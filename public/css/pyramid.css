@@ -1,0 +1,43 @@
+/* ---------- confidence picker (phone: classic "confidence" style + the lost pyramid) ---------- */
+.conf-ask { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 16px; text-align: center; }
+.conf-ask h2 { font-size: 1.9rem; }
+.conf-opts { display: grid; gap: 12px; }
+.conf-opt { display: grid; grid-template-columns: 56px 1fr; grid-template-rows: auto auto; align-items: center; column-gap: 12px; text-align: start; padding: 16px; border: 0; border-radius: var(--r-lg); cursor: pointer; color: #fff;
+  background: linear-gradient(180deg, #5a3fd0, #3a2290); box-shadow: 0 6px 0 #1f1160, var(--drop); animation: ansin .45s var(--spring) both; }
+.conf-opt:nth-child(2) { background: linear-gradient(180deg, #ff7a9a, #e5304d); box-shadow: 0 6px 0 #7d0b22, var(--drop); }
+.conf-opt:nth-child(3) { background: linear-gradient(180deg, #ffd23f, #ff8a1a); box-shadow: 0 6px 0 #8a4b00, var(--drop); color: var(--ink); }
+.conf-opt .ce { grid-row: span 2; font-size: 2.6rem; text-align: center; }
+.conf-opt b { font-size: 1.5rem; }
+.conf-opt small { opacity: .9; font-weight: 700; }
+.conf-opt.picked { box-shadow: 0 0 0 4px #fff, 0 6px 0 rgba(0, 0, 0, .3); }
+.sent .conf-opt:not(.picked) { filter: grayscale(.7) brightness(.6); }
+.cl-p-pts small { font-size: .4em; }
+.cl-p-pts.neg { color: #ffd0d8; }
+.cl-lines.col { flex-direction: column; align-items: stretch; }
+
+/* ---------- the lost pyramid (host board) ---------- */
+.pyr-scene { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 340px; gap: 20px; padding: 20px 26px 90px; overflow: hidden; container-type: size;
+  background: linear-gradient(180deg, #ffb36b 0%, #ffd79a 45%, #f2c27a 62%, #e0a85c 100%); }
+.pyr-sun { position: absolute; top: 6%; left: 8%; width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(circle, #fff6c2, #ffd23f 60%); box-shadow: 0 0 80px 30px rgba(255, 220, 120, .6); }
+.pyr-dunes { position: absolute; left: 0; right: 0; bottom: 0; height: 30%;
+  background: radial-gradient(ellipse 60% 100% at 20% 100%, #d99a4e 60%, transparent 61%), radial-gradient(ellipse 70% 90% at 85% 100%, #c98a40 60%, transparent 61%); }
+.pyr { position: relative; align-self: end; justify-self: center; width: min(100%, 110cqh); aspect-ratio: 1.25; z-index: 2; direction: ltr; }
+.pyr-step { position: absolute; left: calc(var(--k) * 2.9%); right: calc(var(--k) * 2.9%); bottom: calc(var(--k) * 100% / var(--H)); height: calc(100% / var(--H));
+  background: linear-gradient(180deg, #f3d9a0, #d4a35e 70%, #b8843f); border-top: 2px solid #fff3c9; box-shadow: inset 0 -3px 0 rgba(90, 50, 10, .35), 0 2px 0 rgba(90, 50, 10, .4); }
+.pyr-step:nth-child(odd) { filter: brightness(.95); }
+.pyr-step.cap { background: linear-gradient(180deg, #fff2a8, #ffcf33 60%, #e09a00); box-shadow: 0 0 30px rgba(255, 210, 63, .9); }
+.pyr-team { position: absolute; width: 9%; aspect-ratio: 1; transform: translate(-50%, 0); transition: left 1.2s var(--spring), bottom 1.4s var(--spring); z-index: 3; filter: drop-shadow(0 6px 4px rgba(60, 30, 0, .45)); }
+.pyr-team span { position: absolute; top: -26px; left: 50%; transform: translateX(-50%); padding: 0 8px; border-radius: 999px; background: linear-gradient(180deg, var(--c1), var(--c)); font-weight: 900; font-size: .9rem; box-shadow: 0 2px 0 var(--side); }
+.pyr-team.hop { animation: hop .7s ease-out .5s; }
+.pyr-team.slip { animation: slipk .6s ease-out .5s; }
+@keyframes hop { 40% { transform: translate(-50%, -30%) scale(1.15); } }
+@keyframes slipk { 30% { transform: translate(-50%, 0) rotate(-20deg); } 60% { transform: translate(-50%, 0) rotate(15deg); } }
+.pyr-side { position: relative; z-index: 2; display: flex; flex-direction: column; gap: 10px; align-self: center; }
+.pyr-side h2 { color: #6b3a17; text-shadow: 0 2px 0 rgba(255, 255, 255, .5); }
+.pyr-chip { display: flex; align-items: center; gap: 8px; padding: 6px 14px 6px 6px; border-radius: 999px; font-weight: 900; background: linear-gradient(180deg, var(--c1), var(--c)); box-shadow: 0 4px 0 var(--side); animation: rowin .4s ease both; }
+.pyr-chip .art { width: 38px; height: 38px; }
+.pyr-chip b { flex: 1; }
+.pyr-chip .g { padding: 0 8px; border-radius: 999px; background: rgba(255, 255, 255, .9); color: #17a868; }
+.pyr-chip .g.neg { color: #e5304d; }
+.pyr-chip .pp { font-size: .85rem; opacity: .9; }
+.pyr-chip.win { animation: glow 1.2s ease-in-out infinite; }

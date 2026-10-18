@@ -1,0 +1,67 @@
+/* =====================================================================
+   Question types on the phone (question.js)
+   ===================================================================== */
+.q-wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.q-wrap .q-meta { flex: none; display: flex; gap: 8px; align-items: center; }
+.q-wrap .q-meta > span:first-child { margin-inline-end: auto; }
+.pts-chip { padding: 2px 12px; border-radius: 999px; font-weight: 900; font-size: .85rem; color: var(--ink); background: linear-gradient(180deg, #fff3b0, #ffd23f); box-shadow: 0 3px 0 #b37a00; }
+.pts-chip.p0 { background: rgba(255, 255, 255, .2); color: #fff; box-shadow: none; }
+.pts-chip.p3, .pts-chip.p4 { background: linear-gradient(180deg, #ffb3d9, #ff4fa3); color: #fff; box-shadow: 0 3px 0 #a3125a; animation: beat 1.2s infinite; }
+.q-hint { flex: none; text-align: center; color: var(--muted); font-weight: 800; font-size: .95rem; }
+.q-card.has-img { padding: 14px 14px; font-size: clamp(1.1rem, 4.6vw, 1.6rem); }
+
+/* picture (+ image reveal: starts blurred and zoomed, clears during the question) */
+.q-img { flex: 0 1 auto; min-height: 0; max-height: 28vh; display: grid; place-items: center; border-radius: var(--r-lg); overflow: hidden; background: rgba(0, 0, 0, .25); box-shadow: var(--lift); }
+.q-img img { max-width: 100%; max-height: 28vh; display: block; object-fit: contain; }
+.q-img.reveal img { animation: reveal var(--rt, 20s) linear forwards; }
+@keyframes reveal { from { filter: blur(22px) saturate(.6); transform: scale(1.25); } 85% { filter: blur(0); transform: scale(1); } to { filter: none; transform: none; } }
+
+/* answer grids for 2-6 options */
+.answers.n2 { grid-template-columns: 1fr 1fr; grid-auto-rows: 1fr; }
+.answers.tf { grid-template-columns: 1fr 1fr; }
+.answers.n3 { grid-template-columns: 1fr; }
+.answers.n5, .answers.n6 { grid-template-columns: 1fr 1fr; }
+.answers.n5 .ans, .answers.n6 .ans { font-size: clamp(1.05rem, 5vw, 1.5rem); padding-top: 28px; }
+.answers.n3 .ans { padding: 14px 52px 14px 14px; justify-content: flex-start; text-align: start; }
+.answers.n3 .ans .shape { top: 50%; transform: translateY(-50%); }
+.ans:nth-child(5) { --a: #8b5cf6; --a2: #4b2a9a; }
+.ans:nth-child(6) { --a: #0fa3b8; --a2: #0a5d6a; }
+.answers.tf .ans:nth-child(1) { --a: #1f73e0; --a2: #0a3f80; }
+.answers.tf .ans:nth-child(2) { --a: #e9334f; --a2: #8f0d25; }
+.answers.tf .ans { font-size: clamp(1.6rem, 8vw, 2.4rem); }
+/* multi-select: picked answers stay bright with a check */
+.answers.some:not(.locked) .ans:not(.picked) { filter: saturate(.6) brightness(.8); }
+.answers:not(.locked) .ans.picked { box-shadow: 0 0 0 4px #fff, 0 7px 0 var(--a2); transform: scale(.97); }
+.answers:not(.locked) .ans.picked::after { content: '✓'; position: absolute; top: 8px; inset-inline-end: 12px; width: 28px; height: 28px; border-radius: 50%; background: #fff; color: var(--a2); display: grid; place-items: center; font-size: 1.1rem; }
+.q-send { flex: none; }
+.sent .q-send, .sent .btn { filter: grayscale(.6) brightness(.8); pointer-events: none; }
+
+/* typed answer */
+.q-type { flex: 1; display: flex; flex-direction: column; gap: 14px; justify-content: center; }
+.input.big-in { font-size: 1.8rem; padding: 20px; }
+
+/* slider */
+.q-slider { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: 0 6px; }
+.qs-val { align-self: center; min-width: 140px; text-align: center; font-size: 3.4rem; font-weight: 900; line-height: 1; padding: 10px 24px; border-radius: var(--r-lg); color: var(--ink); background: #fff; box-shadow: 0 6px 0 #c9c2f0; direction: ltr; font-variant-numeric: tabular-nums; }
+.q-slider input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 22px; border-radius: 999px; background: linear-gradient(90deg, #22c7e8, #8b5cf6, #ff4fa3); box-shadow: inset 0 3px 6px rgba(0, 0, 0, .35); direction: ltr; touch-action: none; }
+.q-slider input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 46px; height: 46px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #ffd23f 60%); border: 4px solid var(--ink); box-shadow: 0 4px 0 rgba(0, 0, 0, .35); cursor: grab; }
+.q-slider input[type=range]::-moz-range-thumb { width: 40px; height: 40px; border-radius: 50%; background: #ffd23f; border: 4px solid var(--ink); }
+.qs-ends { display: flex; justify-content: space-between; font-weight: 800; color: var(--muted); direction: ltr; }
+
+/* order (puzzle) */
+.q-order { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 10px; }
+.qo-item { display: flex; align-items: center; gap: 12px; padding: 14px 12px; border: 0; border-radius: var(--r); cursor: pointer; text-align: start; color: #fff; font-weight: 900; font-size: 1.2rem;
+  background: hsl(calc(var(--i) * 70 + 200) 70% 48%); box-shadow: 0 5px 0 hsl(calc(var(--i) * 70 + 200) 70% 28%); transition: transform .15s var(--spring); }
+.qo-item.pick { transform: scale(1.03); box-shadow: 0 0 0 4px #fff, 0 5px 0 hsl(calc(var(--i) * 70 + 200) 70% 28%); }
+.qo-n { width: 32px; height: 32px; flex: none; border-radius: 50%; background: rgba(0, 0, 0, .25); display: grid; place-items: center; }
+.qo-t { flex: 1; }
+.qo-mv { display: flex; gap: 4px; }
+.qo-mv i { font-style: normal; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(255, 255, 255, .22); }
+
+/* pin on picture */
+.q-pin { position: relative; flex: 1; min-height: 0; display: grid; place-items: center; border-radius: var(--r-lg); background: rgba(0, 0, 0, .25); touch-action: manipulation; }
+.pin-frame { position: relative; cursor: crosshair; border-radius: var(--r); overflow: hidden; }
+.pin-frame img { width: 100%; height: 100%; display: block; }
+.pin-mark { position: absolute; width: 34px; height: 46px; margin: -46px 0 0 -17px; background: radial-gradient(circle at 50% 35%, #fff 0 18%, #ff4d6d 20% 60%, transparent 62%); clip-path: path('M17 46 C8 30 0 24 0 17 A17 17 0 0 1 34 17 C34 24 26 30 17 46Z'); filter: drop-shadow(0 4px 3px rgba(0, 0, 0, .5)); pointer-events: none; }
+.pin-mark.drop { animation: pindrop .4s var(--spring); }
+@keyframes pindrop { from { transform: translateY(-30px) scale(1.4); } }
