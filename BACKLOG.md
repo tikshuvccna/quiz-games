@@ -7,7 +7,7 @@ Status: **IDEAS ONLY – not scheduled.** The committed plan is in [ROADMAP.md](
 - **P2** – good value, build when P1 is done
 - **P3** – nice to have / long term
 
-The owner liked the **escape-room style**, so it is marked ⭐ and ranked P1.
+The owner liked the **escape-room style** and the **surprise / swap-places events**, so they are marked ⭐ and ranked P1.
 
 ---
 
@@ -19,7 +19,7 @@ The owner liked the **escape-room style**, so it is marked ⭐ and ranked P1.
 | P1 | **Boss battle** | Whole class fights one monster; each correct answer damages it. Cooperative, so weaker students are not embarrassed. |
 | P1 | **Power-ups and double points** | Usable in any game (shield, double points, skip, 50/50, steal). |
 | P1 | **Comeback mechanics** | Catch-up bonus for last places so a lead is never final. |
-| P2 | **Mystery / surprise events** | Random double-points round, steal points, swap places. |
+| P1 ⭐ | **Mystery / surprise events** | Random events that can fire between questions in any game, with a fun animation on the big screen: double-points round, **steal points** from a rival, **swap places** (two players, or the leader and last place, trade positions/scores), shuffle teams, mystery box, "everyone gets +100", freeze a player for one question, reverse the leaderboard. Teacher settings: on/off, frequency, which events are allowed. Also works as a catch-up mechanic. |
 | P2 | **Wager questions** | Bet points before seeing the question (Jeopardy-style). The pyramid game's confidence style already exists. |
 | P2 | **Team relay** | Team members answer in turn. |
 | P2 | **Ghost mode** | Race your own previous score (Kahoot has it). Good for repeat practice and shy students. |
@@ -140,7 +140,7 @@ Game-mode inspiration for the "50 games" list (from competitors): Blooket – To
 
 ## Suggested "version 1" cut
 
-The ROADMAP.md items (games, question media, folders and sharing, template and free-form import, online/LAN mode) plus these P1 items: escape-room quiz, reconnect/rejoin, ordering/matching/hotspot/fill-in questions, power-ups, badges and careful leaderboards, homework mode, AI question generation, safety tools, and tests for all games.
+The ROADMAP.md items (games, question media, folders and sharing, template and free-form import, online/LAN mode) plus these P1 items: escape-room quiz, surprise events (swap places, steal points), reconnect/rejoin, ordering/matching/hotspot/fill-in questions, power-ups, badges and careful leaderboards, homework mode, AI question generation, safety tools, and tests for all games.
 
 ## Sources (competitor and research context; mostly vendor blogs, treat as ideas only)
 
