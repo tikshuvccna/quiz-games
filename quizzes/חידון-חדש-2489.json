@@ -1,0 +1,66 @@
+{
+  "title": "חידון חדש",
+  "description": "",
+  "updated": "2026-10-19T09:10:34.108Z",
+  "questions": [
+    {
+      "type": "poll",
+      "text": "",
+      "time": 20,
+      "points": 1,
+      "answers": [
+        {
+          "text": "",
+          "correct": false
+        },
+        {
+          "text": "",
+          "correct": false
+        },
+        {
+          "text": "",
+          "correct": false
+        },
+        {
+          "text": "",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "poll",
+      "text": "דגכגד",
+      "time": 20,
+      "points": 1,
+      "answers": [
+        {
+          "text": "גכגכ",
+          "correct": false
+        },
+        {
+          "text": "",
+          "correct": false
+        },
+        {
+          "text": "",
+          "correct": false
+        },
+        {
+          "text": "",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "pin",
+      "text": "",
+      "time": 120,
+      "points": 0,
+      "pin": {
+        "x": 50,
+        "y": 50,
+        "r": 10
+      }
+    }
+  ]
+}
