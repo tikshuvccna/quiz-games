@@ -88,3 +88,7 @@ New question types / features:
 5. Items 2 and 3 (assets and backgrounds)
 6. Item 1 (50 games, done in batches)
 7. Item 9 (online/LAN mode)
+
+---
+
+See also [BACKLOG.md](BACKLOG.md) for additional ideas grouped by category and priority (not yet scheduled).
