@@ -238,6 +238,22 @@ Cloud hosting, a database (accounts, saved quizzes, history), sharing quizzes, w
 
 ---
 
+## Troubleshooting: other devices can't open the site (found 2026-10-20)
+
+Symptom: the host screen works on the host PC, `ping <host IP>` works from other devices, but the page does not load (timeout).
+
+Cause (confirmed on the host PC): Windows **Block** rules named "Node.js JavaScript Runtime" on the **Public** profile (TCP and UDP). They are created when someone clicks Cancel on the "Allow Node.js on this network?" popup, and a Block rule overrides the "Quiz Games 3000" Allow rule. School Wi-Fi is usually classified Public.
+
+Fix (admin PowerShell):
+```powershell
+Get-NetFirewallRule -DisplayName "Node.js JavaScript Runtime" | Where-Object { $_.Action -eq "Block" } | Remove-NetFirewallRule
+```
+Also check:
+- If ping fails too, the Wi-Fi uses client isolation (AP isolation). Use the PC's Windows Mobile Hotspot (usually `192.168.137.1`) or a router without isolation.
+- On a Public profile, ports are closed unless an Allow rule exists. `start.bat` adds one for TCP 3000 only. Other Node apps on the same PC need their own rule (the exam-monitor project needs TCP 4555, UDP 3478 and the TURN relay range).
+- Windows lists many virtual adapters (VMware, Hotspot, Tailscale). Use the Wi-Fi IP in the join URL. See ROADMAP.md section 6.
+- Always click **Allow** on the Node.js firewall popup.
+
 ## 5. Known limitations and things not yet verified
 
 - **Real phones**: the platform was tested with bots, a desktop browser and a phone-sized browser tab. Testing on real phones over Wi-Fi with a full class is still needed.

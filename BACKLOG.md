@@ -101,6 +101,7 @@ Game-mode inspiration for the "50 games" list (from competitors): Blooket – To
 |---|---|---|
 | P1 | **Reconnect / rejoin** | A player who refreshes or loses Wi-Fi keeps their score. Check whether it already exists. |
 | P1 | **Automated tests for every new game** | Extend `scripts/smoke-test.js` (currently 15 games) to all 50, using bots; run before each release. |
+| P1 | **Connection self-check on the host screen** | Detects the common failures and shows the exact fix: Windows Block rule for Node.js on a Public profile, missing allow rule for the port, Wi-Fi client isolation, wrong adapter IP. Found in real use on 2026-10-20 (see PROJECT_SUMMARY.md, Troubleshooting). `start.bat` could also remove stale Node.js Block rules. |
 | P1 | **Safety tools** | Hebrew profanity filter for names and open answers (teacher override), kick player, lock room after start. |
 | P2 | **Installable app (PWA)** | Add the player page to the home screen; auto-reconnect. |
 | P2 | **Load test** | 100+ bots on one LAN to find the real limit. |
