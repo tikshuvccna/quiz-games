@@ -23,8 +23,30 @@ if not exist node_modules (
 rem One-time: let phones on the WiFi reach the server (Windows asks for permission once)
 netsh advfirewall firewall show rule name="Quiz Games 3000" >nul 2>nul
 if errorlevel 1 (
-  echo Allowing phones to connect - approve the Windows prompt...
-  powershell -NoProfile -Command "Start-Process netsh -Verb RunAs -Wait -ArgumentList 'advfirewall firewall add rule name=\"Quiz Games 3000\" dir=in action=allow protocol=TCP localport=3000'" >nul 2>nul
+  echo.
+  echo ============================================================
+  echo   FIRST RUN - one-time Windows firewall setup
+  echo ============================================================
+  echo   Windows blocks other devices from reaching this computer.
+  echo   To let students' phones join, this program will now:
+  echo     1. Open port 3000 in the Windows firewall ^(inbound, TCP^)
+  echo     2. Remove old Windows rules that block Node.js, if any
+  echo   Windows will ask for administrator permission - click Yes.
+  echo   This happens only once. Nothing else is changed.
+  echo ============================================================
+  echo.
+  pause
+  powershell -NoProfile -Command "Start-Process powershell -Verb RunAs -Wait -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File \"%~dp0scripts\setup-firewall.ps1\" -Port 3000'"
+  netsh advfirewall firewall show rule name="Quiz Games 3000" >nul 2>nul
+  if errorlevel 1 (
+    echo.
+    echo The firewall was NOT opened ^(permission was denied^).
+    echo The program works on this computer only. To let phones join, run start.bat again and click Yes.
+    echo.
+  ) else (
+    echo Done - phones on the same Wi-Fi can now connect.
+    echo.
+  )
 )
 
 rem Open the host screen in the browser once the server is up

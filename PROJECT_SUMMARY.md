@@ -253,6 +253,7 @@ Also check:
 - On a Public profile, ports are closed unless an Allow rule exists. `start.bat` adds one for TCP 3000 only. Other Node apps on the same PC need their own rule (the exam-monitor project needs TCP 4555, UDP 3478 and the TURN relay range).
 - Windows lists many virtual adapters (VMware, Hotspot, Tailscale). Use the Wi-Fi IP in the join URL. See ROADMAP.md section 6.
 - Always click **Allow** on the Node.js firewall popup.
+- If only some devices connect (found 2026-10-22): check that the failing devices are on the **same Wi-Fi network (same name and subnet)** as the host. It was the cause once. The host IP also changes between networks and days, so old links and QR codes stop working.
 
 ## 5. Known limitations and things not yet verified
 

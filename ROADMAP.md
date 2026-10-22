@@ -62,6 +62,8 @@ New question types / features:
 - The extra columns must **not break compatibility**: the same file must still be accepted by the official Kahoot importer (extra columns placed after Kahoot's columns, ignored by Kahoot).
 - [ ] Update the template file and the import parser.
 - [ ] Validation with a clear error report (row, column, reason).
+- [ ] **Import a .zip** containing the .xlsx plus an `images/` folder: the `Image` column names are matched to the files and attached to the questions automatically (a plain .xlsx without images keeps working). Images made by the Claude Project (diagrams, charts, maps drawn in code) arrive this way; for pin questions the exact `x|y|radius` comes with the file.
+- [ ] Define the final extra-column format (column names, `|` separators) and keep it in sync with the Claude Project instructions.
 
 ## 8. Free-form import
 

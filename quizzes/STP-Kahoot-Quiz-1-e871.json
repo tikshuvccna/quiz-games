@@ -1,0 +1,487 @@
+{
+  "title": "STP חלק ראשון כמעט הכל",
+  "description": "",
+  "updated": "2026-10-22T10:21:25.306Z",
+  "questions": [
+    {
+      "type": "quiz",
+      "text": "מהו הפירוש של הקיצור STP בעולם הרשתות?",
+      "time": 10,
+      "points": 1,
+      "answers": [
+        {
+          "text": "Shared Trunk Protocol",
+          "correct": false
+        },
+        {
+          "text": "Spanning Tree Protocol",
+          "correct": true
+        },
+        {
+          "text": "Switching Tree Protocol",
+          "correct": false
+        },
+        {
+          "text": "Secure Transit Protocol",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "מהי לולאת מיתוג ברשת?",
+      "time": 20,
+      "points": 2,
+      "answers": [
+        {
+          "text": "מצב שבו מתג שולח הודעה חוזרת לכתובת שאינה קיימת",
+          "correct": false
+        },
+        {
+          "text": "מצב שבו שני מתגים משתמשים באותה כתובת MAC בו־זמנית",
+          "correct": false
+        },
+        {
+          "text": "מצב שבו פורט מקבל יותר פריימים מכפי שהוא מסוגל לעבד",
+          "correct": false
+        },
+        {
+          "text": "מצב שבו קיימים שני נתיבים או יותר בין שני רכיבים",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "לכל הודעת ברודקסט ברשת יש TTL (זמן חיים) שמגביל את משך חייה.",
+      "time": 10,
+      "points": 1,
+      "answers": [
+        {
+          "text": "נכון",
+          "correct": false
+        },
+        {
+          "text": "לא נכון",
+          "correct": true
+        },
+        {
+          "text": "",
+          "correct": false
+        },
+        {
+          "text": "",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "מהו ערך ה-Bridge Priority בברירת המחדל במתגי סיסקו?",
+      "time": 10,
+      "points": 3,
+      "answers": [
+        {
+          "text": "32768",
+          "correct": true
+        },
+        {
+          "text": "128",
+          "correct": false
+        },
+        {
+          "text": "4096",
+          "correct": false
+        },
+        {
+          "text": "8192",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "מהי הסיבה הנפוצה ליצירת לולאות מכוונות בין מתגים?",
+      "time": 20,
+      "points": 1,
+      "answers": [
+        {
+          "text": "איזון עומסים – פיזור התעבורה בין כל הכבלים",
+          "correct": false
+        },
+        {
+          "text": "הפרדה בין רשתות – יצירת תחומי ברודקסט נפרדים",
+          "correct": false
+        },
+        {
+          "text": "יתירות – יצירת נתיבי גיבוי למקרה שקו נופל",
+          "correct": true
+        },
+        {
+          "text": "חיסכון בכתובות – הקטנת מספר כתובות ה-MAC ברשת",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "באילו הודעות מתגים מתקשרים ביניהם בשביל לנהל את הפרוטוקול?",
+      "time": 20,
+      "points": 1,
+      "answers": [
+        {
+          "text": "BPDU – Bridge Protocol Data Unit",
+          "correct": true
+        },
+        {
+          "text": "CDP – Cisco Discovery Protocol",
+          "correct": false
+        },
+        {
+          "text": "DTP – Dynamic Trunking Protocol",
+          "correct": false
+        },
+        {
+          "text": "LLDP – Link Layer Discovery Protocol",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "מהי העלות (cost) של חיבור 10GigabitEthernet?",
+      "time": 10,
+      "points": 1,
+      "answers": [
+        {
+          "text": "4",
+          "correct": false
+        },
+        {
+          "text": "19",
+          "correct": false
+        },
+        {
+          "text": "100",
+          "correct": false
+        },
+        {
+          "text": "2",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "איזו פקודה מעבירה את המתג לעבודה בפרוטוקול RPVST+?",
+      "time": 20,
+      "points": 2,
+      "answers": [
+        {
+          "text": "spanning-tree rapid-pvst enable",
+          "correct": false
+        },
+        {
+          "text": "spanning-tree mode rapid-pvst",
+          "correct": true
+        },
+        {
+          "text": "spanning-tree backbonefast enable",
+          "correct": false
+        },
+        {
+          "text": "spanning-tree mode pvst-fast",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "במתג שנבחר כ-Root Bridge כל הפורטים הם Designated Ports.",
+      "time": 20,
+      "points": 3,
+      "answers": [
+        {
+          "text": "נכון",
+          "correct": true
+        },
+        {
+          "text": "לא נכון",
+          "correct": false
+        },
+        {
+          "text": "",
+          "correct": false
+        },
+        {
+          "text": "",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "איזו הגדרה נכונה ל-Root Port?",
+      "time": 20,
+      "points": 1,
+      "answers": [
+        {
+          "text": "הפורט הפעיל עם העלות הגבוהה ביותר אל ה-Root Bridge ההוא",
+          "correct": false
+        },
+        {
+          "text": "הפורט החסום ששומר על נתיב גיבוי אל ה-Root Bridge שלו",
+          "correct": false
+        },
+        {
+          "text": "הפורט הפעיל עם העלות הנמוכה ביותר אל ה-Root Bridge",
+          "correct": true
+        },
+        {
+          "text": "הפורט הפעיל עם המספר הנמוך ביותר בכל מתג רגיל",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "כל כמה שניות שולח מתג הודעת Hello בברירת המחדל?",
+      "time": 20,
+      "points": 2,
+      "answers": [
+        {
+          "text": "5 שניות",
+          "correct": false
+        },
+        {
+          "text": "10 שניות",
+          "correct": false
+        },
+        {
+          "text": "15 שניות",
+          "correct": false
+        },
+        {
+          "text": "2 שניות",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "באיזה מצב פורט שוהה 15 שניות לפני שמתחיל ללמוד כתובות MAC?",
+      "time": 20,
+      "points": 1,
+      "answers": [
+        {
+          "text": "Listening",
+          "correct": true
+        },
+        {
+          "text": "Blocking",
+          "correct": false
+        },
+        {
+          "text": "Learning",
+          "correct": false
+        },
+        {
+          "text": "Forwarding",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "איזו בעיה בטבלת ה-MAC נגרמת בגלל לולאה ברשת?",
+      "time": 20,
+      "points": 1,
+      "answers": [
+        {
+          "text": "הטבלה מתרוקנת לחלוטין בכל פעם שמגיעה הודעת ברודקסט",
+          "correct": false
+        },
+        {
+          "text": "אותה כתובת MAC משויכת לפורטים שונים בכל פעם מחדש",
+          "correct": true
+        },
+        {
+          "text": "כל כתובות ה-MAC מצטברות תחת פורט אחד בלבד בטבלה",
+          "correct": false
+        },
+        {
+          "text": "הטבלה מוחקת כתובות MAC ישנות לפני זמן ההזדקנות שלהן",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "מסלול אל השורש כולל קישור Gigabit ואחריו קישור FastEthernet. מה העלות הכוללת?",
+      "time": 30,
+      "points": 1,
+      "answers": [
+        {
+          "text": "8",
+          "correct": false
+        },
+        {
+          "text": "38",
+          "correct": false
+        },
+        {
+          "text": "23",
+          "correct": true
+        },
+        {
+          "text": "119",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "לשני קישורים אל השורש אותה עלות. איזה פורט ייבחר כ-Root Port?",
+      "time": 20,
+      "points": 2,
+      "answers": [
+        {
+          "text": "הפורט עם המספר הגבוה יותר מבין שני הפורטים האלה",
+          "correct": false
+        },
+        {
+          "text": "הפורט שחובר ראשון באמצעות כבל אל המתג השכן",
+          "correct": false
+        },
+        {
+          "text": "הפורט שקיבל ראשון הודעת BPDU מהמתג השורש",
+          "correct": false
+        },
+        {
+          "text": "הפורט עם המספר הנמוך יותר מבין שני הקישורים",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "במקטע בין שני מתגים עם עלות זהה אל השורש, איזה פורט יהיה Designated?",
+      "time": 30,
+      "points": 2,
+      "answers": [
+        {
+          "text": "הפורט של המתג עם ה-Bridge ID הנמוך יותר",
+          "correct": true
+        },
+        {
+          "text": "הפורט של המתג בעל ה-Bridge ID הגבוה יותר",
+          "correct": false
+        },
+        {
+          "text": "הפורט של המתג בעל מספר הפורטים הרב יותר",
+          "correct": false
+        },
+        {
+          "text": "הפורט של המתג שהופעל ראשון ברשת הזאת",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "איך מזהים בפלט show spanning-tree שהמתג שהרצנו עליו הוא השורש?",
+      "time": 30,
+      "points": 1,
+      "answers": [
+        {
+          "text": "ה-Root ID גבוה מה-Bridge ID של אותו המתג",
+          "correct": false
+        },
+        {
+          "text": "ה-Root ID מכיל את כתובת ה-MAC של המתג השכן",
+          "correct": false
+        },
+        {
+          "text": "ה-Root ID זהה ל-Bridge ID של אותו המתג עצמו",
+          "correct": true
+        },
+        {
+          "text": "הטיימרים ב-Root ID שונים מאלו של ה-Bridge ID",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "אילו שני מצבים של STP הרגיל מתאחדים למצב Discarding ב-Rapid-PVST?",
+      "time": 30,
+      "points": 1,
+      "answers": [
+        {
+          "text": "Blocking",
+          "correct": true
+        },
+        {
+          "text": "Learning",
+          "correct": false
+        },
+        {
+          "text": "Listening",
+          "correct": true
+        },
+        {
+          "text": "Forwarding",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "פורט חסום מפסיק לקבל BPDU. כמה שניות עד שיעבור ל-Forwarding בברירת מחדל?",
+      "time": 30,
+      "points": 1,
+      "answers": [
+        {
+          "text": "20 שניות",
+          "correct": false
+        },
+        {
+          "text": "50 שניות",
+          "correct": true
+        },
+        {
+          "text": "30 שניות",
+          "correct": false
+        },
+        {
+          "text": "5 שניות",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "S1: ‏Priority 32768 ו-MAC נמוך. S2: ‏Priority 28672 ו-MAC גבוה. מי יהיה השורש?",
+      "time": 30,
+      "points": 4,
+      "answers": [
+        {
+          "text": "S2, כי ה-Priority הנמוך יותר מכריע לפני כתובת ה-MAC",
+          "correct": true
+        },
+        {
+          "text": "S1, כי כתובת ה-MAC הנמוכה מכריעה לפני ערך ה-Priority",
+          "correct": false
+        },
+        {
+          "text": "S2, כי כתובת ה-MAC הגבוהה מכריעה לפני ה-Priority",
+          "correct": false
+        },
+        {
+          "text": "S1, כי ה-Priority הגבוה מכריע לפני כתובת ה-MAC",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}
