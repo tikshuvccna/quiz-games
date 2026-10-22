@@ -96,7 +96,7 @@
     saveTimer = null;
     if (!quiz || quiz.builtin) return;
     try {
-      await api('/quizzes/' + encodeURIComponent(quiz.id), { method: 'PUT', body: JSON.stringify({ title: quiz.title, description: quiz.description, questions: quiz.questions }) });
+      await api('/quizzes/' + encodeURIComponent(quiz.id), { method: 'PUT', body: JSON.stringify({ title: quiz.title, description: quiz.description, background: quiz.background || '', questions: quiz.questions }) });
       setStatus('saved');
     } catch (e) {
       setStatus('error');
@@ -504,6 +504,7 @@
       <header class="ed-head">
         <button class="btn ghost sm" id="back">→ לספרייה</button>
         <input class="input sm title-in" id="title" maxlength="80" value="${esc(quiz.title)}" placeholder="שם החידון">
+        <label class="bg-sel" title="הרקע שנבחר אוטומטית כשבוחרים את החידון במסך המשחק">🎨<select id="bgSel"><option value="">רקע: לפי החדר</option></select></label>
         <span class="ed-status saved" id="status">נשמר ✓</span>
         <a class="btn ghost sm" href="/api/q/quizzes/${encodeURIComponent(quiz.id)}/export.xlsx">⬇ ייצוא לאקסל</a>
       </header>
@@ -513,6 +514,11 @@
         <aside class="ed-side" id="side"></aside>
       </div>`;
     document.getElementById('back').onclick = async () => { await save(); library(); };
+    const bg = document.getElementById('bgSel');
+    Scenes.loadFiles().then(() => {
+      bg.innerHTML = `<option value="">רקע: לפי החדר</option>` + Scenes.all().map((x) => `<option value="${esc(x.id)}" ${quiz.background === x.id ? 'selected' : ''}>${esc(x.name)}${x.file ? ' (קובץ)' : x.anim ? ' ✨' : ''}</option>`).join('');
+    });
+    bg.onchange = () => { quiz.background = bg.value; dirty(); };
     const t = document.getElementById('title');
     t.oninput = () => { quiz.title = t.value; dirty(); };
     if (focusTitle) { t.focus(); t.select(); }

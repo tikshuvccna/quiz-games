@@ -12,7 +12,10 @@ const DURATIONS = [120, 180, 300, 480, 600];
 const COUNTDOWN_MS = 3800; // 3 · 2 · 1 · GO
 const LOBBY_GRACE_MS = 20000; // a phone that drops in the lobby keeps its seat this long
 const NAME_MODES = ['custom', 'spin', 'auto'];
-const SCENES = ['classic', 'space', 'ocean', 'forest', 'candy', 'sunset'];
+const SCENES = ['classic', 'space', 'ocean', 'forest', 'candy', 'sunset', 'aurora', 'starfield', 'underwater', 'balloons', 'neon', 'snow', 'fireflies', 'party'];
+const Media = require('./media');
+// a built-in scene, or one of the teacher's pictures / videos in the backgrounds folder
+const validScene = (sc) => typeof sc === 'string' && (SCENES.includes(sc) || (sc.startsWith('file:') && Media.isBackground(sc)));
 const MAX_REROLLS = 3;
 const REPORTS_DIR = process.env.REPORTS_DIR || path.join(__dirname, '..', 'reports');
 
@@ -107,16 +110,23 @@ class Room {
   setSetup(s) {
     if (!s) return;
     if (NAME_MODES.includes(s.nameMode)) this.setup.nameMode = s.nameMode;
-    if (SCENES.includes(s.scene)) this.setup.scene = s.scene;
+    if (validScene(s.scene)) this.setup.scene = s.scene;
     if (typeof s.video === 'string') this.setup.video = s.video.trim().slice(0, 300);
     if (typeof s.winText === 'string') this.setup.winText = s.winText.replace(/[\u0000-\u001f]/g, ' ').slice(0, 140);
-    if (typeof s.quiz === 'string' && this.quizList(true).some((q) => q.id === s.quiz)) this.setup.quiz = s.quiz;
+    if (typeof s.quiz === 'string' && s.quiz !== this.setup.quiz) {
+      const q = this.quizList(true).find((x) => x.id === s.quiz);
+      if (q) {
+        this.setup.quiz = s.quiz;
+        // a quiz can bring its own background
+        if (q.background && validScene(q.background) && !s.scene) this.setup.scene = q.background;
+      }
+    }
   }
 
   // the quiz library (re-read from disk at most every few seconds)
   quizList(fresh) {
     if (fresh || !this.quizCache || Date.now() - this.quizCache.at > 4000) {
-      this.quizCache = { at: Date.now(), list: Quizzes.list().map(({ id, title, count, playable, builtin, folder }) => ({ id, title, count, playable, builtin: !!builtin, folder: folder || '' })) };
+      this.quizCache = { at: Date.now(), list: Quizzes.list().map(({ id, title, count, playable, builtin, folder, background }) => ({ id, title, count, playable, builtin: !!builtin, folder: folder || '', background: background || '' })) };
     }
     return this.quizCache.list;
   }

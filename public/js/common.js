@@ -391,6 +391,7 @@ window.U = {
 
   // lobby / page background theme
   applyScene(scene) {
+    if (window.Scenes) return Scenes.apply(scene);
     if (document.body.dataset.scene !== scene) document.body.dataset.scene = scene || 'classic';
   },
 

@@ -6,6 +6,7 @@ let joinUrl = '';
 let replaced = false;
 let tab = 'games';
 let filter = 'all';
+let videoLib = []; // the video library (videos folder + videos.json)
 const MODE = { teams: 'קבוצה נגד קבוצה', ffa: 'כל אחד לעצמו', coop: 'כולם ביחד' };
 const MODE_ICON = { teams: '⚔️', ffa: '🏃', coop: '🤝' };
 const FILTERS = [['all', 'הכל'], ['teams', '⚔️ קבוצות'], ['ffa', '🏃 אישי'], ['coop', '🤝 שיתופי']];
@@ -13,14 +14,6 @@ const NAME_MODES = [
   ['custom', '✏️ כל אחד בוחר שם', 'השחקנים מקלידים כינוי'],
   ['spin', '🎲 שם אקראי + החלפה', 'מקבלים שם מצחיק ויכולים להחליף עד 3 פעמים'],
   ['auto', '🔒 שם אקראי קבוע', 'שם מצחיק שאי אפשר לשנות'],
-];
-const SCENES = [
-  ['classic', 'סגול קלאסי'],
-  ['space', 'חלל'],
-  ['ocean', 'מתחת לים'],
-  ['forest', 'יער'],
-  ['candy', 'ממתקים'],
-  ['sunset', 'שקיעה'],
 ];
 
 const store = {
@@ -156,8 +149,10 @@ function renderLobby() {
           <div class="game-cards" id="games"></div>
           <div class="room-setup hidden" id="roomSetup">
             <section><h3>שמות השחקנים</h3><div class="opt-cards" id="nameModes">${NAME_MODES.map(([k, l, d]) => `<button class="opt-card" data-name-mode="${k}"><b>${l}</b><small>${d}</small></button>`).join('')}</div></section>
-            <section><h3>רקע הלובי</h3><div class="scene-picks" id="scenes">${SCENES.map(([k, l]) => `<button class="scene-pick" data-scene-pick="${k}"><span class="sp-prev sc-${k}"></span>${l}</button>`).join('')}</div></section>
-            <section><h3>🎬 סרטון יוטיוב בזמן ההמתנה</h3><div class="row"><input class="input sm" id="videoUrl" placeholder="הדביקו קישור ליוטיוב" dir="ltr"><button class="btn sm blue" id="videoSet">הצג</button><button class="btn sm ghost" id="videoClear">הסר</button></div></section>
+            <section><h3>🎨 רקע <small class="muted">(במסך הגדול ובטלפונים)</small></h3><div class="scene-picks" id="scenes"></div>
+              <label class="lite-tog"><input type="checkbox" id="liteMode"> ⚡ מצב חסכוני במחשב הזה (בלי אנימציות ברקע)</label>
+              <small class="muted">רקעים משלכם: שימו תמונות או סרטונים בתיקייה <b dir="ltr">backgrounds</b> של התוכנה.</small></section>
+            <section><h3>🎬 סרטון בזמן ההמתנה</h3><div class="video-lib" id="videoLib"></div><div class="row"><input class="input sm" id="videoUrl" placeholder="או הדביקו קישור ליוטיוב" dir="ltr"><button class="btn sm blue" id="videoSet">הצג</button><button class="btn sm ghost" id="videoClear">הסר</button></div></section>
             <div id="musicSet">${Music.settingsHtml()}</div>
             <section><h3>🏆 טקסט למנצחים</h3><input class="input sm" id="winText" maxlength="140" placeholder="למשל: כל הכבוד! פרס מחכה לכם אצל המורה 🎁"><small class="muted">יופיע בטלפון של המנצחים ובמסך התוצאות</small></section>
           </div>
@@ -179,9 +174,17 @@ function renderLobby() {
       if (nm) socket.emit('host:setup', { nameMode: nm.dataset.nameMode });
       const sc = e.target.closest('[data-scene-pick]');
       if (sc) socket.emit('host:setup', { scene: sc.dataset.scenePick });
+      const vl = e.target.closest('[data-video-pick]');
+      if (vl) { const v = vl.dataset.videoPick; socket.emit('host:setup', { video: st.setup.video === v ? '' : v }); }
     };
     document.getElementById('start').onclick = () => socket.emit('host:start');
     document.getElementById('games').dataset.sig = '';
+    const lm = document.getElementById('liteMode');
+    lm.checked = Scenes.lite();
+    lm.onchange = () => Scenes.setLite(lm.checked);
+    // the scene + video galleries (incl. the teacher's own files) load once per lobby
+    Scenes.loadFiles().then(() => { document.getElementById('scenes').dataset.sig = ''; renderLobby(); });
+    fetch('/api/videos').then((r) => r.json()).then((v) => { videoLib = v; document.getElementById('videoLib').dataset.sig = ''; renderLobby(); }).catch(() => {});
     const vu = document.getElementById('videoUrl');
     document.getElementById('videoSet').onclick = () => {
       if (vu.value && !youtubeId(vu.value)) return alert('זה לא נראה כמו קישור ליוטיוב');
@@ -250,16 +253,30 @@ function renderLobby() {
 
   // room setup
   document.querySelectorAll('[data-name-mode]').forEach((b) => b.classList.toggle('on', b.dataset.nameMode === st.setup.nameMode));
+  const scBox = document.getElementById('scenes');
+  const scList = Scenes.all();
+  if (scBox.dataset.sig !== scList.map((x) => x.id).join()) {
+    scBox.dataset.sig = scList.map((x) => x.id).join();
+    scBox.innerHTML = scList.map((x) => `<button class="scene-pick" data-scene-pick="${esc(x.id)}" title="${esc(x.name)}">${Scenes.previewHtml(x)}<span class="sp-name">${esc(x.name)}</span></button>`).join('');
+  }
   document.querySelectorAll('[data-scene-pick]').forEach((b) => b.classList.toggle('on', b.dataset.scenePick === st.setup.scene));
+  const vlBox = document.getElementById('videoLib');
+  if (vlBox.dataset.sig !== videoLib.map((v) => v.key).join()) {
+    vlBox.dataset.sig = videoLib.map((v) => v.key).join();
+    vlBox.innerHTML = videoLib.map((v) => `<button class="vl-pick" data-video-pick="${esc(v.kind === 'youtube' ? 'https://youtu.be/' + v.key : v.key)}">${v.thumb ? `<img src="${esc(v.thumb)}" alt="" loading="lazy">` : '<span class="vl-file">🎞️</span>'}<span>${esc(v.title)}</span></button>`).join('');
+  }
+  vlBox.querySelectorAll('[data-video-pick]').forEach((b) => b.classList.toggle('on', b.dataset.videoPick === st.setup.video || (youtubeId(b.dataset.videoPick) && youtubeId(b.dataset.videoPick) === youtubeId(st.setup.video))));
   const wt = document.getElementById('winText');
   if (document.activeElement !== wt) wt.value = st.setup.winText || '';
   const vu = document.getElementById('videoUrl');
-  if (document.activeElement !== vu && !vu.value) vu.value = st.setup.video || '';
-  const vid = youtubeId(st.setup.video);
+  if (document.activeElement !== vu && !vu.value && !String(st.setup.video || '').startsWith('file:')) vu.value = st.setup.video || '';
+  // a local file from the video library (works without internet) or a YouTube link
+  const localVid = String(st.setup.video || '').startsWith('file:') ? videoLib.find((v) => v.key === st.setup.video) : null;
+  const vid = localVid ? st.setup.video : youtubeId(st.setup.video);
   const vbox = document.getElementById('video');
   if (vbox.dataset.id !== vid) {
     vbox.dataset.id = vid;
-    vbox.innerHTML = vid ? `<iframe src="https://www.youtube-nocookie.com/embed/${vid}?autoplay=1&loop=1&playlist=${vid}&rel=0&modestbranding=1" title="סרטון" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>` : '';
+    vbox.innerHTML = localVid ? `<video src="${esc(localVid.url)}" autoplay loop playsinline controls></video>` : vid ? `<iframe src="https://www.youtube-nocookie.com/embed/${vid}?autoplay=1&loop=1&playlist=${vid}&rel=0&modestbranding=1" title="סרטון" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>` : '';
     document.querySelector('.join-panel').classList.toggle('with-video', !!vid);
   }
 

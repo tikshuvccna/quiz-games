@@ -71,6 +71,7 @@ function clean(data) {
     title: String((data && data.title) || 'חידון ללא שם').slice(0, 80),
     description: String((data && data.description) || '').slice(0, 300),
     folder: cleanFolder(data && data.folder),
+    background: String((data && data.background) || '').replace(/[^\p{L}\p{N}:._ -]/gu, '').slice(0, 120),
     updated: new Date().toISOString(),
     questions: (Array.isArray(data && data.questions) ? data.questions : []).slice(0, 200).map(qt.normalize).filter(Boolean),
   };
@@ -98,7 +99,7 @@ function list() {
     if (!validId(id)) continue;
     try {
       const q = load(id);
-      out.push({ id, title: q.title, folder: q.folder, count: q.questions.length, playable: q.questions.filter(qt.playable).length, updated: q.updated, cover: (q.questions.find((x) => x.image) || {}).image || null, types: [...new Set(q.questions.map((x) => x.type))] });
+      out.push({ id, title: q.title, folder: q.folder, background: q.background, count: q.questions.length, playable: q.questions.filter(qt.playable).length, updated: q.updated, cover: (q.questions.find((x) => x.image) || {}).image || null, types: [...new Set(q.questions.map((x) => x.type))] });
     } catch {
       // not a quiz file: skip it
     }

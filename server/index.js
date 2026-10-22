@@ -10,6 +10,7 @@ const Quizzes = require('./quizzes');
 const Net = require('./net');
 const Library = require('./library');
 const Freeform = require('./freeform');
+const Media = require('./media');
 
 const PORT = process.env.PORT || 3000;
 const app = express();
@@ -170,6 +171,13 @@ app.get('/api/music', (req, res) => {
   } catch {}
   res.json(files.map((f) => ({ file: f, url: '/music/' + encodeURIComponent(f), title: f.replace(/^M\d+-\d+\s*/, '').replace(/\.\w+$/, '') })));
 });
+
+// the teacher's own backgrounds: every picture / video in the backgrounds folder becomes a scene
+app.use('/backgrounds', express.static(Media.BG_DIR, { maxAge: '1d' }));
+app.get('/api/backgrounds', (req, res) => res.json(Media.backgrounds()));
+// the video library: local video files in the videos folder + YouTube links listed in videos/videos.json
+app.use('/videos', express.static(Media.VIDEO_DIR, { maxAge: '1d' }));
+app.get('/api/videos', (req, res) => res.json(Media.videos()));
 
 // question pictures (public: phones and the big screen load them)
 app.get('/media/:id/:file', (req, res) => {
