@@ -26,8 +26,9 @@ function writeConfig(c) {
   fs.writeFileSync(CONFIG, JSON.stringify(c, null, 2));
 }
 
+// QUIZ_DIR (environment) wins: servers in the cloud and test servers keep their own library
 function folder() {
-  const f = readConfig().folder || DEFAULT_FOLDER;
+  const f = process.env.QUIZ_DIR || readConfig().folder || DEFAULT_FOLDER;
   try {
     fs.mkdirSync(f, { recursive: true });
   } catch {}
