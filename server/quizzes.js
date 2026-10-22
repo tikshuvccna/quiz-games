@@ -183,13 +183,77 @@ const cellText = (c) => {
   return String(v);
 };
 
-// Reads Kahoot's "quiz template" (and our own copy of it): finds the header row
+// Extra columns after Kahoot's own (all optional; Kahoot ignores them):
+//   Type, Points, Image, Video, Reveal, Accept, Slider, Items, Pin, Puzzle, Explanation
+const EXTRA_COLS = /^(type|points|image|video|reveal|accept|slider|items|pin|puzzle|explanation)\b/i;
+const IMG_EXT = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
+const parts = (s) => String(s || '').split('|').map((x) => x.trim()).filter(Boolean);
+
+function parseVideo(s) {
+  s = String(s || '').trim();
+  const m = s.match(/(?:youtu\.be\/|[?&]v=|embed\/|shorts\/)([\w-]{11})/) || s.match(/^([\w-]{11})$/);
+  if (!m) return null;
+  const st = s.match(/[?&](?:start|t)=(\d+)/);
+  const en = s.match(/[?&]end=(\d+)/);
+  return { id: m[1], start: st ? +st[1] : 0, end: en ? +en[1] : 0 };
+}
+
+// one spreadsheet row → raw question (the Kahoot columns are always a valid multiple-choice version)
+function rowToRaw(cells, head, images) {
+  const get = (k) => (head[k] ? cells[head[k]] || '' : '');
+  const text = cells[head.q];
+  const answers = [1, 2, 3, 4, 5, 6].filter((k) => head['a' + k]).map((k) => cells[head['a' + k]] || '');
+  const correct = String(cells[head.correct] || '').split(/[^\d]+/).map(Number).filter((n) => n >= 1 && n <= answers.length);
+  const base = {
+    type: 'quiz',
+    text,
+    time: NEAREST_TIME(Number(cells[head.time]) || 20),
+    answers: answers.map((t, i) => ({ text: t, correct: correct.includes(i + 1) })),
+  };
+  const pts = get('x_points');
+  if (pts !== '' && qt.POINTS.includes(Number(pts))) base.points = Number(pts);
+
+  const imgName = path.basename(get('x_image').replace(/\\/g, '/')).toLowerCase();
+  let missingImage = false;
+  if (get('x_image')) {
+    if (images.has(imgName)) base.image = imgName;
+    else missingImage = true;
+  }
+  if (/^(yes|true|1|כן|tiles)$/i.test(get('x_reveal'))) base.reveal = true;
+  const video = parseVideo(get('x_video'));
+  if (video) base.video = video;
+
+  const type = get('x_type').toLowerCase();
+  let special = null;
+  if (type === 'tf') {
+    special = { ...base, type: 'tf', answers: base.answers.slice(0, 2) };
+  } else if (type === 'poll') {
+    special = { ...base, type: 'poll', points: 0, answers: base.answers.slice(0, 4).map((a) => ({ text: a.text })) };
+  } else if (type === 'type') {
+    const accept = parts(get('x_accept'));
+    if (!accept.length) base.answers.filter((a) => a.correct && a.text).forEach((a) => accept.push(a.text));
+    if (accept.length) special = { ...base, type: 'type', accept, time: Math.max(base.time, 20) };
+  } else if (type === 'slider') {
+    const n = parts(get('x_slider')).map(Number);
+    if (n.length >= 4 && n.every(Number.isFinite) && n[1] > n[0]) special = { ...base, type: 'slider', slider: { min: n[0], max: n[1], step: n[2], answer: n[3], tol: n[4] || 0 } };
+  } else if (type === 'order') {
+    const items = parts(get('x_items'));
+    if (items.length >= 2) special = { ...base, type: 'order', items };
+  } else if (type === 'pin') {
+    const n = parts(get('x_pin')).map(Number);
+    if (base.image && n.length >= 2 && n.every(Number.isFinite)) special = { ...base, type: 'pin', pin: { x: n[0], y: n[1], r: n[2] || 10 } };
+  }
+  return { raw: special || base, downgraded: !!type && type !== 'quiz' && !special, missingImage };
+}
+
+// Reads Kahoot's "quiz template" (and our own copy of it with the extra columns): finds the header row
 // (Question / Answer 1-4 / Time limit / Correct answer(s)) and reads the rows under it.
-async function importXlsx(buffer, title) {
+// images: Map(lowercase file name → { buffer, mime }) from a zip, for the Image column.
+async function importXlsx(buffer, title, images = new Map()) {
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.load(buffer);
   const questions = [];
-  let skipped = 0;
+  const stats = { skipped: 0, downgraded: 0, missingImages: 0, special: 0 };
   for (const ws of wb.worksheets) {
     let head = null;
     ws.eachRow((row, rn) => {
@@ -199,8 +263,10 @@ async function importXlsx(buffer, title) {
         const cols = {};
         cells.forEach((t, cn) => {
           if (!t) return;
+          const x = t.match(EXTRA_COLS);
           const a = t.match(/answer\s*(\d)|תשובה\s*(\d)/i);
-          if (a) cols['a' + (a[1] || a[2])] = cn;
+          if (x) cols['x_' + x[1].toLowerCase()] = cn;
+          else if (a) cols['a' + (a[1] || a[2])] = cn;
           else if (/^(question|שאלה)/i.test(t)) cols.q = cn;
           else if (/time|זמן/i.test(t)) cols.time = cn;
           else if (/correct|נכונ/i.test(t)) cols.correct = cn;
@@ -210,46 +276,85 @@ async function importXlsx(buffer, title) {
       }
       const text = cells[head.q];
       if (!text) return;
-      const answers = [1, 2, 3, 4, 5, 6].filter((k) => head['a' + k]).map((k) => cells[head['a' + k]] || '');
-      const correct = String(cells[head.correct] || '').split(/[^\d]+/).map(Number).filter((n) => n >= 1 && n <= answers.length);
-      const q = qt.normalize({
-        type: 'quiz',
-        text,
-        time: NEAREST_TIME(Number(cells[head.time]) || 20),
-        answers: answers.map((t, i) => ({ text: t, correct: correct.includes(i + 1) })),
-      });
-      if (qt.playable(q)) questions.push(q);
-      else skipped++;
+      const { raw, downgraded, missingImage } = rowToRaw(cells, head, images);
+      const q = qt.normalize(raw);
+      const ok = qt.playable(q) || (q.type === 'poll' && q.answers.filter((a) => a.text).length >= 2);
+      if (!ok) return void stats.skipped++;
+      if (downgraded) stats.downgraded++;
+      if (missingImage) stats.missingImages++;
+      if (q.type !== 'quiz') stats.special++;
+      questions.push(q);
     });
     if (head) break;
   }
   if (!questions.length) throw new Error('לא נמצאו שאלות בקובץ. ודאו שזו תבנית Kahoot (עמודות Question, Answer 1-4, Time limit, Correct answer)');
-  const quiz = create(title || 'חידון מיובא', questions);
-  return { id: quiz.id, count: questions.length, skipped };
+  const id = newId(title || 'חידון מיובא');
+  // copy each used picture into the quiz's media folder once
+  const stored = new Map();
+  for (const q of questions) {
+    if (!q.image) continue;
+    if (!stored.has(q.image)) {
+      const img = images.get(q.image);
+      stored.set(q.image, img ? saveMedia(id, img.buffer, img.mime) : null);
+    }
+    if (stored.get(q.image)) q.image = stored.get(q.image);
+    else delete q.image;
+  }
+  save(id, { title: title || 'חידון מיובא', questions });
+  return { id, count: questions.length, images: stored.size, ...stats };
+}
+
+// .xlsx, or a .zip with the .xlsx and the pictures its Image column names (any folder inside the zip)
+async function importAny(buffer, title) {
+  const JSZip = require('jszip');
+  let zip;
+  try {
+    zip = await JSZip.loadAsync(buffer);
+  } catch {
+    throw new Error('הקובץ אינו xlsx או zip תקין');
+  }
+  if (zip.file('xl/workbook.xml')) return importXlsx(buffer, title);
+  const entries = Object.values(zip.files).filter((f) => !f.dir && !/(^|\/)(__MACOSX\/|\.|~\$)/.test(f.name));
+  const xlsx = entries.filter((f) => /\.xlsx$/i.test(f.name)).sort((a, b) => a.name.length - b.name.length)[0];
+  if (!xlsx) throw new Error('בקובץ ה-zip לא נמצא קובץ xlsx');
+  const images = new Map();
+  for (const f of entries.filter((f) => IMG_EXT[path.extname(f.name).toLowerCase()]).slice(0, 300)) {
+    const buf = await f.async('nodebuffer');
+    if (buf.length && buf.length <= 12 * 1024 * 1024) images.set(path.basename(f.name).toLowerCase(), { buffer: buf, mime: IMG_EXT[path.extname(f.name).toLowerCase()] });
+  }
+  const t = title || path.basename(xlsx.name).replace(/\.xlsx$/i, '');
+  return importXlsx(await xlsx.async('nodebuffer'), t, images);
 }
 
 // a blank template (or a quiz exported) in the same layout as Kahoot's
 async function templateXlsx(id) {
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Quiz', { views: [{ rightToLeft: true }] });
-  ws.columns = [{ width: 6 }, { width: 50 }, { width: 26 }, { width: 26 }, { width: 26 }, { width: 26 }, { width: 16 }, { width: 20 }];
+  ws.columns = [{ width: 6 }, { width: 50 }, { width: 26 }, { width: 26 }, { width: 26 }, { width: 26 }, { width: 16 }, { width: 20 }, { width: 10 }, { width: 8 }, { width: 18 }, { width: 28 }, { width: 9 }, { width: 24 }, { width: 22 }, { width: 24 }, { width: 14 }, { width: 9 }];
   ws.addRow(['', 'תבנית חידון (תואמת לתבנית של Kahoot)']).font = { bold: true, size: 16 };
-  ws.addRow(['', 'מלאו שאלה בכל שורה. זמן: 5/10/20/30/60/90/120/240 שניות. תשובה נכונה: מספר התשובה (למשל 2, או 1,3 לכמה תשובות).']);
+  ws.addRow(['', 'מלאו שאלה בכל שורה. זמן: 5/10/20/30/60/90/120/240 שניות. תשובה נכונה: מספר התשובה (למשל 2, או 1,3 לכמה תשובות). העמודות אחרי "Correct answer" (I ואילך) אופציונליות: Kahoot מתעלם מהן והתוכנית שלנו קוראת אותן.']);
   ws.addRow([]);
-  const head = ws.addRow(['#', 'Question - שאלה', 'Answer 1 - תשובה 1', 'Answer 2 - תשובה 2', 'Answer 3 - תשובה 3', 'Answer 4 - תשובה 4', 'Time limit (sec) - זמן', 'Correct answer(s) - נכונות']);
+  const head = ws.addRow(['#', 'Question - שאלה', 'Answer 1 - תשובה 1', 'Answer 2 - תשובה 2', 'Answer 3 - תשובה 3', 'Answer 4 - תשובה 4', 'Time limit (sec) - זמן', 'Correct answer(s) - נכונות', 'Type', 'Points', 'Image', 'Video', 'Reveal', 'Accept', 'Slider', 'Items', 'Pin', 'Puzzle']);
   head.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-  head.eachCell((c) => (c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF46178F' } }));
-  let rows = [['מהי בירת ישראל?', 'תל אביב', 'ירושלים', 'חיפה', 'אילת', 20, '2']];
+  head.eachCell((c, cn) => (c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: cn > 8 ? 'FF1E7B4F' : 'FF46178F' } }));
+  // extras: Type, Points, Image, Video, Reveal, Accept, Slider, Items, Pin, Puzzle (type "puzzle" is not played yet)
+  let rows = [
+    ['מהי בירת ישראל?', 'תל אביב', 'ירושלים', 'חיפה', 'אילת', 20, '2', 'quiz', 1],
+    ['מהי בירת צרפת? (הקלידו את התשובה)', 'פריז', 'ליון', 'מרסיי', 'ניס', 30, '1', 'type', 1, '', '', '', 'פריז|paris'],
+    ['באיזו שנה קמה מדינת ישראל?', '1938', '1948', '1958', '1968', 30, '2', 'slider', 1, '', '', '', '', '1900|2000|1|1948|0'],
+    ['סדרו מהקטן לגדול. מי הראשון?', 'עכבר', 'חתול', 'כלב', 'סוס', 30, '1', 'order', 1, '', '', '', '', '', '', 'עכבר|חתול|כלב|סוס'],
+    ['הלב נמצא בחזה', 'נכון', 'לא נכון', '', '', 10, '1', 'tf'],
+  ];
   if (id) {
     const q = load(id);
     rows = q.questions.filter((x) => x.type === 'quiz' || x.type === 'tf').map((x) => {
       const ans = x.answers.slice(0, 4).map((a) => a.text);
       while (ans.length < 4) ans.push('');
-      return [x.text, ...ans, x.time, x.answers.slice(0, 4).map((a, i) => (a.correct ? i + 1 : 0)).filter(Boolean).join(',')];
+      return [x.text, ...ans, x.time, x.answers.slice(0, 4).map((a, i) => (a.correct ? i + 1 : 0)).filter(Boolean).join(','), x.type, x.points, '', x.video ? `https://youtu.be/${x.video.id}` : '', x.reveal ? 'yes' : ''];
     });
   }
   rows.forEach((r, i) => ws.addRow([i + 1, ...r]));
   return wb.xlsx.writeBuffer();
 }
 
-module.exports = { SAMPLE_ID, folder, setFolder, list, load, save, create, duplicate, remove, mediaDir, saveMedia, mediaPath, questionsFor, importXlsx, templateXlsx, validId };
+module.exports = { SAMPLE_ID, folder, setFolder, list, load, save, create, duplicate, remove, mediaDir, saveMedia, mediaPath, questionsFor, importXlsx, importAny, templateXlsx, validId };

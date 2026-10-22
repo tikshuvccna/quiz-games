@@ -127,7 +127,7 @@
       </header>
       <div class="lib-tools">
         <button class="btn green sm" id="newQuiz">+ חידון חדש</button>
-        <label class="btn blue sm">⬆ ייבוא מאקסל (תבנית Kahoot)<input type="file" id="importFile" accept=".xlsx" hidden></label>
+        <label class="btn blue sm">⬆ ייבוא מאקסל / zip עם תמונות<input type="file" id="importFile" accept=".xlsx,.zip" hidden></label>
         <a class="btn ghost sm" href="/api/q/template.xlsx">⬇ תבנית ריקה</a>
         <input class="input sm search" id="search" placeholder="🔍 חיפוש" value="${esc(filter)}">
       </div>
@@ -155,8 +155,9 @@
       const file = e.target.files[0];
       if (!file) return;
       try {
-        const r = await api('/import?title=' + encodeURIComponent(file.name.replace(/\.xlsx$/i, '')), { method: 'POST', body: await file.arrayBuffer(), headers: { 'Content-Type': 'application/octet-stream' } });
-        toast(`יובאו ${r.count} שאלות${r.skipped ? ` (${r.skipped} דולגו)` : ''}`);
+        const r = await api('/import?title=' + encodeURIComponent(file.name.replace(/\.(xlsx|zip)$/i, '')), { method: 'POST', body: await file.arrayBuffer(), headers: { 'Content-Type': 'application/octet-stream' } });
+        const notes = [r.special ? `${r.special} מיוחדות` : '', r.images ? `${r.images} תמונות` : '', r.skipped ? `${r.skipped} דולגו` : '', r.downgraded ? `${r.downgraded} יובאו כרב-ברירה` : '', r.missingImages ? `${r.missingImages} תמונות חסרות` : ''].filter(Boolean);
+        toast(`יובאו ${r.count} שאלות${notes.length ? ` (${notes.join(', ')})` : ''}`);
         open(r.id);
       } catch (err) {
         toast(err.message, true);

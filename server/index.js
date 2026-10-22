@@ -84,7 +84,7 @@ app.post('/api/q/quizzes/:id/media', express.raw({ type: 'image/*', limit: '12mb
   const name = Quizzes.saveMedia(req.params.id, req.body, String(req.headers['content-type'] || '').split(';')[0]);
   return { name, url: `/media/${encodeURIComponent(req.params.id)}/${name}` };
 }));
-app.post('/api/q/import', express.raw({ type: () => true, limit: '10mb' }), api((req) => Quizzes.importXlsx(req.body, String(req.query.title || '').slice(0, 80))));
+app.post('/api/q/import', express.raw({ type: () => true, limit: '60mb' }), api((req) => Quizzes.importAny(req.body, String(req.query.title || '').slice(0, 80))));
 const sendXlsx = (res, buf, name) => {
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(name)}`);
