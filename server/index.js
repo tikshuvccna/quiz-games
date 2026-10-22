@@ -9,6 +9,7 @@ const Room = require('./room');
 const Quizzes = require('./quizzes');
 const Net = require('./net');
 const Library = require('./library');
+const Freeform = require('./freeform');
 
 const PORT = process.env.PORT || 3000;
 const app = express();
@@ -102,7 +103,14 @@ app.post('/api/q/quizzes/:id/media', express.raw({ type: ['image/*', 'video/*'],
 }));
 // import: Kahoot-style .xlsx, .zip with an .xlsx + pictures, or a quiz-games package (.qgz), into a folder
 app.post('/api/q/import', express.raw({ type: () => true, limit: '400mb' }), api((req) => Library.importAny(req.body, String(req.query.title || '').slice(0, 80), String(req.query.folder || ''))));
-app.post('/api/q/import-link', api((req) => Library.importFromLink(req.body && req.body.url, req.body && req.body.folder)));
+// free-form text / Word / plain spreadsheet → questions to review before saving
+app.post('/api/q/freeform', express.raw({ type: () => true, limit: '30mb' }), api(async (req) => {
+  const text = await Freeform.toText(Buffer.isBuffer(req.body) ? req.body : Buffer.from(''), String(req.query.name || ''));
+  const questions = Freeform.parse(text);
+  if (!questions.length) throw new Error('לא מצאנו שאלות בטקסט. כתבו כל שאלה בשורה, ואת התשובות בשורות מתחתיה');
+  return { questions };
+}));
+app.post('/api/q/import-link',api((req) => Library.importFromLink(req.body && req.body.url, req.body && req.body.folder)));
 
 // folders
 app.get('/api/q/folders', api(() => Library.folders()));

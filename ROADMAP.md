@@ -67,9 +67,9 @@ New question types / features:
 
 ## 8. Free-form import
 
-- [ ] Option to upload **questions and answers in free form** (plain text/Word/Excel/pasted text, no strict template).
-- [ ] The system fills in everything else automatically: question type, correct answer detection, time limit, points, distractors if missing, and so on.
-- [ ] A preview/edit screen before saving the quiz.
+- [x] Option to upload **questions and answers in free form** (plain text/Word/Excel/pasted text, no strict template).
+- [x] The system fills in everything else automatically: question type, correct answer detection, time limit, points, distractors if missing, and so on.
+- [x] A preview/edit screen before saving the quiz.
 
 ## 9. Online / LAN deployment mode
 
