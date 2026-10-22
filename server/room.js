@@ -14,7 +14,7 @@ const LOBBY_GRACE_MS = 20000; // a phone that drops in the lobby keeps its seat 
 const NAME_MODES = ['custom', 'spin', 'auto'];
 const SCENES = ['classic', 'space', 'ocean', 'forest', 'candy', 'sunset'];
 const MAX_REROLLS = 3;
-const REPORTS_DIR = path.join(__dirname, '..', 'reports');
+const REPORTS_DIR = process.env.REPORTS_DIR || path.join(__dirname, '..', 'reports');
 
 const rooms = new Map();
 const id = () => crypto.randomBytes(8).toString('hex');
@@ -116,7 +116,7 @@ class Room {
   // the quiz library (re-read from disk at most every few seconds)
   quizList(fresh) {
     if (fresh || !this.quizCache || Date.now() - this.quizCache.at > 4000) {
-      this.quizCache = { at: Date.now(), list: Quizzes.list().map(({ id, title, count, playable, builtin }) => ({ id, title, count, playable, builtin: !!builtin })) };
+      this.quizCache = { at: Date.now(), list: Quizzes.list().map(({ id, title, count, playable, builtin, folder }) => ({ id, title, count, playable, builtin: !!builtin, folder: folder || '' })) };
     }
     return this.quizCache.list;
   }

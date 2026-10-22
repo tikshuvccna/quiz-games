@@ -56,10 +56,21 @@ function newId(title) {
   return id;
 }
 
+// a library folder path: "מדעים/כיתה ז" ('' = top level). Up to 4 levels, no dots or slashes in names.
+function cleanFolder(p) {
+  return String(p || '')
+    .split(/[\\/]+/)
+    .map((x) => x.replace(/[<>:"|?*\u0000-\u001f]/g, '').replace(/^\.+/, '').trim().slice(0, 40))
+    .filter(Boolean)
+    .slice(0, 4)
+    .join('/');
+}
+
 function clean(data) {
   return {
     title: String((data && data.title) || 'חידון ללא שם').slice(0, 80),
     description: String((data && data.description) || '').slice(0, 300),
+    folder: cleanFolder(data && data.folder),
     updated: new Date().toISOString(),
     questions: (Array.isArray(data && data.questions) ? data.questions : []).slice(0, 200).map(qt.normalize).filter(Boolean),
   };
@@ -87,7 +98,7 @@ function list() {
     if (!validId(id)) continue;
     try {
       const q = load(id);
-      out.push({ id, title: q.title, count: q.questions.length, playable: q.questions.filter(qt.playable).length, updated: q.updated, cover: (q.questions.find((x) => x.image) || {}).image || null });
+      out.push({ id, title: q.title, folder: q.folder, count: q.questions.length, playable: q.questions.filter(qt.playable).length, updated: q.updated, cover: (q.questions.find((x) => x.image) || {}).image || null, types: [...new Set(q.questions.map((x) => x.type))] });
     } catch {
       // not a quiz file: skip it
     }
@@ -99,6 +110,12 @@ function list() {
 
 function save(id, data) {
   if (!validId(id)) throw new Error('מזהה לא תקין');
+  // the editor doesn't send the folder: keep the one on disk
+  if (data && data.folder === undefined && fs.existsSync(fileOf(id))) {
+    try {
+      data = { ...data, folder: JSON.parse(fs.readFileSync(fileOf(id), 'utf8')).folder };
+    } catch {}
+  }
   const q = clean(data);
   const tmp = fileOf(id) + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(q, null, 2));
@@ -106,14 +123,14 @@ function save(id, data) {
   return { id, ...q };
 }
 
-function create(title, questions = []) {
+function create(title, questions = [], folderPath = '') {
   const id = newId(title);
-  return save(id, { title: title || 'חידון חדש', questions });
+  return save(id, { title: title || 'חידון חדש', questions, folder: folderPath });
 }
 
 function duplicate(id) {
   const q = load(id);
-  const copy = create(`${q.title} (עותק)`, q.questions);
+  const copy = create(`${q.title} (עותק)`, q.questions, q.folder);
   // copy the pictures too
   const src = mediaDir(id, false);
   if (src && fs.existsSync(src)) fs.cpSync(src, mediaDir(copy.id), { recursive: true });
@@ -417,4 +434,4 @@ async function templateXlsx(id) {
   return wb.xlsx.writeBuffer();
 }
 
-module.exports = { SAMPLE_ID, folder, setFolder, list, load, save, create, duplicate, remove, mediaDir, saveMedia, mediaPath, questionsFor, importXlsx, importAny, templateXlsx, validId };
+module.exports = { SAMPLE_ID, folder, setFolder, list, load, save, create, duplicate, remove, mediaDir, saveMedia, mediaPath, questionsFor, importXlsx, importAny, templateXlsx, validId, newId, cleanFolder, fileOf, IMG_EXT };

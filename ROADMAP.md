@@ -45,9 +45,9 @@ New question types / features:
 
 ## 5. Folders and sharing
 
-- [ ] Create **folders** and place quizzes inside them (nested folders optional).
-- [ ] Move, rename and delete folders and quizzes.
-- [ ] **Share quizzes** and **share folders** (share link and/or export/import file; permissions: view / copy / edit).
+- [x] Create **folders** and place quizzes inside them (nested folders optional).
+- [x] Move, rename and delete folders and quizzes.
+- [x] **Share quizzes** and **share folders** (share link and/or export/import file; permissions: view / copy / edit). Done: share links (view / copy) with QR, .qgz packages for a quiz or a folder, import from another teacher's link. "Edit" (working together on one quiz) needs teacher accounts: part of the online mode (section 9).
 
 ## 6. UI / network fixes
 

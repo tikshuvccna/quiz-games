@@ -154,3 +154,68 @@
 .rep.imp tr.lv-skip td { background: rgba(255, 77, 109, .14); }
 .rep.imp tr.lv-warn td { background: rgba(255, 210, 63, .1); }
 .col-tag { display: inline-block; min-width: 28px; padding: 1px 8px; border-radius: 8px; background: #fff; color: var(--ink); font-weight: 900; text-align: center; direction: ltr; }
+
+/* ---------- library with folders ---------- */
+.lib-wrap { flex: 1; min-height: 0; display: grid; grid-template-columns: 250px 1fr; height: calc(100dvh - 70px); }
+.lib-side { display: flex; flex-direction: column; gap: 10px; padding: 14px 10px; border-inline-end: 1px solid var(--line); background: rgba(0, 0, 0, .15); overflow: auto; }
+.lib-side .btn { width: 100%; }
+.tree { display: flex; flex-direction: column; gap: 2px; }
+.tf { display: flex; align-items: center; gap: 8px; width: 100%; border: 0; cursor: pointer; padding: 8px 10px; padding-inline-start: calc(10px + var(--d) * 16px); border-radius: 10px; background: none; color: #fff; font-weight: 700; text-align: start; transition: background .15s; }
+.tf:hover { background: rgba(255, 255, 255, .08); }
+.tf.on { background: rgba(255, 210, 63, .16); color: var(--yellow); box-shadow: inset 3px 0 0 var(--yellow); }
+.tf-ic { flex: none; }
+.tf-n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tf b { flex: none; min-width: 22px; padding: 0 6px; border-radius: 999px; background: rgba(255, 255, 255, .12); font-size: .75rem; text-align: center; color: var(--muted); }
+.lib-tip { font-size: .78rem; font-weight: 700; margin-top: auto; padding: 6px 8px; }
+.lib-main { min-height: 0; overflow: auto; display: flex; flex-direction: column; }
+.lib-bar { display: flex; align-items: center; gap: 12px; padding: 16px 20px 0; flex-wrap: wrap; }
+.crumbs { display: flex; align-items: center; gap: 6px; font-size: 1.25rem; font-weight: 900; flex-wrap: wrap; }
+.crumbs button { border: 0; background: none; color: #fff; font: inherit; cursor: pointer; padding: 2px 6px; border-radius: 8px; }
+.crumbs button:last-child { color: var(--yellow); }
+.crumbs button:hover { background: rgba(255, 255, 255, .1); }
+.crumbs span { color: var(--muted); }
+.folder-acts { display: flex; gap: 6px; margin-inline-start: auto; }
+.folder-acts button, .folder-acts a { border: 0; cursor: pointer; padding: 6px 12px; border-radius: 10px; background: rgba(255, 255, 255, .1); color: #fff; font-weight: 800; font-size: .85rem; text-decoration: none; }
+.folder-acts button:hover, .folder-acts a:hover { background: rgba(255, 255, 255, .2); }
+.folder-acts .del:hover { background: var(--red); }
+.fcard { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 150px; border: 0; cursor: pointer; border-radius: var(--r-lg); color: #fff; font: inherit;
+  background: linear-gradient(160deg, rgba(255, 210, 63, .22), rgba(255, 138, 61, .12)); box-shadow: inset 0 0 0 2px rgba(255, 210, 63, .3), var(--lift); animation: popin .4s var(--spring) both; animation-delay: calc(var(--i) * 40ms); transition: transform .15s var(--spring); }
+.fcard:hover { transform: translateY(-3px); }
+.fc-ic { font-size: 3rem; line-height: 1; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, .25)); }
+.fcard b { font-size: 1.1rem; }
+.fcard small { color: var(--muted); font-weight: 700; }
+.drop-over { background: rgba(46, 229, 157, .25) !important; box-shadow: inset 0 0 0 3px var(--green) !important; transform: scale(1.03); }
+body.drag-quiz .tf[data-drop] { box-shadow: inset 0 0 0 1px rgba(46, 229, 157, .35); }
+.qcard[draggable="true"] { cursor: grab; }
+.qcard.dragging { opacity: .4; }
+.qc-types { position: absolute; top: 8px; inset-inline-end: 8px; padding: 2px 8px; border-radius: 999px; background: rgba(0, 0, 0, .55); font-size: .85rem; }
+.qc-actions .more { margin-inline-start: auto; font-size: 1.1rem; padding: 2px 12px; }
+.lib-empty { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 50px 20px; text-align: center; border-radius: var(--r-lg); border: 3px dashed rgba(255, 255, 255, .15); }
+.le-ic { font-size: 3.4rem; }
+.pop-menu { position: fixed; z-index: 600; min-width: 220px; padding: 6px; border-radius: var(--r); background: #1d1250; box-shadow: var(--drop), 0 0 0 1px var(--line); display: flex; flex-direction: column; animation: popin .18s var(--spring); }
+.pop-menu button, .pop-menu a { border: 0; background: none; color: #fff; font: inherit; font-weight: 700; text-align: start; padding: 9px 12px; border-radius: 9px; cursor: pointer; text-decoration: none; }
+.pop-menu button:hover, .pop-menu a:hover { background: rgba(255, 255, 255, .1); }
+.pop-menu .del:hover { background: var(--red); }
+.pop-menu hr { border: 0; height: 1px; background: var(--line); margin: 4px 0; }
+.fp-list .cur { color: var(--yellow); background: rgba(255, 210, 63, .1); }
+
+/* share dialog */
+.modal-card.share-card { width: min(560px, 100%); }
+.sh-body { display: flex; flex-direction: column; gap: 14px; }
+.sh-perms { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sh-perms button { border: 0; cursor: pointer; display: flex; flex-direction: column; gap: 4px; text-align: start; padding: 12px 14px; border-radius: var(--r); background: rgba(255, 255, 255, .07); color: #fff; font: inherit; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .1); }
+.sh-perms button.on { background: rgba(255, 210, 63, .15); box-shadow: inset 0 0 0 3px var(--yellow); }
+.sh-perms small { color: var(--muted); font-weight: 600; }
+.sh-link { display: flex; gap: 8px; }
+.sh-link .input { flex: 1; font-size: .95rem; text-align: start; }
+.sh-link .btn { width: auto; }
+.sh-qr { align-self: center; width: 170px; height: 170px; padding: 8px; border-radius: var(--r); background: #fff; }
+.sh-qr svg { width: 100%; height: 100%; display: block; }
+.sh-note { font-size: .85rem; font-weight: 600; }
+.sm-list { padding-bottom: 16px; }
+.sm-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; background: rgba(255, 255, 255, .06); }
+.sm-row .btn { width: auto; }
+.sm-ic { font-size: 1.4rem; }
+.sm-t { flex: 1; display: flex; flex-direction: column; }
+.sm-t small { color: var(--muted); font-weight: 600; }
+@media (max-width: 900px) { .lib-wrap { grid-template-columns: 1fr; height: auto; } .lib-side { border: 0; } .tree { flex-direction: row; flex-wrap: wrap; } .tf { width: auto; padding-inline-start: 10px; } }

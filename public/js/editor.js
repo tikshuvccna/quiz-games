@@ -114,70 +114,335 @@
     if (saveTimer) { save(); e.preventDefault(); }
   });
 
-  // ---------- library ----------
+  // ---------- library: folders + quizzes ----------
+  let curFolder = ''; // '' = top level, '*' = every quiz
+  const ICONS = ['🧠', '🌍', '🔬', '📚', '🎨', '🧮'];
+  const parentOf = (p) => p.split('/').slice(0, -1).join('/');
+  const inFolder = (p, root) => p === root || p.startsWith(root + '/');
+  // the address other computers use to reach this one (Wi-Fi first), for share links
+  let shareBase = '';
+  async function linkBase() {
+    if (shareBase) return shareBase;
+    shareBase = location.origin;
+    if (['localhost', '127.0.0.1'].includes(location.hostname)) {
+      try {
+        const info = await (await fetch('/api/info')).json();
+        if (info.publicUrl) shareBase = info.publicUrl.replace(/\/$/, '');
+        else if (info.addresses && info.addresses[0]) shareBase = `http://${info.addresses[0].ip}:${info.port}`;
+      } catch {}
+    }
+    return shareBase;
+  }
+
   async function library() {
     quiz = null;
     let list = [];
-    let folder = '';
+    let folders = [];
+    let root = '';
     try {
-      [list, { folder }] = await Promise.all([api('/quizzes'), api('/folder')]);
+      [list, folders, { folder: root }] = await Promise.all([api('/quizzes'), api('/folders'), api('/folder')]);
     } catch (e) {
       app.innerHTML = `<div class="screen center wait"><h2>${esc(e.message)}</h2><div class="muted">פתחו את העורך מהמחשב שמריץ את השרת (localhost:3000/editor.html)</div></div>`;
       return;
     }
+    if (curFolder !== '*' && curFolder && !folders.some((f) => f.path === curFolder)) curFolder = '';
     app.innerHTML = `
       <header class="ed-head">
         <div class="logo"><div class="logo-mark">${Art.star()}</div><div class="logo-text">ספריית החידונים</div></div>
-        <button class="folder-chip" id="folderBtn" title="שינוי תיקייה">📁 <span dir="ltr">${esc(folder)}</span> · שינוי</button>
+        <button class="folder-chip" id="folderBtn" title="המקום שבו נשמרים החידונים במחשב">💾 <span dir="ltr">${esc(root)}</span> · שינוי</button>
+        <button class="btn ghost sm" id="sharesBtn">🔗 קישורים ששיתפתי</button>
         <a class="btn ghost sm" href="host.html">🎮 למסך המשחק</a>
       </header>
-      <div class="lib-tools">
-        <button class="btn green sm" id="newQuiz">+ חידון חדש</button>
-        <label class="btn blue sm">⬆ ייבוא מאקסל / zip עם תמונות<input type="file" id="importFile" accept=".xlsx,.zip" hidden></label>
-        <a class="btn ghost sm" href="/api/q/template.xlsx">⬇ תבנית ריקה</a>
-        <input class="input sm search" id="search" placeholder="🔍 חיפוש" value="${esc(filter)}">
-      </div>
-      <div class="lib-grid" id="grid"></div>`;
+      <div class="lib-wrap">
+        <aside class="lib-side" id="side">
+          <button class="btn green sm" id="newFolder">+ תיקייה חדשה</button>
+          <div class="tree" id="tree"></div>
+          <div class="muted lib-tip">גררו חידון לתיקייה כדי להעביר אותו</div>
+        </aside>
+        <main class="lib-main">
+          <div class="lib-bar"><nav class="crumbs" id="crumbs"></nav><div class="folder-acts" id="folderActs"></div></div>
+          <div class="lib-tools">
+            <button class="btn green sm" id="newQuiz">+ חידון חדש</button>
+            <label class="btn blue sm">⬆ ייבוא קובץ<input type="file" id="importFile" accept=".xlsx,.zip,.qgz" hidden></label>
+            <button class="btn ghost sm" id="importLink">🔗 ייבוא מקישור</button>
+            <button class="btn ghost sm" id="freeText">📝 ייבוא חופשי</button>
+            <a class="btn ghost sm" href="/api/q/template.xlsx">⬇ תבנית ריקה</a>
+            <input class="input sm search" id="search" placeholder="🔍 חיפוש" value="${esc(filter)}">
+          </div>
+          <div class="lib-grid" id="grid"></div>
+        </main>
+      </div>`;
+
     const draw = () => {
+      // folder tree
+      const node = (path, name, icon, count, depth) => `<button class="tf ${curFolder === path ? 'on' : ''}" data-folder="${esc(path)}" style="--d:${depth}" ${path === '*' ? '' : 'data-drop="1"'}><span class="tf-ic">${icon}</span><span class="tf-n">${esc(name)}</span>${count ? `<b>${count}</b>` : ''}</button>`;
+      const rootCount = list.filter((q) => !q.builtin && !q.folder).length + 1;
+      document.getElementById('tree').innerHTML =
+        node('*', 'כל החידונים', '📚', list.length, 0) + node('', 'ראשי', '🏠', rootCount, 0) +
+        folders.map((f) => node(f.path, f.name, curFolder === f.path || inFolder(curFolder, f.path) ? '📂' : '📁', f.count, f.depth + 1)).join('');
+      // breadcrumbs
+      const segs = curFolder && curFolder !== '*' ? curFolder.split('/') : [];
+      document.getElementById('crumbs').innerHTML = curFolder === '*' ? '<b>📚 כל החידונים</b>' :
+        [`<button data-folder="">🏠 ראשי</button>`, ...segs.map((s, i) => `<span>›</span><button data-folder="${esc(segs.slice(0, i + 1).join('/'))}">${esc(s)}</button>`)].join('');
+      document.getElementById('folderActs').innerHTML = curFolder && curFolder !== '*'
+        ? `<button data-fact="rename">✏️ שינוי שם</button><button data-fact="share">🔗 שיתוף התיקייה</button><a href="/api/q/folder-package?path=${encodeURIComponent(curFolder)}">⬇ הורדה</a><button data-fact="del" class="del">🗑</button>` : '';
+      // sub folders + quizzes
       const f = filter.trim();
-      document.getElementById('grid').innerHTML = list
-        .filter((q) => !f || q.title.includes(f))
-        .map((q, i) => `<div class="qcard" style="--i:${i}">
-          <div class="qc-cover" data-open="${esc(q.id)}">${q.cover ? `<img src="/media/${encodeURIComponent(q.id)}/${encodeURIComponent(q.cover)}" alt="">` : `<span>${['🧠', '🌍', '🔬', '📚', '🎨', '🧮'][i % 6]}</span>`}<b class="qc-count">${q.count} שאלות</b></div>
+      const subs = curFolder === '*' || f ? [] : folders.filter((x) => parentOf(x.path) === curFolder);
+      const qs = list.filter((q) => (!f || q.title.includes(f)) && (curFolder === '*' || f || (q.builtin ? curFolder === '' : (q.folder || '') === curFolder)));
+      document.getElementById('grid').innerHTML =
+        subs.map((x, i) => `<button class="fcard" data-folder="${esc(x.path)}" data-drop="1" style="--i:${i}"><span class="fc-ic">📁</span><b>${esc(x.name)}</b><small>${x.count} חידונים</small></button>`).join('') +
+        qs.map((q, i) => `<div class="qcard" style="--i:${i + subs.length}" ${q.builtin ? '' : `draggable="true" data-drag="${esc(q.id)}"`}>
+          <div class="qc-cover" data-open="${esc(q.id)}">${q.cover ? `<img src="/media/${encodeURIComponent(q.id)}/${encodeURIComponent(q.cover)}" alt="" loading="lazy">` : `<span>${ICONS[i % 6]}</span>`}<b class="qc-count">${q.count} שאלות</b>${q.types && q.types.some((t) => t !== 'quiz' && t !== 'tf') ? `<b class="qc-types">${q.types.includes('puzzle') ? '🧩' : ''}${q.types.includes('pin') ? '📍' : ''}${q.types.includes('slider') ? '🎚️' : ''}${q.types.includes('type') ? '⌨️' : ''}</b>` : ''}</div>
           <div class="qc-body"><div class="qc-title">${esc(q.title)}</div>
-            <div class="qc-sub">${q.builtin ? 'מובנה · שכפלו כדי לערוך' : q.updated ? 'עודכן ' + new Date(q.updated).toLocaleDateString('he-IL') : ''}${q.playable < q.count ? ` · <span class="bad-t">${q.count - q.playable} לא מוכנות</span>` : ''}</div>
-            <div class="qc-actions">${q.builtin ? '' : `<button data-open="${esc(q.id)}">✏️ עריכה</button>`}<button data-dup="${esc(q.id)}">⧉ שכפול</button>${q.builtin ? '' : `<a href="/api/q/quizzes/${encodeURIComponent(q.id)}/export.xlsx">⬇ אקסל</a><button data-del="${esc(q.id)}" class="del">🗑</button>`}</div>
-          </div></div>`)
-        .join('') || '<div class="muted">אין חידונים בתיקייה עדיין</div>';
+            <div class="qc-sub">${q.builtin ? 'מובנה · שכפלו כדי לערוך' : q.updated ? 'עודכן ' + new Date(q.updated).toLocaleDateString('he-IL') : ''}${curFolder === '*' && q.folder ? ` · 📁 ${esc(q.folder)}` : ''}${q.playable < q.count ? ` · <span class="bad-t">${q.count - q.playable} לא מוכנות</span>` : ''}</div>
+            <div class="qc-actions">${q.builtin ? '' : `<button data-open="${esc(q.id)}">✏️ עריכה</button>`}<button data-dup="${esc(q.id)}">⧉ שכפול</button>${q.builtin ? '' : `<button data-menu="${esc(q.id)}" class="more">⋯</button>`}</div>
+          </div></div>`).join('') ||
+        `<div class="lib-empty"><div class="le-ic">${f ? '🔍' : '📂'}</div><b>${f ? 'לא נמצאו חידונים' : 'התיקייה ריקה'}</b><span class="muted">${f ? 'נסו מילה אחרת' : 'צרו חידון חדש, ייבאו קובץ, או גררו לכאן חידון'}</span></div>`;
     };
     draw();
+    const reload = () => library();
+
     document.getElementById('search').oninput = (e) => { filter = e.target.value; draw(); };
-    document.getElementById('folderBtn').onclick = () => folderPicker(folder);
+    document.getElementById('folderBtn').onclick = () => folderPicker(root);
+    document.getElementById('sharesBtn').onclick = () => sharesManager();
     document.getElementById('newQuiz').onclick = async () => {
-      const q = await api('/quizzes', { method: 'POST', body: JSON.stringify({ title: 'חידון חדש' }) });
+      const q = await api('/quizzes', { method: 'POST', body: JSON.stringify({ title: 'חידון חדש', folder: curFolder === '*' ? '' : curFolder }) });
       open(q.id, true);
+    };
+    document.getElementById('newFolder').onclick = async () => {
+      const name = prompt(curFolder && curFolder !== '*' ? `שם התיקייה החדשה (בתוך "${curFolder}"):` : 'שם התיקייה החדשה:');
+      if (!name || !name.trim()) return;
+      try {
+        const r = await api('/folders', { method: 'POST', body: JSON.stringify({ path: (curFolder && curFolder !== '*' ? curFolder + '/' : '') + name.replace(/\//g, '-') }) });
+        curFolder = r.path;
+        reload();
+      } catch (e) { toast(e.message, true); }
     };
     document.getElementById('importFile').onchange = async (e) => {
       const file = e.target.files[0];
       if (!file) return;
+      const t = toastSticky('מייבא…');
       try {
-        const r = await api('/import?title=' + encodeURIComponent(file.name.replace(/\.(xlsx|zip)$/i, '')), { method: 'POST', body: await file.arrayBuffer(), headers: { 'Content-Type': 'application/octet-stream' } });
+        const r = await api(`/import?title=${encodeURIComponent(file.name.replace(/\.(xlsx|zip|qgz)$/i, ''))}&folder=${encodeURIComponent(curFolder === '*' ? '' : curFolder)}`, { method: 'POST', body: await file.arrayBuffer(), headers: { 'Content-Type': 'application/octet-stream' } });
+        t.remove();
+        if (r.kind === 'folder') { toast(`התיקייה "${r.folder.split('/').pop()}" יובאה עם ${r.count} חידונים`); curFolder = r.folder; return reload(); }
+        if (r.kind === 'quiz') { toast(`החידון "${r.title}" יובא (${r.count} שאלות)`); return open(r.id); }
         const notes = [r.special ? `${r.special} מיוחדות` : '', r.images ? `${r.images} תמונות` : '', r.skipped ? `${r.skipped} דולגו` : '', r.downgraded ? `${r.downgraded} יובאו כרב-ברירה` : '', r.missingImages ? `${r.missingImages} תמונות חסרות` : ''].filter(Boolean);
         toast(`יובאו ${r.count} שאלות${notes.length ? ` (${notes.join(', ')})` : ''}`);
         await open(r.id);
         if (r.issues && r.issues.length) importReport(r, file.name);
       } catch (err) {
+        t.remove();
         if (err.issues && err.issues.length) importReport({ count: 0, issues: err.issues }, file.name);
         else toast(err.message, true);
       }
     };
-    document.getElementById('grid').onclick = async (e) => {
+    document.getElementById('importLink').onclick = () => linkImporter(curFolder === '*' ? '' : curFolder);
+    document.getElementById('freeText').onclick = () => window.FreeImport && window.FreeImport.open({ folder: curFolder === '*' ? '' : curFolder, api, toast, onDone: (id) => open(id) });
+
+    app.onclick = async (e) => {
+      const fo = e.target.closest('[data-folder]');
+      if (fo && !e.target.closest('[data-menu]')) { curFolder = fo.dataset.folder; filter = ''; document.getElementById('search').value = ''; draw(); return; }
+      const fa = e.target.closest('[data-fact]');
+      if (fa) return folderAction(fa.dataset.fact);
       const o = e.target.closest('[data-open]');
+      if (o) return open(o.dataset.open);
       const d = e.target.closest('[data-dup]');
-      const x = e.target.closest('[data-del]');
-      if (o) open(o.dataset.open);
-      if (d) { const q = await api(`/quizzes/${encodeURIComponent(d.dataset.dup)}/duplicate`, { method: 'POST' }); toast('נוצר עותק'); open(q.id); }
-      if (x && confirm('למחוק את החידון? (הוא יעבור לתיקיית .trash)')) { await api('/quizzes/' + encodeURIComponent(x.dataset.del), { method: 'DELETE' }); library(); }
+      if (d) { const q = await api(`/quizzes/${encodeURIComponent(d.dataset.dup)}/duplicate`, { method: 'POST' }); toast('נוצר עותק'); return open(q.id); }
+      const m = e.target.closest('[data-menu]');
+      if (m) return quizMenu(m, list.find((q) => q.id === m.dataset.menu));
+    };
+    // drag a quiz card onto a folder (in the tree or a folder card) to move it
+    app.ondragstart = (e) => {
+      const c = e.target.closest('[data-drag]');
+      if (!c) return;
+      e.dataTransfer.setData('text/quiz', c.dataset.drag);
+      e.dataTransfer.effectAllowed = 'move';
+      c.classList.add('dragging');
+      document.body.classList.add('drag-quiz');
+    };
+    app.ondragend = () => {
+      document.body.classList.remove('drag-quiz');
+      app.querySelectorAll('.dragging, .drop-over').forEach((x) => x.classList.remove('dragging', 'drop-over'));
+    };
+    app.ondragover = (e) => {
+      const t = e.target.closest('[data-drop]');
+      if (!t || !e.dataTransfer.types.includes('text/quiz')) return;
+      e.preventDefault();
+      app.querySelectorAll('.drop-over').forEach((x) => x !== t && x.classList.remove('drop-over'));
+      t.classList.add('drop-over');
+    };
+    app.ondrop = async (e) => {
+      const t = e.target.closest('[data-drop]');
+      const id = e.dataTransfer.getData('text/quiz');
+      if (!t || !id) return;
+      e.preventDefault();
+      try {
+        await api(`/quizzes/${encodeURIComponent(id)}/folder`, { method: 'PUT', body: JSON.stringify({ folder: t.dataset.folder }) });
+        toast(`הועבר ל${t.dataset.folder ? '"' + t.dataset.folder.split('/').pop() + '"' : 'תיקייה הראשית'}`);
+        reload();
+      } catch (err) { toast(err.message, true); }
+    };
+
+    async function folderAction(act) {
+      const name = curFolder.split('/').pop();
+      try {
+        if (act === 'rename') {
+          const to = prompt('שם חדש לתיקייה:', name);
+          if (!to || to === name) return;
+          const r = await api('/folders', { method: 'PUT', body: JSON.stringify({ from: curFolder, to: (parentOf(curFolder) ? parentOf(curFolder) + '/' : '') + to.replace(/\//g, '-') }) });
+          curFolder = r.path;
+          reload();
+        } else if (act === 'del') {
+          const n = list.filter((q) => q.folder && inFolder(q.folder, curFolder)).length;
+          if (!confirm(n ? `למחוק את התיקייה "${name}"? ${n} החידונים שבה יעברו לתיקייה שמעליה.` : `למחוק את התיקייה "${name}"?`)) return;
+          await api('/folders?path=' + encodeURIComponent(curFolder), { method: 'DELETE' });
+          curFolder = parentOf(curFolder);
+          reload();
+        } else if (act === 'share') shareDialog({ kind: 'folder', folder: curFolder, title: name });
+      } catch (e) { toast(e.message, true); }
+    }
+
+    function quizMenu(btn, q) {
+      document.querySelector('.pop-menu')?.remove();
+      const m = document.createElement('div');
+      m.className = 'pop-menu';
+      m.innerHTML = `<button data-a="share">🔗 שיתוף</button><button data-a="move">📁 העברה לתיקייה</button><button data-a="rename">✏️ שינוי שם</button>
+        <a href="/api/q/quizzes/${encodeURIComponent(q.id)}/package">📦 הורדת חבילה (עם התמונות)</a><a href="/api/q/quizzes/${encodeURIComponent(q.id)}/export.xlsx">⬇ ייצוא לאקסל</a>
+        <hr><button data-a="del" class="del">🗑 מחיקה</button>`;
+      document.body.appendChild(m);
+      const r = btn.getBoundingClientRect();
+      m.style.top = Math.min(innerHeight - m.offsetHeight - 10, r.bottom + 6) + 'px';
+      m.style.left = Math.max(10, r.left - m.offsetWidth + r.width) + 'px';
+      const close = (ev) => { if (!m.contains(ev.target)) { m.remove(); document.removeEventListener('pointerdown', close, true); } };
+      setTimeout(() => document.addEventListener('pointerdown', close, true));
+      m.onclick = async (e) => {
+        const a = e.target.closest('[data-a]');
+        if (!a) return;
+        m.remove();
+        try {
+          if (a.dataset.a === 'share') shareDialog({ kind: 'quiz', id: q.id, title: q.title });
+          if (a.dataset.a === 'move') moveDialog(q, folders, reload);
+          if (a.dataset.a === 'rename') {
+            const t = prompt('שם חדש לחידון:', q.title);
+            if (!t || t === q.title) return;
+            const full = await api('/quizzes/' + encodeURIComponent(q.id));
+            await api('/quizzes/' + encodeURIComponent(q.id), { method: 'PUT', body: JSON.stringify({ ...full, title: t }) });
+            reload();
+          }
+          if (a.dataset.a === 'del' && confirm(`למחוק את "${q.title}"? (הוא יעבור לתיקיית .trash)`)) { await api('/quizzes/' + encodeURIComponent(q.id), { method: 'DELETE' }); reload(); }
+        } catch (err) { toast(err.message, true); }
+      };
+    }
+  }
+
+  function moveDialog(q, folders, done) {
+    const m = document.createElement('div');
+    m.className = 'modal';
+    m.innerHTML = `<div class="modal-card fp">
+      <div class="modal-head"><h2>📁 להעביר את "${esc(q.title)}"</h2><div class="modal-actions"><button class="btn sm ghost" id="mvClose">✕</button></div></div>
+      <div class="fp-list">${[{ path: '', name: '🏠 ראשי', depth: -1 }, ...folders].map((f) => `<button data-to="${esc(f.path)}" style="padding-inline-start:${12 + (f.depth + 1) * 18}px" ${f.path === (q.folder || '') ? 'class="cur"' : ''}>${f.depth >= 0 ? '📁 ' : ''}${esc(f.name)}${f.path === (q.folder || '') ? ' · כאן עכשיו' : ''}</button>`).join('')}</div></div>`;
+    document.body.appendChild(m);
+    m.onclick = async (e) => {
+      if (e.target === m || e.target.id === 'mvClose') return m.remove();
+      const b = e.target.closest('[data-to]');
+      if (!b) return;
+      try {
+        await api(`/quizzes/${encodeURIComponent(q.id)}/folder`, { method: 'PUT', body: JSON.stringify({ folder: b.dataset.to }) });
+        m.remove();
+        toast('הועבר');
+        done();
+      } catch (err) { toast(err.message, true); }
+    };
+  }
+
+  // ---------- sharing ----------
+  async function shareDialog(item) {
+    const base = await linkBase();
+    const m = document.createElement('div');
+    m.className = 'modal';
+    document.body.appendChild(m);
+    let perm = 'copy';
+    const draw = async () => {
+      let s;
+      try {
+        s = await api('/shares', { method: 'POST', body: JSON.stringify({ ...item, perm }) });
+      } catch (e) { m.remove(); return toast(e.message, true); }
+      const url = `${base}/share/${s.token}`;
+      m.innerHTML = `<div class="modal-card share-card">
+        <div class="modal-head"><h2>🔗 שיתוף ${item.kind === 'folder' ? 'התיקייה' : 'החידון'} "${esc(item.title)}"</h2><div class="modal-actions"><button class="btn sm ghost" id="shClose">✕</button></div></div>
+        <div class="modal-body sh-body">
+          <div class="sh-perms">
+            <button data-perm="copy" class="${perm === 'copy' ? 'on' : ''}"><b>📥 צפייה + העתקה</b><small>המורה השני/ה יכול/ה לראות ולהוסיף לספרייה שלו/ה</small></button>
+            <button data-perm="view" class="${perm === 'view' ? 'on' : ''}"><b>👀 צפייה בלבד</b><small>רואים את השאלות והתשובות, בלי להוריד</small></button>
+          </div>
+          <div class="sh-link"><input class="input sm" id="shUrl" dir="ltr" readonly value="${esc(url)}"><button class="btn blue sm" id="shCopy">📋 העתקה</button></div>
+          <div class="sh-qr" id="shQr"></div>
+          <div class="muted sh-note">${/localhost|127\.0\.0\.1/.test(base) ? '⚠️ המחשב לא מחובר לרשת: הקישור יעבוד רק כאן.' : 'הקישור עובד מכל מחשב או טלפון ברשת הזו כל עוד השרת פועל. במצב אונליין הוא עובד מכל מקום.'} כדי להוסיף לספרייה אחרת: "🔗 ייבוא מקישור" בספרייה של המורה השני/ה.</div>
+        </div></div>`;
+      fetch('/qr?text=' + encodeURIComponent(url)).then((r) => r.text()).then((svg) => { const q = m.querySelector('#shQr'); if (q) q.innerHTML = svg; }).catch(() => {});
+      m.querySelector('#shCopy').onclick = () => { m.querySelector('#shUrl').select(); navigator.clipboard?.writeText(url).then(() => toast('הקישור הועתק')); };
+    };
+    m.onclick = (e) => {
+      if (e.target === m || e.target.id === 'shClose') return m.remove();
+      const p = e.target.closest('[data-perm]');
+      if (p && p.dataset.perm !== perm) { perm = p.dataset.perm; draw(); }
+    };
+    draw();
+  }
+
+  async function sharesManager() {
+    const base = await linkBase();
+    const m = document.createElement('div');
+    m.className = 'modal';
+    document.body.appendChild(m);
+    const draw = async () => {
+      const list = await api('/shares');
+      m.innerHTML = `<div class="modal-card fp">
+        <div class="modal-head"><h2>🔗 קישורים ששיתפתי</h2><div class="modal-actions"><button class="btn sm ghost" id="smClose">✕</button></div></div>
+        <div class="fp-list sm-list">${list.map((s) => `<div class="sm-row"><span class="sm-ic">${s.kind === 'folder' ? '📁' : '🧠'}</span><div class="sm-t"><b>${esc(s.title)}</b><small>${s.perm === 'copy' ? '📥 צפייה + העתקה' : '👀 צפייה בלבד'} · נפתח ${s.opened || 0} פעמים</small></div>
+          <button class="btn ghost sm" data-copy="${esc(base + '/share/' + s.token)}">📋</button><button class="btn ghost sm" data-revoke="${esc(s.token)}">ביטול</button></div>`).join('') || '<div class="muted">עדיין לא שיתפתם כלום</div>'}</div></div>`;
+    };
+    m.onclick = async (e) => {
+      if (e.target === m || e.target.id === 'smClose') return m.remove();
+      const c = e.target.closest('[data-copy]');
+      if (c) navigator.clipboard?.writeText(c.dataset.copy).then(() => toast('הקישור הועתק'));
+      const r = e.target.closest('[data-revoke]');
+      if (r && confirm('לבטל את הקישור? מי שיש לו אותו לא יוכל לפתוח אותו יותר.')) { await api('/shares/' + encodeURIComponent(r.dataset.revoke), { method: 'DELETE' }); draw(); }
+    };
+    draw();
+  }
+
+  function linkImporter(folderPath) {
+    const m = document.createElement('div');
+    m.className = 'modal';
+    m.innerHTML = `<div class="modal-card share-card">
+      <div class="modal-head"><h2>🔗 ייבוא מקישור של מורה אחר/ת</h2><div class="modal-actions"><button class="btn sm ghost" id="liClose">✕</button></div></div>
+      <div class="modal-body sh-body">
+        <input class="input sm" id="liUrl" dir="ltr" placeholder="http://10.0.0.5:3000/share/…">
+        <button class="btn green" id="liGo">ייבוא לספרייה שלי${folderPath ? ` (לתיקייה "${esc(folderPath.split('/').pop())}")` : ''}</button>
+        <div class="muted sh-note">המחשב ששיתף צריך להיות דלוק, עם השרת פועל, ובאותה רשת (או במצב אונליין).</div>
+      </div></div>`;
+    document.body.appendChild(m);
+    const inp = m.querySelector('#liUrl');
+    inp.focus();
+    m.onclick = async (e) => {
+      if (e.target === m || e.target.id === 'liClose') return m.remove();
+      if (e.target.id !== 'liGo') return;
+      const btn = e.target;
+      btn.disabled = true;
+      btn.textContent = 'מייבא…';
+      try {
+        const r = await api('/import-link', { method: 'POST', body: JSON.stringify({ url: inp.value, folder: folderPath }) });
+        m.remove();
+        if (r.kind === 'folder') { toast(`התיקייה יובאה עם ${r.count} חידונים`); curFolder = r.folder; library(); }
+        else { toast(`"${r.title}" יובא`); open(r.id); }
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'ייבוא לספרייה שלי';
+        toast(err.message, true);
+      }
     };
   }
 
@@ -233,6 +498,8 @@
     }
     if (!quiz.questions.length) quiz.questions.push(blank('quiz'));
     cur = 0;
+    // the library's click / drag handlers belong to the library screen only
+    app.onclick = app.ondragstart = app.ondragend = app.ondragover = app.ondrop = null;
     app.innerHTML = `
       <header class="ed-head">
         <button class="btn ghost sm" id="back">→ לספרייה</button>

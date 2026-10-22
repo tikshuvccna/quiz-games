@@ -196,10 +196,19 @@ function renderLobby() {
 
   // quiz picker
   const qs = document.getElementById('quizSel');
-  const sig = (st.quizzes || []).map((q) => q.id + q.title + q.playable).join('|');
+  const sig = (st.quizzes || []).map((q) => q.id + q.title + q.playable + q.folder).join('|');
   if (qs.dataset.sig !== sig) {
     qs.dataset.sig = sig;
-    qs.innerHTML = (st.quizzes || []).map((q) => `<option value="${esc(q.id)}" ${q.playable ? '' : 'disabled'}>${esc(q.title)} (${q.playable})</option>`).join('');
+    // grouped by library folder
+    const opt = (q) => `<option value="${esc(q.id)}" ${q.playable ? '' : 'disabled'}>${esc(q.title)} (${q.playable})</option>`;
+    const groups = new Map();
+    for (const q of st.quizzes || []) {
+      const f = q.folder || '';
+      if (!groups.has(f)) groups.set(f, []);
+      groups.get(f).push(q);
+    }
+    qs.innerHTML = [...groups.keys()].sort((a, b) => (a ? 1 : 0) - (b ? 1 : 0) || a.localeCompare(b, 'he'))
+      .map((f) => (f ? `<optgroup label="📁 ${esc(f.replace(/\//g, ' › '))}">${groups.get(f).map(opt).join('')}</optgroup>` : groups.get(f).map(opt).join(''))).join('');
   }
   if (document.activeElement !== qs) qs.value = st.setup.quiz;
   const cq = (st.quizzes || []).find((q) => q.id === st.setup.quiz);

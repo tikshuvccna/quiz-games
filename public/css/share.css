@@ -1,0 +1,37 @@
+/* =====================================================================
+   Share page (a quiz or folder shared by another teacher)
+   ===================================================================== */
+.sh-page { max-width: 980px; margin: 0 auto; padding: 18px 18px 50px; display: flex; flex-direction: column; gap: 16px; }
+.sh-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.sh-head .logo-mark { width: 46px; height: 46px; }
+.sh-head .logo-text { font-size: 2rem; }
+.sh-badge { padding: 6px 14px; border-radius: 999px; background: rgba(46, 229, 157, .16); color: #9ff5c8; font-weight: 800; }
+.sh-hero { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.sh-hero-ic { font-size: 3.6rem; filter: drop-shadow(0 5px 0 rgba(0, 0, 0, .3)); }
+.sh-hero-t { flex: 1; min-width: 200px; }
+.sh-hero h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); }
+.sh-hero-act { display: flex; flex-direction: column; gap: 10px; width: min(300px, 100%); }
+.sh-how { padding: 12px 16px; border-radius: var(--r); background: rgba(255, 210, 63, .1); box-shadow: inset 0 0 0 2px rgba(255, 210, 63, .3); font-weight: 600; line-height: 1.5; }
+.sh-list { display: flex; flex-direction: column; gap: 12px; }
+.sh-quiz { border-radius: var(--r-lg); background: linear-gradient(180deg, var(--panel-1), var(--panel-2)); box-shadow: var(--lift), var(--drop); overflow: hidden; }
+.sh-quiz summary { display: flex; align-items: center; gap: 10px; padding: 14px 18px; cursor: pointer; list-style: none; font-weight: 900; font-size: 1.2rem; }
+.sh-quiz summary::-webkit-details-marker { display: none; }
+.sh-quiz summary::before { content: '◀'; font-size: .8rem; color: var(--muted); transition: transform .2s; }
+.sh-quiz[open] summary::before { transform: rotate(-90deg); }
+.sh-qt { flex: 1; }
+.sh-qf { color: var(--muted); font-size: .9rem; font-weight: 700; }
+.sh-qs { margin: 0; padding: 0 18px 18px 18px; padding-inline-start: 46px; display: flex; flex-direction: column; gap: 12px; }
+.sh-qs li { padding: 12px 14px; border-radius: var(--r); background: rgba(0, 0, 0, .2); }
+.sh-qs li::marker { color: var(--yellow); font-weight: 900; }
+.sh-qhead { display: flex; gap: 10px; align-items: center; font-size: .85rem; font-weight: 800; }
+.sh-type { padding: 1px 10px; border-radius: 999px; background: rgba(255, 255, 255, .1); }
+.sh-text { font-weight: 900; font-size: 1.15rem; margin: 6px 0 8px; }
+.sh-img { display: block; max-width: min(320px, 100%); max-height: 200px; border-radius: 10px; margin-bottom: 8px; }
+.sh-ans { display: flex; flex-wrap: wrap; gap: 8px; }
+.sh-ans span { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 10px; background: var(--a); font-weight: 800; opacity: .55; }
+.sh-ans span.ok { opacity: 1; box-shadow: 0 0 0 3px #fff; }
+.sh-ans .shape { width: 16px; height: 16px; }
+.sh-line { font-weight: 700; color: #ddd8ff; }
+.sh-line b { color: var(--yellow); }
+.sh-explain { margin-top: 8px; font-weight: 600; color: var(--muted); }
+.sh-gone { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 60px 20px; text-align: center; }

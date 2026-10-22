@@ -8,6 +8,7 @@ const fs = require('fs');
 const Room = require('./room');
 const Quizzes = require('./quizzes');
 const Net = require('./net');
+const Library = require('./library');
 
 const PORT = process.env.PORT || 3000;
 const app = express();
@@ -89,7 +90,7 @@ app.post('/api/q/fs/mkdir', api((req) => {
   return { path: dir };
 }));
 app.get('/api/q/quizzes', api(() => Quizzes.list()));
-app.post('/api/q/quizzes', api((req) => Quizzes.create((req.body && req.body.title) || 'חידון חדש')));
+app.post('/api/q/quizzes', api((req) => Quizzes.create((req.body && req.body.title) || 'חידון חדש', [], (req.body && req.body.folder) || '')));
 app.get('/api/q/quizzes/:id', api((req) => Quizzes.load(req.params.id)));
 app.put('/api/q/quizzes/:id', api((req) => Quizzes.save(req.params.id, req.body)));
 app.delete('/api/q/quizzes/:id', api((req) => (Quizzes.remove(req.params.id), { ok: true })));
@@ -99,7 +100,50 @@ app.post('/api/q/quizzes/:id/media', express.raw({ type: ['image/*', 'video/*'],
   const name = Quizzes.saveMedia(req.params.id, req.body, String(req.headers['content-type'] || '').split(';')[0]);
   return { name, url: `/media/${encodeURIComponent(req.params.id)}/${name}` };
 }));
-app.post('/api/q/import', express.raw({ type: () => true, limit: '60mb' }), api((req) => Quizzes.importAny(req.body, String(req.query.title || '').slice(0, 80))));
+// import: Kahoot-style .xlsx, .zip with an .xlsx + pictures, or a quiz-games package (.qgz), into a folder
+app.post('/api/q/import', express.raw({ type: () => true, limit: '400mb' }), api((req) => Library.importAny(req.body, String(req.query.title || '').slice(0, 80), String(req.query.folder || ''))));
+app.post('/api/q/import-link', api((req) => Library.importFromLink(req.body && req.body.url, req.body && req.body.folder)));
+
+// folders
+app.get('/api/q/folders', api(() => Library.folders()));
+app.post('/api/q/folders', api((req) => Library.createFolder(req.body && req.body.path)));
+app.put('/api/q/folders', api((req) => Library.renameFolder(req.body && req.body.from, req.body && req.body.to)));
+app.delete('/api/q/folders', api((req) => Library.deleteFolder(String(req.query.path || ''), req.query.withQuizzes === '1')));
+app.put('/api/q/quizzes/:id/folder', api((req) => Library.setQuizFolder(req.params.id, req.body && req.body.folder)));
+
+// packages (one quiz or a whole folder, with its pictures and videos)
+const sendPackage = (res, { name, buffer }) => {
+  res.setHeader('Content-Type', 'application/zip');
+  res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(name.replace(/[\\/:*?"<>|]/g, '-'))}.qgz`);
+  res.send(buffer);
+};
+app.get('/api/q/quizzes/:id/package', api(async (req, res) => sendPackage(res, await Library.packageQuiz(req.params.id))));
+app.get('/api/q/folder-package', api(async (req, res) => sendPackage(res, await Library.packageFolder(String(req.query.path || '')))));
+
+// share links (made on the host computer, opened by anyone who has the link)
+app.get('/api/q/shares', api(() => Library.listShares()));
+app.post('/api/q/shares', api((req) => Library.createShare(req.body || {})));
+app.delete('/api/q/shares/:token', api((req) => Library.revokeShare(req.params.token)));
+app.get('/share/:token', (req, res) => {
+  if (!Library.getShare(req.params.token)) return res.status(404).sendFile(path.join(PUBLIC, 'share.html'));
+  res.sendFile(path.join(PUBLIC, 'share.html'));
+});
+app.get('/share/:token/data', (req, res) => {
+  const s = Library.getShare(req.params.token);
+  if (!s) return res.status(404).json({ error: 'הקישור לא נמצא או בוטל' });
+  Library.touchShare(s.token);
+  res.json(Library.shareView(s));
+});
+app.get('/share/:token/package', async (req, res) => {
+  const s = Library.getShare(req.params.token);
+  if (!s) return res.status(404).json({ error: 'הקישור לא נמצא או בוטל' });
+  if (s.perm !== 'copy') return res.status(403).json({ error: 'הקישור מאפשר צפייה בלבד' });
+  try {
+    sendPackage(res, await Library.sharePackage(s));
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
 const sendXlsx = (res, buf, name) => {
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(name)}`);
