@@ -7,6 +7,7 @@ const STRIKE_FALLBACK_MS = 6000;
 
 class DragonGame extends QuizGame {
   static id = 'dragon';
+  static order = 14;
   static title = 'קרב הדרקון';
   static emoji = '🐉';
   static mode = 'coop';

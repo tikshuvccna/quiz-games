@@ -10,6 +10,7 @@ const BOOM_LOSS = 30;
 
 class BombGame extends QuizGame {
   static id = 'bomb';
+  static order = 12;
   static title = 'הפצצה המתקתקת';
   static emoji = '💣';
   static mode = 'ffa';

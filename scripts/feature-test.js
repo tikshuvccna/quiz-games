@@ -1,7 +1,7 @@
 // Checks room-level features against a running server: node scripts/feature-test.js
 const { io } = require('socket.io-client');
 const Q = require('../questions/sample.json');
-const URL = 'http://localhost:3000';
+const URL = process.env.QG_URL || 'http://localhost:3000';
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const ok = (cond, msg) => console.log(cond ? '  ✔' : '  ✘ FAIL', msg);
 

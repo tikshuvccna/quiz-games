@@ -1,18 +1,24 @@
 // Question types: normalizing stored questions, what the phone sees, and checking answers on the server.
 //
 // Stored question (quiz files):
-//   { type, text, image?, reveal?, video?: { id, start, end }, time, points,
+//   { type, text, time, points, explain?,
+//     image?, reveal?: 'blur' | 'tiles', revealSec?,   picture (PNG/JPG/GIF/WebP, animated too) and how it appears
+//     video?: { id, start, end } (YouTube) | { file, start, end } (uploaded mp4/webm)
 //     answers?: [{ text, correct }]        quiz / tf / poll
 //     accept?:  [string]                   type answer (any of these spellings)
 //     slider?:  { min, max, step, answer, tol }
 //     items?:   [string]                   order (listed in the correct order)
 //     pin?:     { x, y, r }                pin on the image (percent of width/height)
+//     puzzle?:  { rows, cols }             jigsaw: the image cut into rows × cols real puzzle pieces
 //   }
 const { shuffle } = require('./shuffle');
 
-const TYPES = ['quiz', 'tf', 'type', 'slider', 'order', 'pin', 'poll', 'slide'];
+const TYPES = ['quiz', 'tf', 'type', 'slider', 'order', 'pin', 'puzzle', 'poll', 'slide'];
 // types that have a right answer (the only ones the games use)
-const SCORED = new Set(['quiz', 'tf', 'type', 'slider', 'order', 'pin']);
+const SCORED = new Set(['quiz', 'tf', 'type', 'slider', 'order', 'pin', 'puzzle']);
+const REVEALS = ['blur', 'tiles'];
+const REVEAL_SECS = [0, 5, 10, 15, 20, 30, 45, 60];
+const VIDEO_FILE = /^[\w.-]+\.(mp4|webm|m4v|mov|ogv)$/i;
 const TIMES = [5, 10, 20, 30, 45, 60, 90, 120, 180, 240];
 const POINTS = [0, 1, 2, 3, 4];
 
@@ -45,8 +51,21 @@ function normalize(raw) {
     points: POINTS.includes(num(raw.points, 1)) ? num(raw.points, 1) : 1,
   };
   if (raw.image) q.image = str(raw.image, 200);
-  if (raw.reveal) q.reveal = true;
-  if (raw.video && raw.video.id) q.video = { id: str(raw.video.id, 20), start: num(raw.video.start, 0), end: num(raw.video.end, 0) };
+  // older quizzes stored reveal: true (= the blur that clears)
+  if (raw.reveal && q.image) {
+    q.reveal = REVEALS.includes(raw.reveal) ? raw.reveal : 'blur';
+    const rs = num(raw.revealSec, 0);
+    if (REVEAL_SECS.includes(rs) && rs) q.revealSec = rs;
+  }
+  const v = raw.video;
+  if (v && typeof v === 'object') {
+    const times = { start: Math.max(0, Math.round(num(v.start, 0))), end: Math.max(0, Math.round(num(v.end, 0))) };
+    if (times.end && times.end <= times.start) times.end = 0;
+    if (typeof v.id === 'string' && /^[\w-]{11}$/.test(v.id)) q.video = { id: v.id, ...times };
+    else if (typeof v.file === 'string' && VIDEO_FILE.test(v.file)) q.video = { file: v.file, ...times };
+  }
+  const ex = str(raw.explain, 200).trim();
+  if (ex) q.explain = ex;
   if (type === 'quiz' || type === 'poll') {
     q.answers = (Array.isArray(raw.answers) ? raw.answers : []).slice(0, 6).map((a) => ({ text: str(a && a.text, 120), correct: type === 'quiz' && !!(a && a.correct) }));
   } else if (type === 'tf') {
@@ -66,6 +85,9 @@ function normalize(raw) {
   } else if (type === 'pin') {
     const p = raw.pin || {};
     q.pin = { x: clamp(num(p.x, 50), 0, 100), y: clamp(num(p.y, 50), 0, 100), r: clamp(num(p.r, 10), 2, 50) };
+  } else if (type === 'puzzle') {
+    const p = raw.puzzle || {};
+    q.puzzle = { rows: clamp(Math.round(num(p.rows, 3)), 2, 5), cols: clamp(Math.round(num(p.cols, 3)), 2, 5) };
   }
   return q;
 }
@@ -78,7 +100,7 @@ function playable(q) {
   if (q.type === 'type') return q.accept.length > 0;
   if (q.type === 'slider') return true;
   if (q.type === 'order') return q.items.length >= 2;
-  if (q.type === 'pin') return !!q.image;
+  if (q.type === 'pin' || q.type === 'puzzle') return !!q.image;
   return false;
 }
 
@@ -86,7 +108,11 @@ function playable(q) {
 function present(q, mediaBase) {
   const out = { type: q.type, text: q.text, time: q.time, points: q.points };
   if (q.image) out.image = mediaBase + encodeURIComponent(q.image);
-  if (q.reveal) out.reveal = true;
+  if (q.reveal) {
+    out.reveal = q.reveal;
+    out.revealSec = Math.min(q.revealSec || q.time, q.time);
+  }
+  if (q.video) out.video = q.video.id ? { ...q.video } : { url: mediaBase + encodeURIComponent(q.video.file), start: q.video.start, end: q.video.end };
   const state = {};
   if (q.type === 'quiz' || q.type === 'tf' || q.type === 'poll') {
     const idx = q.answers.map((a, i) => i).filter((i) => q.answers[i].text);
@@ -100,6 +126,9 @@ function present(q, mediaBase) {
     state.order = shuffle(q.items.map((_, i) => i));
     if (state.order.every((v, i) => v === i) && state.order.length > 1) state.order.reverse();
     out.items = state.order.map((i) => q.items[i]);
+  } else if (q.type === 'puzzle') {
+    // the seed draws the same knobs and holes on the big screen and on every phone
+    out.puzzle = { rows: q.puzzle.rows, cols: q.puzzle.cols, seed: 1 + Math.floor(Math.random() * 1e9) };
   }
   return { payload: out, state };
 }
@@ -110,6 +139,7 @@ function correctText(q) {
   if (q.type === 'slider') return String(q.slider.answer);
   if (q.type === 'order') return q.items.join(' ← ');
   if (q.type === 'pin') return 'המקום המסומן בתמונה';
+  if (q.type === 'puzzle') return 'התמונה השלמה';
   return '';
 }
 
@@ -151,7 +181,15 @@ function check(q, state, data) {
     const d = Math.hypot(x - q.pin.x, y - q.pin.y);
     return { valid: true, ok: d <= q.pin.r, chosen: `(${Math.round(x)}%, ${Math.round(y)}%)` };
   }
+  if (q.type === 'puzzle') {
+    // order[cell] = the piece put in that cell; piece k belongs in cell k
+    const n = q.puzzle.rows * q.puzzle.cols;
+    const o = data.order;
+    if (!Array.isArray(o) || o.length !== n || new Set(o).size !== n || o.some((v) => !Number.isInteger(v) || v < 0 || v >= n)) return { valid: false };
+    const right = o.filter((v, i) => v === i).length;
+    return { valid: true, ok: right === n, ratio: right / n, chosen: `${right}/${n} חלקים במקום` };
+  }
   return { valid: false };
 }
 
-module.exports = { TYPES, SCORED, TIMES, POINTS, normalize, playable, present, check, correctText, norm };
+module.exports = { TYPES, SCORED, TIMES, POINTS, REVEALS, REVEAL_SECS, VIDEO_FILE, normalize, playable, present, check, correctText, norm };

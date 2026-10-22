@@ -7,6 +7,7 @@ const WAVE_SECONDS = 30;
 
 class AsteroidsGame extends QuizGame {
   static id = 'asteroids';
+  static order = 13;
   static title = 'מגני כדור הארץ';
   static emoji = '☄️';
   static mode = 'coop';

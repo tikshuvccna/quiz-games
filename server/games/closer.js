@@ -8,6 +8,7 @@ const MAX_STEPS = 30;
 
 class CloserGame extends QuizGame {
   static id = 'closer';
+  static order = 9;
   static title = 'סוגרי שטחים';
   static emoji = '🟩';
   static mode = 'ffa';

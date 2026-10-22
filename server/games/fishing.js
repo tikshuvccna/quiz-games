@@ -24,6 +24,7 @@ function rollFish(streak) {
 
 class FishingGame extends QuizGame {
   static id = 'fishing';
+  static order = 11;
   static title = 'דייגים';
   static emoji = '🎣';
   static mode = 'ffa';

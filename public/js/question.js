@@ -4,13 +4,22 @@
 //   slider    : { value }
 //   order     : { order: [displayed indexes in the chosen order] }
 //   pin       : { x, y } in percent of the picture
+//   puzzle    : { order: [piece in each cell] }
 window.QView = (function () {
   const { esc } = U;
   const POINTS_LABEL = { 0: 'ללא ניקוד', 2: 'ניקוד כפול ×2', 3: 'ניקוד משולש ×3', 4: 'ניקוד מרובע ×4' };
 
-  const image = (q) => (q.image && q.type !== 'pin' ? `<div class="q-img ${q.reveal ? 'reveal' : ''}" style="--rt:${Math.min(q.time || 20, 30)}s"><img src="${esc(q.image)}" alt=""></div>` : '');
+  // the picture (with its reveal) and the question video; the classic quiz plays videos on the big screen only
+  const media = (q, noVideo) =>
+    (q.video && !noVideo ? QMedia.video(q.video, { autoplay: true, muted: true }) : '') +
+    (q.image && q.type !== 'pin' && q.type !== 'puzzle' ? QMedia.picture(q.image, { reveal: q.reveal, revealSec: q.revealSec }) : '');
 
-  function render(box, q, { meta = '', onAnswer }) {
+  function render(box, q, opts) {
+    draw(box, q, opts);
+    QMedia.mount(box);
+  }
+
+  function draw(box, q, { meta = '', onAnswer, noVideo = false }) {
     let sent = false;
     const send = (data) => {
       if (sent) return false;
@@ -22,7 +31,7 @@ window.QView = (function () {
       return true;
     };
     const pts = POINTS_LABEL[q.points] ? `<span class="pts-chip p${q.points}">${POINTS_LABEL[q.points]}</span>` : '';
-    const head = `<div class="q-meta">${meta}${pts}</div><div class="q-card ${q.image ? 'has-img' : ''}">${esc(q.text)}</div>${image(q)}`;
+    const head = `<div class="q-meta">${meta}${pts}</div><div class="q-card ${q.image ? 'has-img' : ''}">${esc(q.text)}</div>${media(q, noVideo)}`;
 
     if (q.type === 'quiz' || q.type === 'tf' || q.type === 'poll') {
       const n = q.options.length;
@@ -144,6 +153,21 @@ window.QView = (function () {
         box.querySelector('#qpSend').disabled = false;
       };
       box.querySelector('#qpSend').onclick = () => at && send(at);
+      return;
+    }
+
+    if (q.type === 'puzzle') {
+      box.innerHTML = `<div class="q-meta">${meta}${pts}</div><div class="q-card">${esc(q.text)}</div>
+        <div class="q-hint">גררו כל חלק למקום שלו (או לחצו על חלק ואז על משבצת)</div>
+        <div class="q-puzzle" id="qz"></div>
+        <button class="btn big" id="qzSend" disabled>שלחו ✓</button>`;
+      const btn = box.querySelector('#qzSend');
+      let order = null;
+      QMedia.jigsaw(box.querySelector('#qz'), q, {
+        locked: () => sent,
+        onChange: (o) => { order = o; btn.disabled = !o; },
+      });
+      btn.onclick = () => order && send({ order });
       return;
     }
 

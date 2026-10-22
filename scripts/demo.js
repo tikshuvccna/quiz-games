@@ -9,7 +9,7 @@ const path = require('path');
 const game = process.argv[2] || 'territory';
 const count = process.argv[3] || '6';
 
-const host = io('http://localhost:3000');
+const host = io(process.env.QG_URL || 'http://localhost:3000');
 host.emit('host:create', { game }, (r) => {
   host.emit('host:game', game);
   console.log(JSON.stringify({ pin: r.pin, hostToken: r.hostToken }));

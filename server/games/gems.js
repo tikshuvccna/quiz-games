@@ -23,6 +23,7 @@ const tierOf = (gems) => TIERS.reduce((t, min, i) => (gems >= min ? i : t), 0);
 
 class GemsGame extends QuizGame {
   static id = 'gems';
+  static order = 7;
   static title = 'מרדף היהלומים';
   static emoji = '💎';
   static mode = 'ffa';

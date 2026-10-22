@@ -28,12 +28,18 @@ const store = {
   set(v) { try { v ? sessionStorage.setItem('host', JSON.stringify(v)) : sessionStorage.removeItem('host'); } catch {} },
 };
 
+// the address phones use: the best network address (Wi-Fi first), or the one the host picked
+let addrs = [];
+const pickedIp = { get() { try { return localStorage.getItem('qg-ip') || ''; } catch { return ''; } }, set(v) { try { localStorage.setItem('qg-ip', v); } catch {} } };
 async function computeJoinUrl(pin) {
   let base = location.origin;
   if (['localhost', '127.0.0.1'].includes(location.hostname)) {
     try {
       const info = await (await fetch('/api/info')).json();
-      if (info.ips[0]) base = `http://${info.ips[0]}:${info.port}`;
+      addrs = info.addresses || [];
+      const want = pickedIp.get();
+      const a = addrs.find((x) => x.ip === want) || addrs[0];
+      if (a) base = `http://${a.ip}:${info.port}`;
     } catch {}
   }
   joinUrl = `${base}/?pin=${pin}`;
@@ -129,8 +135,10 @@ function renderLobby() {
         <div class="join-step">היכנסו מהטלפון ל־<b id="joinHost"></b></div>
         <div class="pin-label">קוד המשחק</div>
         <div class="pin" id="pin"></div>
+        <div class="join-or"><span>או סרקו</span></div>
         <div class="qr" id="qr"></div>
         <div class="join-url" id="joinUrl"></div>
+        <div class="net-row" id="netRow"></div>
         <div class="lobby-video" id="video"></div>
       </div>
       <div class="card lobby-main">
@@ -199,6 +207,7 @@ function renderLobby() {
 
   document.getElementById('pin').textContent = st.pin;
   document.getElementById('round').textContent = st.round ? `🔁 סיבוב ${st.round + 1}` : '';
+  renderNet();
   if (joinUrl) {
     document.getElementById('joinUrl').textContent = joinUrl;
     document.getElementById('joinHost').textContent = joinUrl.replace(/^https?:\/\//, '').split('/')[0];
@@ -250,6 +259,25 @@ function renderLobby() {
   if (count.textContent !== String(st.players.length)) { count.textContent = st.players.length; U.bump(count); }
   renderPlayers();
   document.getElementById('start').disabled = st.players.length < 1;
+}
+
+// which network the join address is on, and a switch when the PC has more than one
+function renderNet() {
+  const row = document.getElementById('netRow');
+  const local = ['localhost', '127.0.0.1'].includes(location.hostname);
+  const host = joinUrl.replace(/^https?:\/\//, '').split(/[:/]/)[0];
+  const cur = addrs.find((a) => a.ip === host);
+  const sig = [local, addrs.map((a) => a.ip).join(), host].join('|');
+  if (row.dataset.sig === sig) return;
+  row.dataset.sig = sig;
+  if (local && !addrs.length) {
+    row.innerHTML = '<div class="net-warn">⚠️ המחשב לא מחובר לרשת: הטלפונים לא יוכלו להתחבר. התחברו ל־Wi-Fi ורעננו.</div>';
+    return;
+  }
+  if (!cur) return void (row.innerHTML = '');
+  row.innerHTML = `<span class="net-chip">${cur.kind === 'wifi' ? '📶' : cur.kind === 'hotspot' ? '📡' : '🔌'} ${esc(cur.label)}${cur.kind === 'wifi' || cur.kind === 'ethernet' ? '' : ` · ${esc(cur.name)}`}</span>${addrs.length > 1 ? `<select id="netSel" title="כתובת אחרת">${addrs.map((a) => `<option value="${esc(a.ip)}" ${a.ip === host ? 'selected' : ''}>${esc(a.label)} · ${esc(a.ip)}</option>`).join('')}</select>` : ''}`;
+  const sel = document.getElementById('netSel');
+  if (sel) sel.onchange = () => { pickedIp.set(sel.value); ready(st.pin); };
 }
 
 function renderPlayers() {

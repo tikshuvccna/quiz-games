@@ -5,6 +5,7 @@ const DROP_FALLBACK_MS = 8000;
 
 class TowerGame extends QuizGame {
   static id = 'tower';
+  static order = 10;
   static title = 'מגדל השמיים';
   static emoji = '🏗️';
   static mode = 'ffa';

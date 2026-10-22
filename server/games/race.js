@@ -6,6 +6,7 @@ const DODGE_MS = 3000;
 
 class RaceGame extends QuizGame {
   static id = 'race';
+  static order = 8;
   static title = 'מירוץ הקארטים';
   static emoji = '🏎️';
   static mode = 'ffa';

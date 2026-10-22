@@ -7,20 +7,34 @@ const { Server } = require('socket.io');
 const fs = require('fs');
 const Room = require('./room');
 const Quizzes = require('./quizzes');
+const Net = require('./net');
 
 const PORT = process.env.PORT || 3000;
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { maxHttpBufferSize: 64 * 1024 });
 
+// every game's client script / stylesheet in one file (classic first: other quiz modes build on it),
+// so a new game needs no <script> tag
+const PUBLIC = path.join(__dirname, '..', 'public');
+const bundle = (dir, ext, first = []) => {
+  let files = [];
+  try {
+    files = fs.readdirSync(path.join(PUBLIC, dir)).filter((f) => f.endsWith(ext)).sort();
+  } catch {}
+  files = [...first.filter((f) => files.includes(f)), ...files.filter((f) => !first.includes(f))];
+  return files.map((f) => `/* ${dir}/${f} */\n` + fs.readFileSync(path.join(PUBLIC, dir, f), 'utf8')).join('\n');
+};
+app.get('/js/games-all.js', (req, res) => res.type('application/javascript').set('Cache-Control', 'no-cache').send(bundle('js/games', '.js', ['classic.js'])));
+app.get('/css/games-all.css', (req, res) => res.type('text/css').set('Cache-Control', 'no-cache').send(bundle('css/games', '.css')));
+
 // no-cache = the browser revalidates (cheap ETag check), so updated files always show up
 app.use(express.static(path.join(__dirname, '..', 'public'), { setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache') }));
 
+// join addresses for the QR code: Wi-Fi first, then wired LAN, then the PC's hotspot (virtual adapters left out)
 app.get('/api/info', (req, res) => {
-  const ips = [];
-  for (const list of Object.values(os.networkInterfaces()))
-    for (const n of list || []) if (n.family === 'IPv4' && !n.internal) ips.push(n.address);
-  res.json({ port: PORT, ips });
+  const list = Net.addresses();
+  res.json({ port: PORT, ips: list.map((a) => a.ip), addresses: list });
 });
 
 app.get('/qr', async (req, res) => {
@@ -43,7 +57,7 @@ const api = (fn) => async (req, res) => {
     const out = await fn(req, res);
     if (out !== undefined && !res.headersSent) res.json(out);
   } catch (e) {
-    res.status(400).json({ error: e.message || 'שגיאה' });
+    res.status(400).json({ error: e.message || 'שגיאה', issues: e.issues });
   }
 };
 app.use('/api/q', local, express.json({ limit: '2mb' }));
@@ -80,7 +94,8 @@ app.get('/api/q/quizzes/:id', api((req) => Quizzes.load(req.params.id)));
 app.put('/api/q/quizzes/:id', api((req) => Quizzes.save(req.params.id, req.body)));
 app.delete('/api/q/quizzes/:id', api((req) => (Quizzes.remove(req.params.id), { ok: true })));
 app.post('/api/q/quizzes/:id/duplicate', api((req) => Quizzes.duplicate(req.params.id)));
-app.post('/api/q/quizzes/:id/media', express.raw({ type: 'image/*', limit: '12mb' }), api((req) => {
+// pictures (incl. animated GIF / APNG / WebP) and video files for questions
+app.post('/api/q/quizzes/:id/media', express.raw({ type: ['image/*', 'video/*'], limit: '300mb' }), api((req) => {
   const name = Quizzes.saveMedia(req.params.id, req.body, String(req.headers['content-type'] || '').split(';')[0]);
   return { name, url: `/media/${encodeURIComponent(req.params.id)}/${name}` };
 }));
@@ -329,6 +344,7 @@ server.on('error', (e) => {
 
 server.listen(PORT, () => {
   console.log(`Quiz games running. Host screen: http://localhost:${PORT}/host.html`);
-  for (const list of Object.values(os.networkInterfaces()))
-    for (const n of list || []) if (n.family === 'IPv4' && !n.internal) console.log(`  phones on the same network: http://${n.address}:${PORT}`);
+  const list = Net.addresses();
+  if (!list.length) console.log('  This computer is not connected to a network: phones cannot join yet.');
+  list.forEach((a, i) => console.log(`  ${i ? '   or' : 'phones join at'}: http://${a.ip}:${PORT}   (${a.label}: ${a.name})`));
 });

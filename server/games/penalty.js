@@ -15,6 +15,7 @@ function pickCol() {
 
 class PenaltyGame extends QuizGame {
   static id = 'penalty';
+  static order = 5;
   static title = 'פנדלים';
   static emoji = '⚽';
   static mode = 'teams';

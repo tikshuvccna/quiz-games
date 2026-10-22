@@ -6,6 +6,7 @@ const PULL_MS = 3000;
 
 class TugGame extends QuizGame {
   static id = 'tug';
+  static order = 4;
   static title = 'מלחמת חבל';
   static emoji = '💪';
   static mode = 'teams';

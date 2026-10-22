@@ -11,7 +11,8 @@ const ROOT = path.join(__dirname, '..');
 const CONFIG = path.join(ROOT, 'config.json');
 const DEFAULT_FOLDER = path.join(ROOT, 'quizzes');
 const SAMPLE_ID = '__sample';
-const IMAGE_TYPES = { 'image/png': '.png', 'image/jpeg': '.jpg', 'image/gif': '.gif', 'image/webp': '.webp', 'image/svg+xml': '.svg' };
+const IMAGE_TYPES = { 'image/png': '.png', 'image/apng': '.png', 'image/jpeg': '.jpg', 'image/gif': '.gif', 'image/webp': '.webp', 'image/svg+xml': '.svg' };
+const VIDEO_TYPES = { 'video/mp4': '.mp4', 'video/webm': '.webm', 'video/quicktime': '.mov', 'video/x-m4v': '.m4v', 'video/ogg': '.ogv' };
 
 function readConfig() {
   try {
@@ -137,8 +138,8 @@ function mediaDir(id, create = true) {
 }
 
 function saveMedia(id, buffer, mime) {
-  const ext = IMAGE_TYPES[mime];
-  if (!ext) throw new Error('סוג קובץ לא נתמך (PNG, JPG, GIF, WEBP, SVG)');
+  const ext = IMAGE_TYPES[mime] || VIDEO_TYPES[mime];
+  if (!ext) throw new Error('סוג קובץ לא נתמך (תמונות: PNG, JPG, GIF, WEBP, SVG · סרטונים: MP4, WEBM, MOV)');
   if (!buffer || !buffer.length) throw new Error('קובץ ריק');
   const name = `${Date.now().toString(36)}${crypto.randomBytes(3).toString('hex')}${ext}`;
   fs.writeFileSync(path.join(mediaDir(id), name), buffer);
@@ -147,7 +148,7 @@ function saveMedia(id, buffer, mime) {
 
 function mediaPath(id, file) {
   const name = path.basename(String(file || ''));
-  if (!validId(id) || !/^[\w.-]+\.(png|jpe?g|gif|webp|svg)$/i.test(name)) return null;
+  if (!validId(id) || !/^[\w.-]+\.(png|jpe?g|gif|webp|svg|mp4|webm|m4v|mov|ogv)$/i.test(name)) return null;
   const p = path.join(folder(), 'media', id, name);
   return fs.existsSync(p) ? p : null;
 }
@@ -198,61 +199,103 @@ function parseVideo(s) {
   return { id: m[1], start: st ? +st[1] : 0, end: en ? +en[1] : 0 };
 }
 
+// spreadsheet column number → letter (1 → A, 27 → AA)
+const colLetter = (n) => {
+  let s = '';
+  for (n = Number(n) || 0; n > 0; n = Math.floor((n - 1) / 26)) s = String.fromCharCode(65 + ((n - 1) % 26)) + s;
+  return s;
+};
+const TYPE_NAMES = { quiz: 'quiz', tf: 'tf', type: 'type', slider: 'slider', order: 'order', pin: 'pin', puzzle: 'puzzle', poll: 'poll', slide: 'slide', 'נכון/לא נכון': 'tf', 'הקלדה': 'type', 'סרגל': 'slider', 'סידור': 'order', 'סימון': 'pin', 'פאזל': 'puzzle', 'סקר': 'poll', 'שקופית': 'slide', 'חידון': 'quiz' };
+
 // one spreadsheet row → raw question (the Kahoot columns are always a valid multiple-choice version)
-function rowToRaw(cells, head, images) {
+// note(col, reason, level): collects what the teacher should know about this row
+function rowToRaw(cells, head, images, note) {
   const get = (k) => (head[k] ? cells[head[k]] || '' : '');
   const text = cells[head.q];
   const answers = [1, 2, 3, 4, 5, 6].filter((k) => head['a' + k]).map((k) => cells[head['a' + k]] || '');
-  const correct = String(cells[head.correct] || '').split(/[^\d]+/).map(Number).filter((n) => n >= 1 && n <= answers.length);
-  const base = {
-    type: 'quiz',
-    text,
-    time: NEAREST_TIME(Number(cells[head.time]) || 20),
-    answers: answers.map((t, i) => ({ text: t, correct: correct.includes(i + 1) })),
-  };
+  const rawCorrect = String(cells[head.correct] || '');
+  const correct = rawCorrect.split(/[^\d]+/).filter(Boolean).map(Number);
+  const okCorrect = correct.filter((n) => n >= 1 && n <= answers.length && answers[n - 1]);
+  if (correct.length > okCorrect.length) note(head.correct, `תשובה נכונה "${rawCorrect}" לא קיימת בשורה`, 'warn');
+  const t = Number(cells[head.time]);
+  const time = NEAREST_TIME(t || 20);
+  if (cells[head.time] && t !== time) note(head.time, `זמן ${cells[head.time]} לא קיים, נקבע ${time} שניות`, 'info');
+  const base = { type: 'quiz', text, time, answers: answers.map((x, i) => ({ text: x, correct: okCorrect.includes(i + 1) })) };
   const pts = get('x_points');
-  if (pts !== '' && qt.POINTS.includes(Number(pts))) base.points = Number(pts);
-
-  const imgName = path.basename(get('x_image').replace(/\\/g, '/')).toLowerCase();
-  let missingImage = false;
-  if (get('x_image')) {
-    if (images.has(imgName)) base.image = imgName;
-    else missingImage = true;
+  if (pts !== '') {
+    if (qt.POINTS.includes(Number(pts))) base.points = Number(pts);
+    else note(head.x_points, `ניקוד "${pts}" לא תקין (0-4), נקבע 1`, 'info');
   }
-  if (/^(yes|true|1|כן|tiles)$/i.test(get('x_reveal'))) base.reveal = true;
-  const video = parseVideo(get('x_video'));
-  if (video) base.video = video;
+  const ex = get('x_explanation');
+  if (ex) base.explain = ex;
 
-  const type = get('x_type').toLowerCase();
+  const imgRaw = get('x_image');
+  if (imgRaw) {
+    const imgName = path.basename(imgRaw.replace(/\\/g, '/')).toLowerCase();
+    if (images.has(imgName)) base.image = imgName;
+    else note(head.x_image, images.size ? `התמונה "${imgRaw}" לא נמצאה ב-zip` : `התמונה "${imgRaw}" לא צורפה (העלו zip עם תיקיית images)`, 'warn');
+  }
+  const rv = get('x_reveal').toLowerCase();
+  if (rv) {
+    if (/^(yes|true|1|כן|blur|טשטוש)$/i.test(rv)) base.reveal = 'blur';
+    else if (/^(tiles|אריחים|ריבועים)$/i.test(rv)) base.reveal = 'tiles';
+    else if (!/^(no|false|0|לא)$/i.test(rv)) note(head.x_reveal, `ערך חשיפה "${rv}" לא מוכר (yes / tiles)`, 'info');
+    if (base.reveal && !base.image) note(head.x_reveal, 'חשיפה הדרגתית צריכה תמונה', 'info');
+  }
+  const vRaw = get('x_video');
+  if (vRaw) {
+    const video = parseVideo(vRaw);
+    if (video) base.video = video;
+    else note(head.x_video, `"${vRaw}" לא נראה כמו קישור ליוטיוב`, 'warn');
+  }
+
+  const typeRaw = get('x_type').trim();
+  const type = TYPE_NAMES[typeRaw.toLowerCase()] || (typeRaw ? null : 'quiz');
+  if (type === null) note(head.x_type, `סוג שאלה "${typeRaw}" לא מוכר, יובא כרב-ברירה`, 'warn');
   let special = null;
+  const down = (col, why) => note(col, `${why}: יובא כרב-ברירה`, 'warn');
   if (type === 'tf') {
     special = { ...base, type: 'tf', answers: base.answers.slice(0, 2) };
   } else if (type === 'poll') {
-    special = { ...base, type: 'poll', points: 0, answers: base.answers.slice(0, 4).map((a) => ({ text: a.text })) };
+    special = { ...base, type: 'poll', points: 0, answers: base.answers.slice(0, 6).map((x) => ({ text: x.text })) };
+  } else if (type === 'slide') {
+    special = { ...base, type: 'slide', points: 0 };
   } else if (type === 'type') {
     const accept = parts(get('x_accept'));
-    if (!accept.length) base.answers.filter((a) => a.correct && a.text).forEach((a) => accept.push(a.text));
+    if (!accept.length) base.answers.filter((x) => x.correct && x.text).forEach((x) => accept.push(x.text));
     if (accept.length) special = { ...base, type: 'type', accept, time: Math.max(base.time, 20) };
+    else down(head.x_accept || head.x_type, 'לשאלת הקלדה חסרה תשובה (עמודת Accept)');
   } else if (type === 'slider') {
     const n = parts(get('x_slider')).map(Number);
-    if (n.length >= 4 && n.every(Number.isFinite) && n[1] > n[0]) special = { ...base, type: 'slider', slider: { min: n[0], max: n[1], step: n[2], answer: n[3], tol: n[4] || 0 } };
+    if (n.length >= 4 && n.every(Number.isFinite) && n[1] > n[0] && n[3] >= n[0] && n[3] <= n[1]) special = { ...base, type: 'slider', slider: { min: n[0], max: n[1], step: n[2] || 1, answer: n[3], tol: n[4] || 0 } };
+    else down(head.x_slider || head.x_type, `סרגל צריך min|max|step|answer|tolerance (קיבלנו "${get('x_slider')}")`);
   } else if (type === 'order') {
     const items = parts(get('x_items'));
-    if (items.length >= 2) special = { ...base, type: 'order', items };
+    if (items.length >= 2 && items.length <= 6) special = { ...base, type: 'order', items };
+    else down(head.x_items || head.x_type, `סידור צריך 2-6 פריטים מופרדים ב-| (קיבלנו ${items.length})`);
   } else if (type === 'pin') {
     const n = parts(get('x_pin')).map(Number);
-    if (base.image && n.length >= 2 && n.every(Number.isFinite)) special = { ...base, type: 'pin', pin: { x: n[0], y: n[1], r: n[2] || 10 } };
+    if (!base.image) down(head.x_image || head.x_type, 'שאלת סימון צריכה תמונה');
+    else if (n.length >= 2 && n.every(Number.isFinite) && n[0] >= 0 && n[0] <= 100 && n[1] >= 0 && n[1] <= 100) special = { ...base, type: 'pin', pin: { x: n[0], y: n[1], r: n[2] || 10 } };
+    else down(head.x_pin || head.x_type, `סימון צריך x|y|radius באחוזים (קיבלנו "${get('x_pin')}")`);
+  } else if (type === 'puzzle') {
+    const m = get('x_puzzle').match(/^(\d)\s*[x×*]\s*(\d)$/i);
+    if (!base.image) down(head.x_image || head.x_type, 'פאזל צריך תמונה');
+    else special = { ...base, type: 'puzzle', puzzle: m ? { rows: +m[1], cols: +m[2] } : { rows: 3, cols: 3 }, time: Math.max(base.time, 30) };
+    if (base.image && get('x_puzzle') && !m) note(head.x_puzzle, `גודל פאזל "${get('x_puzzle')}" לא תקין (למשל 3x3), נקבע 3x3`, 'info');
   }
-  return { raw: special || base, downgraded: !!type && type !== 'quiz' && !special, missingImage };
+  return special || base;
 }
 
 // Reads Kahoot's "quiz template" (and our own copy of it with the extra columns): finds the header row
 // (Question / Answer 1-4 / Time limit / Correct answer(s)) and reads the rows under it.
 // images: Map(lowercase file name → { buffer, mime }) from a zip, for the Image column.
+// The result lists every problem by row and column, so the teacher can fix the file.
 async function importXlsx(buffer, title, images = new Map()) {
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.load(buffer);
   const questions = [];
+  const issues = [];
   const stats = { skipped: 0, downgraded: 0, missingImages: 0, special: 0 };
   for (const ws of wb.worksheets) {
     let head = null;
@@ -275,19 +318,35 @@ async function importXlsx(buffer, title, images = new Map()) {
         return;
       }
       const text = cells[head.q];
-      if (!text) return;
-      const { raw, downgraded, missingImage } = rowToRaw(cells, head, images);
-      const q = qt.normalize(raw);
-      const ok = qt.playable(q) || (q.type === 'poll' && q.answers.filter((a) => a.text).length >= 2);
-      if (!ok) return void stats.skipped++;
-      if (downgraded) stats.downgraded++;
-      if (missingImage) stats.missingImages++;
+      if (!text) {
+        if (cells.some(Boolean)) issues.push({ row: rn, col: colLetter(head.q), reason: 'שורה בלי טקסט שאלה: דולגה', level: 'skip' });
+        return;
+      }
+      const rowIssues = [];
+      const note = (col, reason, level) => rowIssues.push({ row: rn, col: colLetter(col), reason, level });
+      const q = qt.normalize(rowToRaw(cells, head, images, note));
+      if (q.text.length > 120) note(head.q, `שאלה ארוכה (${q.text.length} תווים): קשה לקרוא בטלפון. Kahoot מגביל ל-120`, 'info');
+      const ok = qt.playable(q) || (q.type === 'poll' && q.answers.filter((x) => x.text).length >= 2) || (q.type === 'slide' && !!q.text);
+      if (!ok) {
+        const filled = q.answers ? q.answers.filter((x) => x.text).length : 0;
+        const why = q.type === 'quiz' && filled < 2 ? 'צריך לפחות 2 תשובות' : q.type === 'quiz' ? 'לא סומנה תשובה נכונה (עמודת Correct answer)' : 'השאלה לא שלמה';
+        issues.push(...rowIssues, { row: rn, col: colLetter(q.type === 'quiz' && filled >= 2 ? head.correct : head.a1), reason: `${why}: השורה דולגה`, level: 'skip' });
+        stats.skipped++;
+        return;
+      }
+      issues.push(...rowIssues);
+      if (rowIssues.some((x) => x.reason.includes('יובא כרב-ברירה'))) stats.downgraded++;
+      if (rowIssues.some((x) => x.reason.startsWith('התמונה'))) stats.missingImages++;
       if (q.type !== 'quiz') stats.special++;
       questions.push(q);
     });
     if (head) break;
   }
-  if (!questions.length) throw new Error('לא נמצאו שאלות בקובץ. ודאו שזו תבנית Kahoot (עמודות Question, Answer 1-4, Time limit, Correct answer)');
+  if (!questions.length) {
+    const e = new Error(issues.length ? `אף שורה לא יובאה (${issues.length} בעיות). ${issues.slice(0, 3).map((x) => `שורה ${x.row}: ${x.reason}`).join(' · ')}` : 'לא נמצאו שאלות בקובץ. ודאו שזו תבנית Kahoot (עמודות Question, Answer 1-4, Time limit, Correct answer)');
+    e.issues = issues;
+    throw e;
+  }
   const id = newId(title || 'חידון מיובא');
   // copy each used picture into the quiz's media folder once
   const stored = new Map();
@@ -301,7 +360,7 @@ async function importXlsx(buffer, title, images = new Map()) {
     else delete q.image;
   }
   save(id, { title: title || 'חידון מיובא', questions });
-  return { id, count: questions.length, images: stored.size, ...stats };
+  return { id, count: questions.length, images: [...stored.values()].filter(Boolean).length, issues: issues.slice(0, 300), ...stats };
 }
 
 // .xlsx, or a .zip with the .xlsx and the pictures its Image column names (any folder inside the zip)

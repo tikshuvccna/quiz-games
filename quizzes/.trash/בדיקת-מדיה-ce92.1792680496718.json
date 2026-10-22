@@ -1,0 +1,68 @@
+{
+  "title": "בדיקת מדיה",
+  "description": "",
+  "updated": "2026-10-22T14:47:29.924Z",
+  "questions": [
+    {
+      "type": "puzzle",
+      "text": "הרכיבו את התמונה!",
+      "time": 60,
+      "points": 1,
+      "image": "mvjnnjw8da77da.png",
+      "explain": "זה אריה",
+      "puzzle": {
+        "rows": 3,
+        "cols": 3
+      }
+    },
+    {
+      "type": "quiz",
+      "text": "מה מסתתר מאחורי האריחים?",
+      "time": 30,
+      "points": 1,
+      "image": "mvjnnjw8da77da.png",
+      "reveal": "tiles",
+      "revealSec": 20,
+      "explain": "רואים רעמה",
+      "answers": [
+        {
+          "text": "אריה",
+          "correct": true
+        },
+        {
+          "text": "נמר",
+          "correct": false
+        },
+        {
+          "text": "פיל",
+          "correct": false
+        },
+        {
+          "text": "זברה",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "שאלה עם סרטון",
+      "time": 20,
+      "points": 1,
+      "video": {
+        "id": "dQw4w9WgXcQ",
+        "start": 10,
+        "end": 30
+      },
+      "answers": [
+        {
+          "text": "א",
+          "correct": true
+        },
+        {
+          "text": "ב",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

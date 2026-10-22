@@ -1,7 +1,7 @@
 // Classic quiz end to end: teams + second-chance round. node scripts/classic-test.js (server running)
 const { io } = require('socket.io-client');
 const Q = require('../questions/sample.json');
-const URL = 'http://localhost:3000';
+const URL = process.env.QG_URL || 'http://localhost:3000';
 const ok = (c, m) => console.log(c ? '  ✔' : '  ✘ FAIL', m);
 
 (async () => {

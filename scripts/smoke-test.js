@@ -1,7 +1,7 @@
 // Bots play a short round of every game against a running server: node scripts/smoke-test.js [territory|gems|asteroids]
 const { io } = require('socket.io-client');
 const Q = require('../questions/sample.json');
-const URL = 'http://localhost:3000';
+const URL = process.env.QG_URL || 'http://localhost:3000';
 
 function run(game) {
   return new Promise((resolve) => {

@@ -8,6 +8,7 @@ const VOTE_SECONDS = 120; // long on purpose: teams should talk it over
 
 class PyramidGame extends ClassicGame {
   static id = 'pyramid';
+  static order = 2;
   static title = 'הפירמידה האבודה';
   static emoji = '🔺';
   static mode = 'teams';

@@ -7,24 +7,7 @@ const { shuffle } = require('./shuffle');
 const Quizzes = require('./quizzes');
 const TEAMS = require('./teams');
 const { randomName } = require('./names');
-const TerritoryGame = require('./games/territory');
-const GemsGame = require('./games/gems');
-const AsteroidsGame = require('./games/asteroids');
-const TugGame = require('./games/tug');
-const RaceGame = require('./games/race');
-const DragonGame = require('./games/dragon');
-const CloserGame = require('./games/closer');
-const TowerGame = require('./games/tower');
-const PenaltyGame = require('./games/penalty');
-const SnowballGame = require('./games/snowball');
-const FishingGame = require('./games/fishing');
-const BombGame = require('./games/bomb');
-const RocketGame = require('./games/rocket');
-const ClassicGame = require('./games/classic');
-const PyramidGame = require('./games/pyramid');
-
-const GAMES = {};
-for (const G of [ClassicGame, PyramidGame, TerritoryGame, TugGame, PenaltyGame, SnowballGame, GemsGame, RaceGame, CloserGame, TowerGame, FishingGame, BombGame, AsteroidsGame, DragonGame, RocketGame]) GAMES[G.id] = G;
+const GAMES = require('./games');
 const DURATIONS = [120, 180, 300, 480, 600];
 const COUNTDOWN_MS = 3800; // 3 · 2 · 1 · GO
 const LOBBY_GRACE_MS = 20000; // a phone that drops in the lobby keeps its seat this long
@@ -103,7 +86,7 @@ class Room {
 
   setGame(gameId) {
     if (this.phase !== 'lobby') return;
-    this.Game = Object.prototype.hasOwnProperty.call(GAMES, gameId) ? GAMES[gameId] : this.Game || TerritoryGame;
+    this.Game = Object.prototype.hasOwnProperty.call(GAMES, gameId) ? GAMES[gameId] : this.Game || GAMES.territory || Object.values(GAMES)[0];
     const keep = this.settings ? { duration: this.settings.duration, need: this.settings.need, amount: this.settings.amount } : {};
     this.settings = defaultsFor(this.Game);
     if (keep.duration) this.settings.duration = keep.duration;

@@ -6,7 +6,7 @@ const count = Number(process.argv[3] || 5);
 const NAMES = ['נועם', 'מיכל', 'עידו', 'שירה', 'אורי', 'תמר', 'איתי', 'רוני', 'גיל', 'ליאור'];
 
 NAMES.slice(0, count).forEach((name, i) => {
-  const s = io('http://localhost:3000');
+  const s = io(process.env.QG_URL || 'http://localhost:3000');
   let board = null;
   const send = (type, data, ms) => setTimeout(() => s.emit('player:action', { type, data }), ms);
   s.on('board', (d) => (board = d.board));
@@ -21,7 +21,12 @@ NAMES.slice(0, count).forEach((name, i) => {
         data = { choice: Math.random() < 0.75 ? right : (right + 1) % qq.options.length };
       } else if (qq.options) data = qq.multi ? { choices: [0] } : { choice: Math.floor(Math.random() * qq.options.length) };
       else if (qq.slider) data = { value: qq.slider.min + Math.round(Math.random() * (qq.slider.max - qq.slider.min)) };
-      else if (qq.items) data = { order: qq.items.map((_, i) => i) };
+      else if (qq.puzzle) {
+        const n = qq.puzzle.rows * qq.puzzle.cols;
+        const order = Array.from({ length: n }, (_, k) => k);
+        if (Math.random() < 0.4) [order[0], order[1]] = [order[1], order[0]];
+        data = { order };
+      } else if (qq.items) data = { order: qq.items.map((_, i) => i) };
       else if (qq.type === 'pin') data = { x: Math.random() * 100, y: Math.random() * 100 };
       else data = { text: 'תשובה' };
       if (y.conf) data.conf = y.conf[Math.floor(Math.random() * y.conf.length)].v; // confidence / pyramid

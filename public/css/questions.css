@@ -65,3 +65,42 @@
 .pin-mark { position: absolute; width: 34px; height: 46px; margin: -46px 0 0 -17px; background: radial-gradient(circle at 50% 35%, #fff 0 18%, #ff4d6d 20% 60%, transparent 62%); clip-path: path('M17 46 C8 30 0 24 0 17 A17 17 0 0 1 34 17 C34 24 26 30 17 46Z'); filter: drop-shadow(0 4px 3px rgba(0, 0, 0, .5)); pointer-events: none; }
 .pin-mark.drop { animation: pindrop .4s var(--spring); }
 @keyframes pindrop { from { transform: translateY(-30px) scale(1.4); } }
+
+/* picture reveal by tiles: colored tiles flip away one by one */
+.rv-tiles { position: relative; }
+.q-img.rv-tiles { height: 28vh; width: 100%; }
+.rv-frame { position: relative; overflow: hidden; border-radius: var(--r); }
+.rv-frame img { width: 100% !important; height: 100% !important; max-width: none !important; max-height: none !important; display: block; object-fit: fill; }
+.rv-grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(var(--c), 1fr); grid-template-rows: repeat(var(--r), 1fr); pointer-events: none; }
+.rv-grid i { background: linear-gradient(135deg, hsl(var(--h) 70% 58%), hsl(calc(var(--h) + 40) 70% 42%)); box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .35), inset 0 -4px 0 rgba(0, 0, 0, .18); animation: tileoff .55s cubic-bezier(.5, -.4, .7, 1) var(--d) forwards; }
+@keyframes tileoff { to { transform: perspective(300px) rotateX(85deg) scale(.6); opacity: 0; } }
+
+/* question video (YouTube or an uploaded file) */
+.q-video { flex: none; width: 100%; aspect-ratio: 16 / 9; max-height: 30vh; border-radius: var(--r-lg); overflow: hidden; background: #000; box-shadow: var(--lift), var(--drop); }
+.q-video iframe, .q-video video { width: 100%; height: 100%; border: 0; display: block; background: #000; }
+
+/* explanation after the answer */
+.fb-explain { max-width: 520px; font-size: 1.05rem; font-weight: 700; line-height: 1.35; padding: 10px 16px; border-radius: var(--r); background: rgba(0, 0, 0, .22); animation: popin .5s var(--spring) .35s both; }
+.fb-explain::before { content: '💡 '; }
+
+/* ---------- jigsaw puzzle ---------- */
+.q-puzzle { flex: 1; min-height: 0; display: flex; flex-direction: column; touch-action: none; }
+.pz { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.pz-board { position: relative; flex: none; border-radius: 6px; background: rgba(0, 0, 0, .35); box-shadow: inset 0 3px 10px rgba(0, 0, 0, .5), 0 0 0 3px rgba(255, 255, 255, .12); }
+.pz-ghost { position: absolute; inset: 0; background-size: 100% 100%; opacity: .14; filter: grayscale(1); border-radius: 6px; pointer-events: none; }
+.pz-cell { position: absolute; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14); transition: background .15s; }
+.pz-board.picking .pz-cell { background: rgba(255, 210, 63, .08); box-shadow: inset 0 0 0 1.5px rgba(255, 210, 63, .45); }
+.pz-cell.hover { background: rgba(255, 210, 63, .28); box-shadow: inset 0 0 0 3px var(--yellow); }
+.pz-board.full { box-shadow: inset 0 3px 10px rgba(0, 0, 0, .5), 0 0 0 3px var(--green), 0 0 24px rgba(46, 229, 157, .4); }
+.pz-tray-wrap { flex: 1; min-height: 96px; width: 100%; overflow-x: auto; overflow-y: hidden; border-radius: var(--r); background: rgba(0, 0, 0, .22); box-shadow: inset 0 3px 8px rgba(0, 0, 0, .35); }
+.pz-tray { display: flex; align-items: center; gap: 6px; height: 100%; padding: 4px 34px; width: max-content; }
+.pz-piece { position: relative; flex: none; margin: calc(var(--m) * -0.55); cursor: grab; touch-action: none; filter: drop-shadow(0 4px 3px rgba(0, 0, 0, .45)); transition: transform .15s var(--spring), filter .15s; }
+.pz-piece svg { display: block; pointer-events: none; }
+.pz-piece.on-board { position: absolute; margin: 0; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .35)); z-index: 2; }
+.pz-piece.sel { transform: scale(1.08); filter: drop-shadow(0 0 0 #fff) drop-shadow(0 0 8px var(--yellow)) drop-shadow(0 6px 5px rgba(0, 0, 0, .45)); z-index: 5; }
+.pz-piece.lifted { opacity: .25; }
+.pz-drag { position: fixed; margin: 0; z-index: 400; pointer-events: none; transform: scale(1.08) rotate(-3deg); filter: drop-shadow(0 14px 12px rgba(0, 0, 0, .5)); }
+.pz-snap { animation: pzsnap .3s var(--spring); }
+@keyframes pzsnap { 40% { transform: scale(1.1); } }
+.sent .pz-piece { pointer-events: none; }
+.pz-outline { display: block; width: 100%; height: 100%; }

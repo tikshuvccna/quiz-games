@@ -54,7 +54,8 @@ async function sheet() {
     check('xlsx: pin without a picture becomes multiple choice', byText('Point at the red dot').type === 'quiz');
     check('xlsx: puzzle becomes multiple choice', byText('Puzzle (not played yet)').type === 'quiz' && r.downgraded >= 2, r);
     check('xlsx: poll stays a poll', byText('Poll').type === 'poll' && byText('Poll').points === 0);
-    check('xlsx: youtube id, start, end and reveal', JSON.stringify(byText('Video question').video) === '{"id":"dQw4w9WgXcQ","start":5,"end":20}' && byText('Video question').reveal === true);
+    check('xlsx: youtube id, start and end', JSON.stringify(byText('Video question').video) === '{"id":"dQw4w9WgXcQ","start":5,"end":20}');
+    check('xlsx: reveal is dropped when the picture is missing', !byText('Video question').reveal && r.issues.some((x) => x.row === 8 && x.col === 'K'), r.issues);
     check('xlsx: plain question unchanged', byText('Plain question').type === 'quiz' && byText('Plain question').answers[1].correct);
 
     // .zip with pictures
@@ -69,7 +70,9 @@ async function sheet() {
     const pin = quiz.questions.find((q) => q.text === 'Point at the red dot');
     check('zip: 9 questions and 2 pictures', r.count === 9 && r.images === 2, r);
     check('zip: pin question is a pin with a stored picture', pin.type === 'pin' && pin.pin.x === 40 && !!Q.mediaPath(r.id, pin.image));
-    check('zip: picture names are case-insensitive', !!Q.mediaPath(r.id, quiz.questions.find((q) => q.text === 'Video question').image));
+    const vq = quiz.questions.find((q) => q.text === 'Video question');
+    check('zip: picture names are case-insensitive', !!Q.mediaPath(r.id, vq.image));
+    check('zip: reveal (blur) kept with the picture', vq.reveal === 'blur');
     check('zip: missing picture is counted and removed', r.missingImages === 1 && !quiz.questions.find((q) => q.text === 'Pin without a picture').image, r);
 
     // errors

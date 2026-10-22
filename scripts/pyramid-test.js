@@ -1,7 +1,7 @@
 // Quiz-style modes end to end: Lost Pyramid + classic accuracy/confidence. node scripts/pyramid-test.js
 const { io } = require('socket.io-client');
 const Q = require('../questions/sample.json');
-const URL = 'http://localhost:3000';
+const URL = process.env.QG_URL || 'http://localhost:3000';
 const ok = (c, m) => console.log(c ? '  ✔' : '  ✘ FAIL', m);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 

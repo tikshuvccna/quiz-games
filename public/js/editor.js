@@ -7,8 +7,9 @@
     ['tf', 'נכון / לא נכון', 'שתי תשובות', '⚖️'],
     ['type', 'הקלדת תשובה', 'השחקן מקליד, כמה איותים מותרים', '⌨️'],
     ['slider', 'סרגל מספרים', 'בוחרים מספר בטווח', '🎚️'],
-    ['order', 'סידור (פאזל)', 'מסדרים פריטים בסדר הנכון', '🧩'],
+    ['order', 'סידור', 'מסדרים פריטים בסדר הנכון', '🔢'],
     ['pin', 'סימון על תמונה', 'לוחצים על המקום הנכון', '📍'],
+    ['puzzle', 'פאזל אמיתי', 'התמונה נחתכת לחלקי פאזל שמרכיבים', '🧩'],
     ['poll', 'סקר', 'בלי תשובה נכונה · חידון קלאסי בלבד', '📊'],
     ['slide', 'שקופית מידע', 'רק טקסט/תמונה · חידון קלאסי בלבד', '🖼️'],
   ];
@@ -28,7 +29,7 @@
     const json = typeof opts.body === 'string';
     const res = await fetch('/api/q' + path, { ...rest, headers: json ? { 'Content-Type': 'application/json' } : headers });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || 'שגיאה');
+    if (!res.ok) throw Object.assign(new Error(data.error || 'שגיאה'), { issues: data.issues });
     return data;
   }
   const toast = (text, bad) => {
@@ -49,6 +50,7 @@
     if (type === 'slider') q.slider = { min: 0, max: 100, step: 1, answer: 50, tol: 0 };
     if (type === 'order') q.items = ['', '', ''];
     if (type === 'pin') q.pin = { x: 50, y: 50, r: 10 };
+    if (type === 'puzzle') { q.puzzle = { rows: 3, cols: 3 }; q.time = 60; }
     if (type === 'slide') q.points = 0;
     return q;
   }
@@ -60,6 +62,9 @@
     if (type !== 'slide') n.points = q.points;
     if (q.image) n.image = q.image;
     if (q.reveal) n.reveal = q.reveal;
+    if (q.revealSec) n.revealSec = q.revealSec;
+    if (q.video) n.video = q.video;
+    if (q.explain) n.explain = q.explain;
     if ((type === 'quiz' || type === 'poll') && q.answers && q.type !== 'tf') n.answers = q.answers.map((a) => ({ text: a.text, correct: type === 'quiz' && !!a.correct }));
     return n;
   }
@@ -74,6 +79,7 @@
     if (q.type === 'type' && !q.accept.some((a) => a.trim())) p.push('הוסיפו תשובה נכונה אחת לפחות');
     if (q.type === 'order' && q.items.filter((x) => x.trim()).length < 2) p.push('צריך לפחות 2 פריטים');
     if (q.type === 'pin' && !q.image) p.push('צריך תמונה כדי לסמן עליה');
+    if (q.type === 'puzzle' && !q.image) p.push('צריך תמונה כדי לחתוך לפאזל');
     if (q.type === 'slider' && (q.slider.answer < q.slider.min || q.slider.answer > q.slider.max)) p.push('התשובה מחוץ לטווח');
     return p;
   }
@@ -158,9 +164,11 @@
         const r = await api('/import?title=' + encodeURIComponent(file.name.replace(/\.(xlsx|zip)$/i, '')), { method: 'POST', body: await file.arrayBuffer(), headers: { 'Content-Type': 'application/octet-stream' } });
         const notes = [r.special ? `${r.special} מיוחדות` : '', r.images ? `${r.images} תמונות` : '', r.skipped ? `${r.skipped} דולגו` : '', r.downgraded ? `${r.downgraded} יובאו כרב-ברירה` : '', r.missingImages ? `${r.missingImages} תמונות חסרות` : ''].filter(Boolean);
         toast(`יובאו ${r.count} שאלות${notes.length ? ` (${notes.join(', ')})` : ''}`);
-        open(r.id);
+        await open(r.id);
+        if (r.issues && r.issues.length) importReport(r, file.name);
       } catch (err) {
-        toast(err.message, true);
+        if (err.issues && err.issues.length) importReport({ count: 0, issues: err.issues }, file.name);
+        else toast(err.message, true);
       }
     };
     document.getElementById('grid').onclick = async (e) => {
@@ -170,6 +178,26 @@
       if (o) open(o.dataset.open);
       if (d) { const q = await api(`/quizzes/${encodeURIComponent(d.dataset.dup)}/duplicate`, { method: 'POST' }); toast('נוצר עותק'); open(q.id); }
       if (x && confirm('למחוק את החידון? (הוא יעבור לתיקיית .trash)')) { await api('/quizzes/' + encodeURIComponent(x.dataset.del), { method: 'DELETE' }); library(); }
+    };
+  }
+
+  // ---------- import report: every problem by row and column ----------
+  function importReport(r, fileName) {
+    const LV = { skip: ['⛔', 'דולגה'], warn: ['⚠️', 'אזהרה'], info: ['ℹ️', 'לידיעה'] };
+    const m = document.createElement('div');
+    m.className = 'modal';
+    const rows = r.issues;
+    const skipped = rows.filter((x) => x.level === 'skip').length;
+    m.innerHTML = `<div class="modal-card imp-rep">
+      <div class="modal-head"><h2>📋 דוח ייבוא</h2><span class="muted">${esc(fileName)} · ${r.count} שאלות יובאו${skipped ? ` · ${skipped} שורות דולגו` : ''}</span>
+        <div class="modal-actions"><button class="btn sm ghost" id="irCopy">📋 העתקה</button><button class="btn sm ghost" id="irClose">✕</button></div></div>
+      <div class="modal-body"><table class="rep imp"><thead><tr><th></th><th>שורה</th><th>עמודה</th><th>מה קרה</th></tr></thead><tbody>
+        ${rows.map((x) => `<tr class="lv-${x.level}"><td>${LV[x.level][0]}</td><td><b>${x.row}</b></td><td><span class="col-tag">${esc(x.col || '')}</span></td><td>${esc(x.reason)}</td></tr>`).join('')}
+      </tbody></table><div class="muted" style="margin-top:8px">תקנו את השורות בקובץ וייבאו שוב, או ערכו את השאלות כאן בעורך.</div></div></div>`;
+    document.body.appendChild(m);
+    m.onclick = (e) => { if (e.target === m || e.target.id === 'irClose') m.remove(); };
+    m.querySelector('#irCopy').onclick = () => {
+      navigator.clipboard?.writeText(rows.map((x) => `שורה ${x.row} · עמודה ${x.col}: ${x.reason}`).join('\n')).then(() => toast('הועתק'));
     };
   }
 
@@ -301,13 +329,35 @@
     return p.length ? p.map((x) => `<div class="prob">⚠️ ${x}</div>`).join('') : '<div class="ok-t">✓ השאלה מוכנה</div>';
   };
 
+  // youtube links → video id (watch?v=, youtu.be/, embed/, shorts/)
+  const youtubeId = (url) => {
+    const m = String(url || '').match(/(?:youtu\.be\/|[?&]v=|embed\/|shorts\/|live\/)([\w-]{11})/);
+    return m ? m[1] : /^[\w-]{11}$/.test(String(url || '').trim()) ? String(url).trim() : '';
+  };
+  const ytTime = (url, key) => {
+    const m = String(url || '').match(new RegExp(`[?&]${key}=(\\d+)`));
+    return m ? Number(m[1]) : 0;
+  };
+
   function drawStage() {
     const q = quiz.questions[cur];
     const st = document.getElementById('stage');
-    const media = q.type === 'pin' ? '' : `<div class="drop ${q.image ? 'has' : ''}" id="drop">${q.image ? `<img src="${mediaUrl(q.image)}" alt=""><button class="img-x" id="imgX" title="הסרת תמונה">✕</button>` : '<div class="drop-hint">🖼️ גררו תמונה לכאן, הדביקו (Ctrl+V) או לחצו להעלאה</div>'}<input type="file" id="imgFile" accept="image/*" hidden></div>`;
+    const media = q.type === 'pin' ? '' : `<div class="drop ${q.image ? 'has' : ''}" id="drop">${q.image ? `<img src="${mediaUrl(q.image)}" alt=""><button class="img-x" id="imgX" title="הסרת תמונה">✕</button>` : `<div class="drop-hint">🖼️ גררו תמונה לכאן, הדביקו (Ctrl+V) או לחצו להעלאה<small>${q.type === 'puzzle' ? 'התמונה תיחתך לחלקי פאזל' : 'גם GIF ותמונות מונפשות'}</small></div>`}<input type="file" id="imgFile" accept="image/*,video/*" hidden></div>`;
+    const v = q.video;
+    const vid = q.type === 'slide' || q.type === 'puzzle' || q.type === 'pin' ? '' : `
+      <div class="vid-ed ${v ? 'has' : ''}">
+        <div class="vid-row">
+          <span class="vid-ic">🎬</span>
+          ${v && v.file ? `<span class="vid-file">📁 סרטון שהועלה</span>` : `<input class="input sm" id="vidUrl" dir="ltr" placeholder="קישור ליוטיוב (לא חובה)" value="${v && v.id ? esc('https://youtu.be/' + v.id) : ''}">`}
+          <label class="btn ghost sm">⬆ העלאת סרטון<input type="file" id="vidFile" accept="video/*" hidden></label>
+          ${v ? `<label class="vid-t">מ־<input type="number" id="vidStart" min="0" value="${v.start || 0}"> שנ׳</label><label class="vid-t">עד <input type="number" id="vidEnd" min="0" value="${v.end || ''}" placeholder="סוף"> שנ׳</label><button class="btn ghost sm" id="vidX">✕</button>` : ''}
+        </div>
+        ${v ? `<div class="vid-prev">${QMedia.video(v.id ? v : { url: mediaUrl(v.file), start: v.start, end: v.end }, { autoplay: false })}</div><div class="muted ae-tip">בחידון הקלאסי הסרטון מתנגן במסך הגדול. במשחקים, בטלפון של כל שחקן.</div>` : ''}
+      </div>`;
     st.innerHTML = `
       <textarea class="q-text-in" id="qtext" maxlength="300" placeholder="הקלידו את השאלה…">${esc(q.text)}</textarea>
       ${media}
+      ${vid}
       <div class="ans-ed" id="ansEd"></div>`;
     const ta = document.getElementById('qtext');
     ta.oninput = () => { q.text = ta.value; soft(); };
@@ -315,7 +365,7 @@
     const drop = document.getElementById('drop');
     if (drop) {
       drop.onclick = (e) => {
-        if (e.target.id === 'imgX') { delete q.image; delete q.reveal; dirty(); drawAll(); return; }
+        if (e.target.id === 'imgX') { delete q.image; delete q.reveal; delete q.revealSec; dirty(); drawAll(); return; }
         document.getElementById('imgFile').click();
       };
       document.getElementById('imgFile').onchange = (e) => e.target.files[0] && upload(e.target.files[0]);
@@ -323,21 +373,53 @@
       drop.ondragleave = () => drop.classList.remove('over');
       drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) upload(f); };
     }
+    const vu = document.getElementById('vidUrl');
+    if (vu) vu.onchange = () => {
+      const id = youtubeId(vu.value);
+      if (vu.value.trim() && !id) return toast('זה לא נראה כמו קישור ליוטיוב', true);
+      if (!id) delete q.video;
+      else q.video = { id, start: ytTime(vu.value, 'start') || ytTime(vu.value, 't'), end: ytTime(vu.value, 'end') };
+      dirty();
+      drawStage();
+    };
+    const vf = document.getElementById('vidFile');
+    if (vf) vf.onchange = (e) => e.target.files[0] && upload(e.target.files[0]);
+    const vs = document.getElementById('vidStart');
+    const ve = document.getElementById('vidEnd');
+    if (vs) vs.onchange = () => { q.video.start = Math.max(0, Number(vs.value) || 0); dirty(); drawStage(); };
+    if (ve) ve.onchange = () => { q.video.end = Math.max(0, Number(ve.value) || 0); dirty(); drawStage(); };
+    const vx = document.getElementById('vidX');
+    if (vx) vx.onclick = () => { delete q.video; dirty(); drawStage(); };
     drawAnswers();
   }
 
   async function upload(file) {
-    if (!file.type.startsWith('image/')) return toast('רק תמונות', true);
-    if (file.size > 12 * 1024 * 1024) return toast('התמונה גדולה מדי (עד 12MB)', true);
+    const isVideo = file.type.startsWith('video/');
+    if (!file.type.startsWith('image/') && !isVideo) return toast('רק תמונות או סרטונים', true);
+    if (!isVideo && file.size > 12 * 1024 * 1024) return toast('התמונה גדולה מדי (עד 12MB)', true);
+    if (isVideo && file.size > 300 * 1024 * 1024) return toast('הסרטון גדול מדי (עד 300MB)', true);
+    const q = quiz.questions[cur];
+    if (isVideo && (q.type === 'pin' || q.type === 'puzzle' || q.type === 'slide')) return toast('לשאלה מהסוג הזה אפשר להוסיף רק תמונה', true);
+    const t = isVideo ? toastSticky('מעלה סרטון…') : null;
     try {
       const r = await api(`/quizzes/${encodeURIComponent(quiz.id)}/media`, { method: 'POST', body: file, headers: { 'Content-Type': file.type } });
-      quiz.questions[cur].image = r.name;
+      if (isVideo) q.video = { file: r.name, start: 0, end: 0 };
+      else q.image = r.name;
       dirty();
       drawAll();
     } catch (e) {
       toast(e.message, true);
+    } finally {
+      if (t) t.remove();
     }
   }
+  const toastSticky = (text) => {
+    const t = document.createElement('div');
+    t.className = 'ed-toast';
+    t.textContent = text;
+    document.body.appendChild(t);
+    return t;
+  };
 
   function drawAnswers() {
     const q = quiz.questions[cur];
@@ -436,6 +518,29 @@
       return;
     }
 
+    if (q.type === 'puzzle') {
+      const opt = (k) => [2, 3, 4, 5].map((n) => `<option value="${n}" ${q.puzzle[k] === n ? 'selected' : ''}>${n}</option>`).join('');
+      box.innerHTML = `<div class="pz-ed">
+          <label>שורות<select id="pzRows">${opt('rows')}</select></label><span class="pz-x">×</span><label>עמודות<select id="pzCols">${opt('cols')}</select></label>
+          <span class="muted">= ${q.puzzle.rows * q.puzzle.cols} חלקים</span>
+        </div>
+        ${q.image ? `<div class="pz-prev" id="pzPrev"></div>` : ''}
+        <div class="muted ae-tip">השחקנים מקבלים את החלקים מעורבבים וגוררים אותם למקום. ניקוד לפי מהירות, וחלק מהנקודות גם על פאזל שרובו נכון.</div>`;
+      box.onchange = (e) => {
+        if (e.target.id === 'pzRows') q.puzzle.rows = Number(e.target.value);
+        if (e.target.id === 'pzCols') q.puzzle.cols = Number(e.target.value);
+        rerender();
+      };
+      const pv = document.getElementById('pzPrev');
+      if (pv) QMedia.size(mediaUrl(q.image)).then(({ w, h }) => {
+        const W = 360;
+        const H = Math.round((W * h) / w);
+        pv.innerHTML = QMedia.puzzleOutline({ ...q.puzzle, seed: 7 }, mediaUrl(q.image), W, H);
+        pv.style.aspectRatio = `${w} / ${h}`;
+      });
+      return;
+    }
+
     box.innerHTML = '<div class="muted ae-tip">שקופית מידע: מוצגת לכולם בחידון הקלאסי, בלי תשובות.</div>';
   }
 
@@ -446,7 +551,9 @@
       <label>סוג השאלה<select id="sType">${TYPES.map(([k, l, , ic]) => `<option value="${k}" ${k === q.type ? 'selected' : ''}>${ic} ${l}</option>`).join('')}</select></label>
       <label>⏱ זמן לשאלה<select id="sTime">${TIMES.map((t) => `<option value="${t}" ${t === q.time ? 'selected' : ''}>${t < 60 ? t + ' שניות' : t / 60 + ' דק׳'}</option>`).join('')}</select></label>
       ${q.type === 'slide' ? '' : `<label>⭐ ניקוד<select id="sPts">${POINTS.map(([v, l]) => `<option value="${v}" ${v === q.points ? 'selected' : ''}>${l}</option>`).join('')}</select></label>`}
-      ${q.image && q.type !== 'pin' ? `<label class="tog"><input type="checkbox" id="sReveal" ${q.reveal ? 'checked' : ''}> חשיפת תמונה הדרגתית<small>התמונה מטושטשת ומתבהרת במהלך הזמן</small></label>` : ''}
+      ${q.image && q.type !== 'pin' && q.type !== 'puzzle' ? `<label>🌫️ חשיפת התמונה<select id="sReveal">${[['', 'מיד'], ['blur', 'טשטוש שמתבהר'], ['tiles', 'אריחים שנעלמים']].map(([v, l]) => `<option value="${v}" ${(q.reveal || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+        ${q.reveal ? `<label>⏳ משך החשיפה<select id="sRevealSec">${[[0, 'לאורך כל הזמן'], [5, '5 שניות'], [10, '10 שניות'], [15, '15 שניות'], [20, '20 שניות'], [30, '30 שניות'], [45, '45 שניות'], [60, 'דקה']].map(([v, l]) => `<option value="${v}" ${(q.revealSec || 0) === v ? 'selected' : ''}>${l}</option>`).join('')}</select><small class="muted">מי שעונה מהר, לפני שרואים הכל, מקבל יותר נקודות</small></label>` : ''}` : ''}
+      ${q.type === 'slide' ? '' : `<label>💡 הסבר אחרי התשובה<textarea id="sExplain" maxlength="200" rows="3" placeholder="למה זו התשובה? (לא חובה)">${esc(q.explain || '')}</textarea></label>`}
       <div class="side-note">במשחקים (לא בחידון הקלאסי) אין הגבלת זמן, וניקוד כפול = מתקדמים מהר יותר לתור הבא.</div>
       <div class="probs" id="probs">${probsHtml(q)}</div>
       <div class="side-stats">${quiz.questions.length} שאלות · ${quiz.questions.filter((x) => !problems(x).length).length} מוכנות</div>`;
@@ -454,7 +561,11 @@
       if (e.target.id === 'sType') { quiz.questions[cur] = convert(q, e.target.value); dirty(); drawAll(); }
       if (e.target.id === 'sTime') { q.time = Number(e.target.value); dirty(); }
       if (e.target.id === 'sPts') { q.points = Number(e.target.value); dirty(); }
-      if (e.target.id === 'sReveal') { q.reveal = e.target.checked; dirty(); }
+      if (e.target.id === 'sReveal') { if (e.target.value) q.reveal = e.target.value; else { delete q.reveal; delete q.revealSec; } dirty(); drawSide(); }
+      if (e.target.id === 'sRevealSec') { const v = Number(e.target.value); if (v) q.revealSec = v; else delete q.revealSec; dirty(); }
+    };
+    side.oninput = (e) => {
+      if (e.target.id === 'sExplain') { q.explain = e.target.value; dirty(); }
     };
   }
 

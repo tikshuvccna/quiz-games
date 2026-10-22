@@ -12,6 +12,7 @@ const MILESTONES = [
 
 class RocketGame extends QuizGame {
   static id = 'rocket';
+  static order = 15;
   static title = 'טיל לירח';
   static emoji = '🚀';
   static mode = 'coop';

@@ -6,6 +6,7 @@ const MAX_LEVEL = 3;
 
 class TerritoryGame extends QuizGame {
   static id = 'territory';
+  static order = 3;
   static title = 'כובשי הממלכה';
   static emoji = '🏰';
   static mode = 'teams';

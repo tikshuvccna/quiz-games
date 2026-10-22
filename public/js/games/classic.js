@@ -42,7 +42,10 @@
       const pins = rv ? rv.pins.map(([x, y, ok]) => `<i class="cl-pin ${ok ? 'ok' : ''}" style="left:${x}%;top:${y}%"></i>`).join('') + `<i class="cl-target" style="left:${rv.target.x}%;top:${rv.target.y}%;--r:${rv.target.r}"></i>` : '';
       return `<div class="cl-pinbox"><div class="cl-pinframe" id="pinFrame"><img src="${esc(q.image)}" alt="">${pins}</div></div>`;
     }
-    return q.image ? `<div class="cl-img ${q.reveal && !rv ? 'reveal' : ''}" style="--rt:${q.time}s"><img src="${esc(q.image)}" alt=""></div>` : '';
+    if (q.type === 'puzzle') return `<div class="cl-pinbox"><div class="cl-pinframe cl-pz" id="pinFrame" data-pz="1"><img src="${esc(q.image)}" alt=""></div></div>`;
+    // the question video plays on the big screen (with sound) while the class answers
+    if (q.video && !rv) return QMedia.video(q.video, { autoplay: true, cls: 'cl-video' });
+    return q.image ? QMedia.picture(q.image, { reveal: q.reveal, revealSec: q.revealSec, cls: 'cl-img', done: !!rv }) : '';
   }
 
   function body(q, rv) {
@@ -62,6 +65,7 @@
       return `<div class="cl-order ${rv ? 'rv' : ''}">${items.map((t, i) => `<span style="--i:${i}">${rv ? `<b>${i + 1}</b>` : ''}${esc(t)}</span>`).join(rv ? '' : '')}</div>${rv ? '' : '<div class="cl-hint">🧩 סדרו בטלפון בסדר הנכון</div>'}`;
     }
     if (q.type === 'pin') return rv ? `<div class="cl-hint">${rv.right} מתוך ${rv.answered} פגעו במקום הנכון</div>` : '<div class="cl-hint">📍 סמנו בטלפון את המקום הנכון</div>';
+    if (q.type === 'puzzle') return rv ? `<div class="cl-hint">🧩 ${rv.right} מתוך ${rv.answered} הרכיבו את כל הפאזל · בממוצע <b>${rv.avgPct}%</b> מהחלקים במקום</div>` : `<div class="cl-hint">🧩 הרכיבו את הפאזל בטלפון (${q.puzzle.rows}×${q.puzzle.cols} חלקים)</div>`;
     return '';
   }
 
@@ -117,6 +121,7 @@
           <div class="cl-qtext">${esc(q.text)}</div>
           <div class="cl-mid"><div class="cl-score-sum"><b>${rv.right}</b><span>ענו נכון</span></div><div class="cl-media">${media(q, rv)}</div><div class="cl-counter"><b>${rv.answered}</b><span>ענו</span></div></div>
           ${body(q, rv)}
+          ${rv.explain ? `<div class="cl-explain">💡 ${esc(rv.explain)}</div>` : ''}
           ${rv.boostPct !== undefined ? `<div class="cl-hint">🚀 ${rv.boostPct}% בחרו בוסט</div>` : ''}
           ${b.lines && b.lines.length ? `<div class="cl-lines">${b.lines.map((l, i) => `<span style="--i:${i}">${esc(l)}</span>`).join('')}</div>` : ''}</div>`;
         U.sfx(q.type === 'poll' ? 'pop' : 'good');
@@ -132,9 +137,16 @@
           <div class="cl-lines">${(b.lines || []).map((l, i) => `<span style="--i:${i}">${esc(l)}</span>`).join('')}</div></div>`;
         box.querySelectorAll('.cl-row .sc').forEach((el, i) => setTimeout(() => U.countTo(el, b.board[i].score, 900), 250 + i * 120));
       }
+      QMedia.mount(box);
       // pins sit on the picture's real proportions
       const pf = document.getElementById('pinFrame');
       if (pf) U.fitImage(pf, pf.querySelector('img'));
+      if (pf && pf.dataset.pz && b.q.puzzle) {
+        const img = pf.querySelector('img');
+        const draw = () => { pf.insertAdjacentHTML('beforeend', QMedia.puzzleOutline(b.q.puzzle, b.q.image, img.naturalWidth || 400, img.naturalHeight || 300)); };
+        if (img.complete && img.naturalWidth) draw();
+        else img.addEventListener('load', draw, { once: true });
+      }
     },
 
     hostEnded(app, st) {
@@ -167,6 +179,7 @@
         app.innerHTML = `${ctx.topBar()}${you.remain === null ? '' : `<div class="timebar"><i style="animation-duration:${you.remain}ms"></i></div>`}<div class="q-wrap" id="qw"></div>`;
         const send = (data) => ctx.act('answer', { ...data, qid: you.qid });
         QView.render(document.getElementById('qw'), you.question, {
+          noVideo: true,
           meta: `<span>שאלה ${you.qnum} מתוך ${you.total}${you.bonus ? ' · ⭐ כפול' : ''}</span>`,
           // confidence / pyramid: after picking an answer, say how sure you are
           onAnswer: (data) => (you.conf ? this.askConf(app, you.conf, (v) => send({ ...data, conf: v })) : send(data)),
@@ -196,6 +209,7 @@
           ${r.conf === 1 && you.stage !== undefined && !this.pyramidMode ? `<div class="pill">🚀 ${r.ok ? 'הבוסט הצליח!' : 'הבוסט נכשל'}</div>` : ''}
           ${r.ok && r.streak >= 2 ? `<div class="streak">${Art.flame()} רצף ${r.streak}</div>` : ''}
           ${!r.ok && !poll && you.correctText ? `<div class="fb-answer">התשובה הנכונה<b>${esc(you.correctText)}</b></div>` : ''}
+          ${you.explain ? `<div class="fb-explain">${esc(you.explain)}</div>` : ''}
           <div class="fb-note">מקום ${you.rank}${you.above ? (you.above.gap > 0 ? ` · עוד ${you.above.gap} ${this.ptsUnit || 'נק׳'} כדי לעקוף את ${esc(you.above.name)}` : ` · צמוד ל־${esc(you.above.name)}!`) : you.rank === 1 ? ' · אתם בראש! 👑' : ''}</div></div>`;
         if (!poll) {
           U.sfx(r.ok ? 'good' : 'bad');

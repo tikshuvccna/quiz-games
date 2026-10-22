@@ -1,6 +1,6 @@
 # Roadmap – Planned Features
 
-Status: **PLANNED – do not implement until the owner says so.**
+Status: **IN PROGRESS** (the owner asked to build everything, 2026-10-22). Checked items are done.
 
 This file collects the requested changes in one place so they can be implemented later, in order, on request.
 
@@ -34,14 +34,14 @@ This file collects the requested changes in one place so they can be implemented
 
 Besides an image, a question can include:
 
-- [ ] Uploaded **video**
-- [ ] **YouTube link** (embedded, with optional start/end time)
-- [ ] **Moving image**: PNG (APNG) or GIF
+- [x] Uploaded **video**
+- [x] **YouTube link** (embedded, with optional start/end time)
+- [x] **Moving image**: PNG (APNG) or GIF
 
 New question types / features:
 
-- [ ] **Real puzzle-piece question**: the picture is cut into pieces that players arrange (drag and drop, touch-friendly). Configurable grid size (e.g. 2x2, 3x3, 4x4) and scoring by time/accuracy.
-- [ ] **Slow image reveal** (Kahoot-style): the image is revealed gradually over time (blur-to-sharp or tile-by-tile). Faster answer = more points. Configurable duration.
+- [x] **Real puzzle-piece question**: the picture is cut into pieces that players arrange (drag and drop, touch-friendly). Configurable grid size (e.g. 2x2, 3x3, 4x4) and scoring by time/accuracy.
+- [x] **Slow image reveal** (Kahoot-style): the image is revealed gradually over time (blur-to-sharp or tile-by-tile). Faster answer = more points. Configurable duration.
 
 ## 5. Folders and sharing
 
@@ -51,8 +51,8 @@ New question types / features:
 
 ## 6. UI / network fixes
 
-- [ ] Add **spacing between the game PIN/number and the QR code** on the lobby screen.
-- [ ] **Host IP selection**: use the **WLAN (Wi-Fi) IP** by default; if there is no WLAN IP, fall back to the **LAN (Ethernet) IP**. Ignore virtual adapters (VPN, Docker, VirtualBox, Hyper-V, loopback). This IP is used in the displayed join URL and QR code.
+- [x] Add **spacing between the game PIN/number and the QR code** on the lobby screen.
+- [x] **Host IP selection**: use the **WLAN (Wi-Fi) IP** by default; if there is no WLAN IP, fall back to the **LAN (Ethernet) IP**. Ignore virtual adapters (VPN, Docker, VirtualBox, Hyper-V, loopback). This IP is used in the displayed join URL and QR code.
 
 ## 7. Excel / template import
 
@@ -61,9 +61,9 @@ New question types / features:
   - every other feature in our app (media, puzzle, slow reveal, per-question settings, etc.)
 - The extra columns must **not break compatibility**: the same file must still be accepted by the official Kahoot importer (extra columns placed after Kahoot's columns, ignored by Kahoot).
 - [x] Update the template file and the import parser (done: extra columns Type, Points, Image, Video, Reveal, Accept, Slider, Items, Pin are read; Puzzle needs the puzzle question type first).
-- [ ] Validation with a clear error report (row, column, reason).
+- [x] Validation with a clear error report (row, column, reason).
 - [x] **Import a .zip** containing the .xlsx plus an `images/` folder: the `Image` column names are matched to the files and attached to the questions automatically (a plain .xlsx without images keeps working). Images made by the Claude Project (diagrams, charts, maps drawn in code) arrive this way; for pin questions the exact `x|y|radius` comes with the file.
-- [ ] Define the final extra-column format (column names, `|` separators) and keep it in sync with the Claude Project instructions.
+- [x] Define the final extra-column format (column names, `|` separators) and keep it in sync with the Claude Project instructions.
 
 ## 8. Free-form import
 

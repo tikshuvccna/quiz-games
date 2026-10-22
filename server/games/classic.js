@@ -14,6 +14,7 @@ const BONUS_QUESTIONS = 2;
 
 class ClassicGame extends QuizGame {
   static id = 'classic';
+  static order = 1;
   static title = 'חידון קלאסי';
   static emoji = '🎯';
   static mode = 'ffa';
@@ -148,6 +149,7 @@ class ClassicGame extends QuizGame {
       return picks.length > 0 && picks.every((i) => q.answers[i] && q.answers[i].correct);
     }
     if (q.type === 'slider') return Math.abs(Number(a.data.value) - q.slider.answer) <= q.slider.tol + (q.slider.max - q.slider.min) * 0.1;
+    if (q.type === 'puzzle') return a.res.ratio >= 0.75;
     return false;
   }
 
@@ -155,6 +157,8 @@ class ClassicGame extends QuizGame {
   scoreFor(p, q, a, ok) {
     if (this.style === 'accuracy') return ok && q.points > 0 ? 1 : 0;
     let pts = ok ? this.points(q, a.ms, p.g.streak) : 0;
+    // a jigsaw that is mostly right still earns part of the points (no streak)
+    if (!ok && a && q.type === 'puzzle' && a.res.ratio >= 0.5) pts = Math.round(this.points(q, a.ms, 0) * a.res.ratio * 0.5);
     if (this.style === 'confidence' && a && a.data.conf === 1) {
       p.g.boosts++;
       if (ok) {
@@ -243,7 +247,7 @@ class ClassicGame extends QuizGame {
     }
     this.rank();
     // what the class answered
-    const rv = { correctText: qt.correctText(q), answered: cur.answers.size, right };
+    const rv = { correctText: qt.correctText(q), answered: cur.answers.size, right, explain: q.explain || '' };
     if (q.type === 'quiz' || q.type === 'tf' || q.type === 'poll') {
       rv.dist = cur.state.order.map(() => 0);
       for (const a of cur.answers.values()) {
@@ -272,6 +276,9 @@ class ClassicGame extends QuizGame {
       rv.target = q.pin;
     } else if (q.type === 'order') {
       rv.items = q.items;
+    } else if (q.type === 'puzzle') {
+      const ratios = [...cur.answers.values()].map((a) => a.res.ratio || 0);
+      rv.avgPct = ratios.length ? Math.round((ratios.reduce((s, v) => s + v, 0) / ratios.length) * 100) : 0;
     }
     if (this.style === 'confidence') {
       const boosted = [...cur.answers.values()].filter((a) => a.data.conf === 1).length;
@@ -396,7 +403,7 @@ class ClassicGame extends QuizGame {
     // reveal / board: my own result + who is right above me
     const list = this.rank();
     const above = g.rank > 1 ? list[g.rank - 2] : null;
-    return { ...base, phase: can ? 'c_result' : 'c_watch_res', res: g.res, correctText: cur.reveal ? cur.reveal.correctText : '', above: above ? { name: above.name, gap: above.g.score - g.score } : null };
+    return { ...base, phase: can ? 'c_result' : 'c_watch_res', res: g.res, correctText: cur.reveal ? cur.reveal.correctText : '', explain: cur.reveal ? cur.reveal.explain : '', above: above ? { name: above.name, gap: above.g.score - g.score } : null };
   }
 
   results() {

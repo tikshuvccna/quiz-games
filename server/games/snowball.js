@@ -34,6 +34,7 @@ function flight(angleDeg, power, alive) {
 
 class SnowballGame extends QuizGame {
   static id = 'snowball';
+  static order = 6;
   static title = 'קרב כדורי שלג';
   static emoji = '☃️';
   static mode = 'teams';
