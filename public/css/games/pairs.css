@@ -1,0 +1,42 @@
+/* ---------- memory pairs: card table (same 6 x 4 layout on the host and the phone) ---------- */
+.pr-table { direction: ltr; display: grid; place-items: center; background: radial-gradient(ellipse at 50% 40%, #2f9a6a, #1c6b4a 60%, #0f3f2c); }
+.pr-felt { position: absolute; inset: 0; opacity: .25; pointer-events: none;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, .25) 1px, transparent 1.5px); background-size: 14px 14px; }
+.pr-grid { position: relative; display: grid; grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(4, 1fr); gap: 1.6%; aspect-ratio: 1.17; }
+.pr-grid.host { width: min(94cqw, 92cqh * 1.17); padding: 1.6%; border-radius: 26px; background: rgba(0, 0, 0, .18); box-shadow: inset 0 0 0 4px rgba(255, 210, 63, .35), 0 20px 40px rgba(0, 0, 0, .35); }
+.pr-grid.pr-dealt .pr-card { animation: prdeal .5s var(--spring) both; animation-delay: calc(var(--i) * 30ms); }
+@keyframes prdeal { from { transform: translateY(-60px) rotate(-20deg) scale(.4); opacity: 0; } }
+.pr-card { position: relative; border: 0; padding: 0; background: none; cursor: pointer; perspective: 800px; min-width: 0; min-height: 0; }
+.pr-in { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .5s cubic-bezier(.3, 1.3, .5, 1); }
+.pr-card.up .pr-in { transform: rotateY(180deg); }
+.pr-back, .pr-face { position: absolute; inset: 0; border-radius: 12%/9%; backface-visibility: hidden; -webkit-backface-visibility: hidden; display: grid; place-items: center; }
+.pr-back { background: repeating-linear-gradient(45deg, rgba(255, 255, 255, .08) 0 6px, transparent 6px 12px), linear-gradient(160deg, #a66bff, #5b23c9);
+  box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--ink), 0 6px 0 5px rgba(0, 0, 0, .25); }
+.pr-back i { font-style: normal; font-weight: 900; font-size: clamp(1.2rem, 4.5cqh, 3rem); color: #e7d4ff; text-shadow: 0 3px 0 rgba(0, 0, 0, .3); }
+.pr-face { transform: rotateY(180deg); background: linear-gradient(180deg, #fff, #f1ecff); box-shadow: 0 0 0 3px var(--tc, #ffd23f), 0 0 0 5px var(--ink), 0 6px 0 5px rgba(0, 0, 0, .25); }
+.pr-art { width: 72%; height: 64%; display: grid; place-items: center; }
+.pr-art .art { width: 100%; height: 100%; }
+.pr-tag { position: absolute; bottom: 4%; left: 6%; right: 6%; font-style: normal; font-weight: 900; font-size: clamp(.6rem, 1.7cqh, 1rem); color: #fff; background: var(--tc, #ffd23f); border-radius: 999px; padding: 0 4px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; direction: rtl; }
+.pr-tag:empty { display: none; }
+.pr-card.peek .pr-face { box-shadow: 0 0 0 4px var(--tc), 0 0 0 6px var(--ink), 0 0 26px var(--tc); }
+.pr-card.gone .pr-in { transform: rotateY(180deg) scale(.92); }
+.pr-card.gone .pr-face { background: linear-gradient(180deg, color-mix(in srgb, var(--tc) 22%, #fff), color-mix(in srgb, var(--tc) 40%, #fff)); }
+.pr-card.gone .pr-art { opacity: .8; }
+.pr-card.pr-win { animation: prwin .8s var(--spring); z-index: 5; }
+@keyframes prwin { 40% { transform: scale(1.18) rotate(-4deg); } }
+.pr-card.shake { animation: shake .45s; }
+.pr-card:not(.up):hover .pr-in { transform: translateY(-4px); }
+.pr-deal { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) scale(0); opacity: 0; z-index: 9; pointer-events: none; padding: .3em .8em; border-radius: 22px;
+  font-size: clamp(2rem, 7cqh, 4.4rem); font-weight: 900; color: var(--ink); background: linear-gradient(180deg, #fff6c4, #ffd23f); box-shadow: 0 8px 0 #b37a00, 0 20px 40px rgba(0, 0, 0, .5); white-space: nowrap; }
+.pr-deal.show { animation: prban 1.8s var(--spring) forwards; }
+@keyframes prban { 0% { transform: translate(-50%, -50%) scale(.2) rotate(-8deg); opacity: 0; } 22% { transform: translate(-50%, -50%) scale(1.08) rotate(2deg); opacity: 1; } 80% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -65%) scale(1); } }
+/* phone */
+.pr-phone { display: grid; place-items: center; padding: 10px; background: radial-gradient(ellipse at 50% 40%, #2f9a6a, #1c6b4a 60%, #0f3f2c); }
+.pr-grid.phone { width: min(100%, (100cqh - 20px) * 1.17); gap: 2.2%; }
+.pr-grid.phone .pr-back i { font-size: clamp(1rem, 6cqw, 1.8rem); }
+.pr-grid.phone .pr-tag { font-size: .6rem; }
+.pr-grid.phone .pr-card.mine .pr-face { box-shadow: 0 0 0 4px #fff, 0 0 0 6px var(--ink), 0 0 20px #fff; }
+.pr-grid.phone .pr-card.wait .pr-in { transform: rotateY(90deg); }
+.pr-grid.locked .pr-card { cursor: default; }
+.pr-grid.phone:not(.locked) .pr-card:not(.up) .pr-back { animation: prready 1.6s ease-in-out infinite; animation-delay: calc(var(--i) * 40ms); }
+@keyframes prready { 50% { filter: brightness(1.18); } }

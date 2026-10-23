@@ -4,7 +4,7 @@ A Hebrew (RTL) live classroom game platform in the spirit of **Kahoot's game mod
 
 - **Runs on**: the local network (LAN) only. The internet version with a database comes later (Phase E).
 - **Language**: Hebrew UI. The chat with the user is in English.
-- **Last updated**: 2026-10-16. Phases A (questions) and B (classic quiz + quiz modes) are done, plus music. Phase D (new games) is next.
+- **Last updated**: 2026-10-23. Phases A (questions) and B (classic quiz + quiz modes) are done, plus music, and ROADMAP.md items 4–8 (question media, folders and sharing, import, backgrounds). Phase D (new games) is in progress: batch 1 (5 games) shipped 2026-10-23, so there are 20 games.
 
 ---
 
@@ -23,14 +23,14 @@ A Hebrew (RTL) live classroom game platform in the spirit of **Kahoot's game mod
 
 | Command | What it checks |
 |---|---|
-| `node scripts/smoke-test.js [game]` | Bots play a short round of every game (15) and print the state and results. |
+| `node scripts/smoke-test.js [game]` | Bots play a short round of every game (20) and print the state and results. |
 | `node scripts/feature-test.js` | Name modes and reroll, 3 teams, reward settings, winner text, rematch with the same PIN, the report, an individual game played in teams. 14 checks. |
 | `node scripts/classic-test.js` | Classic quiz: every stage, team averages, the second-chance round for the bottom 5. |
 | `node scripts/pyramid-test.js` | The Lost Pyramid (4 teams), the accuracy style and the confidence style. |
 | `node scripts/demo.js <game> 8 9999` | A room with 8 bots for visual demos. Put the printed pin and token into the browser's `sessionStorage.host`, reload `/host.html`, and press start. |
 | `node scripts/bots.js <pin> [n]` | Adds n bots to an existing room (they answer every question type, including confidence). |
 
-All suites passed on 2026-10-16.
+All suites passed on 2026-10-23 (smoke, feature, classic, pyramid, freeform, import, library).
 
 ---
 
@@ -75,21 +75,22 @@ scripts/                tests, bots, demo
      - When an action finishes, call `this.turnDone(p)`.
      - `score(p)`, `publicState()`, `personal(p)` (spread `this.baseView(p)` into it), `results()`.
      - Use `this.later()` instead of `setTimeout` (cleared when the game stops).
-2. **Register** it in the `GAMES` list in `server/room.js`.
-3. **Client** `public/js/games/<id>.js` sets `Games[id]`:
+   - Static `order` sets its place in the lobby. There is nothing to register: `server/games/index.js` loads every file in the folder.
+2. **Client** `public/js/games/<id>.js` sets `Games[id]` (served inside the `js/games-all.js` bundle, no script tag needed):
    - `hostPlaying(app, st)` uses `U.hostFrame` + `U.hostTick`.
    - `hostEnded` uses `U.hostResults`.
    - `hud(you)`.
-   - `playerPhase(app, you, ctx)`: view keys must include `you.qid + ':' + you.turn`.
+   - `playerPhase(app, you, ctx)`: view keys must include `you.qid + ':' + you.turn` (plus any repeat counter, e.g. a bonus chain).
    - `playerEnded` uses `U.playerResult`.
-   - Add a lobby cover in `Art.cover()`, and the script tag to both `host.html` and `index.html`.
+   - Lobby cover: `Art.covers[id] = () => '<svg body, 160×100>'`. Shared gradients go in `Art.addDefs(id, defs)`, never inside a drawing (a drawing in a hidden lobby card breaks its gradient ids). `Art.inner(svg)` nests one drawing in another.
+3. **Styles** `public/css/games/<id>.css` (served inside `css/games-all.css`), with a per-game class prefix.
 4. **Bots**: teach `scripts/bots.js` and `scripts/smoke-test.js` the new phase, then run the tests and take screenshots on the host (1366×768) and a phone (390×800).
 
 ---
 
 ## 3. What exists today
 
-### 3.1 Games (15)
+### 3.1 Games (20)
 
 | # | Game | Mode | What answering earns / the action on the phone |
 |---|---|---|---|
@@ -108,6 +109,11 @@ scripts/                tests, bots, demo
 | 13 | ☄️ מגני כדור הארץ | Co-op | Laser shots at falling asteroids, with waves and a boss. |
 | 14 | 🐉 קרב הדרקון | Co-op | A sword-timing meter against a boss that attacks the class. |
 | 15 | 🚀 טיל לירח | Co-op | A Simon memory sequence fuels the class rocket to the moon. |
+| 16 | 🤖 בורחים מהרובוט | Co-op (easy / normal / hard) | Like Kahoot's Robot Run. Hold-to-sprint: let go before the engine overheats. A rubber-band robot chases the class and zaps it back when it catches up; wrong answers speed it up. Reach the exit door. |
+| 17 | 🎨 ציור במספרים | Co-op | Like Chill Art. A paintbrush = a patch of about 10 squares of a big paint-by-numbers picture: pick a color, drag over its squares. Pictures are generated (5 seeded scenes), the grid grows with the class, finished pictures go to a gallery. |
+| 18 | 🎡 גלגל המזל | Individual or teams | Spin a 12-segment wheel: points, ×2, 1000 jackpot, steal from / swap with the player just above you, or lose half. The server picks the segment; the phone animates it. |
+| 19 | 🃏 זיכרון זוגות | 2–4 teams | One shared 6×4 board (same layout on the host and the phones). Flip two cards; a pair goes to your team and earns another flip (up to 3). A cleared board deals a new one. |
+| 20 | 🚢 קרב ספינות | 2 teams | Battleship on 8×8 seas with hidden fleets. Aim and fire from the phone; a hit earns another shot (up to 2). Points for hits, sinking ships and destroying a fleet (a new fleet then sails in). |
 
 ### 3.2 Platform
 
@@ -173,9 +179,9 @@ scripts/                tests, bots, demo
 | Treasure Trove | ✅ מרדף היהלומים |
 | The Lost Pyramid | ✅ הפירמידה האבודה |
 | Tallest Tower (teams complete floors) | 🟡 מגדל השמיים exists (individual or teams); ⏳ a team-floors version |
-| Robot Run (co-op escape, hold-to-boost, mini-games) | ⏳ Phase D |
+| Robot Run (co-op escape, hold-to-boost, mini-games) | ✅ בורחים מהרובוט (no mini-games between yet) |
 | Submarine Squad (co-op, hold to speed up, "diving mode") | ⏳ Phase D |
-| Chill Art (co-op paint-by-numbers reveals a picture) | ⏳ Phase D |
+| Chill Art (co-op paint-by-numbers reveals a picture) | ✅ ציור במספרים |
 | Cosmic Quest (space navigation, collect stars) | ⏳ Phase D |
 | Marble Race (correct = marble, luck race at the end) | ⏳ Phase D |
 | Unplugged (no devices; Team Tiles) | ⏳ planned |
@@ -187,28 +193,23 @@ scripts/                tests, bots, demo
 
 Agreed order: A ✅ → B ✅ → **D (now)** → C → E.
 
-### Phase D: new games (next)
+### Phase D: new games (in progress)
 
-Suggested order: start with the co-op ones, which are the most different from what exists.
+Built in batches of 5. **Batch 1 (done 2026-10-23)**: Robot Run, Chill Art, Wheel of fortune, Memory pairs, Battleship (games 16–20 above).
 
-**5 co-op "escape / together" games**
-1. **Robot Run**: the class escapes a robot; correct answers let you hold-to-boost your character; mini-games in between.
-2. **Submarine Squad**: hold to speed the sub away from a fish; when the progress bar fills, a "diving mode" mini-game.
-3. **Chill Art**: correct answers = paintbrushes; paint-by-numbers on the phone reveals a masterpiece on the big screen.
-4. **The floor is lava / climb**.
-5. **Zombie run to the safe house** (or "outrun the tide").
+**Still to build: co-op "escape / together" games**
+1. **Submarine Squad**: hold to speed the sub away from a fish; when the progress bar fills, a "diving mode" mini-game.
+2. **The floor is lava / climb**.
+3. **Zombie run to the safe house** (or "outrun the tide").
 
-**10 more games from the user's request**
+**Still to build: from the user's request**
 1. **Classic Asteroids**: fly your own ship for a few seconds after a correct answer, with a phone joystick and fire button. Real-time.
 2. **Team puzzle**: each team builds a picture; a correct answer gives a player 5 seconds to place pieces; first team to finish wins. 2–6 teams.
 3. **Snake arena**: real-time, steer for a few seconds per reward.
-4. **Memory pairs**: teams flip two cards on the shared board.
-5. **Battleship**: team vs team.
-6. **Wheel of fortune**: spin for points, double, steal or lose.
-7. **Castle tower defense**: co-op.
-8. **Burger restaurant**: co-op, build orders in the right sequence.
-9. **Basketball**: aim and timing.
-10. **Whack-a-mole**.
+4. **Castle tower defense**: co-op.
+5. **Burger restaurant**: co-op, build orders in the right sequence.
+6. **Basketball**: aim and timing.
+7. **Whack-a-mole**.
 
 **Also from Kahoot's list**: Marble Race (classic flow + a race finale), Cosmic Quest, Tallest Tower team-floors, Unplugged, shared-device teams.
 

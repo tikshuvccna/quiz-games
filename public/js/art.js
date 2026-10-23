@@ -557,8 +557,25 @@
           <g transform="translate(62 22) rotate(18) scale(.36)">${Art.rocket().replace(/<\/?svg[^>]*>/g, '')}</g>
           <path d="M0 92 C40 80 120 80 160 92 V100 H0Z" fill="#fff" opacity=".85"/>`,
       };
-      return `<svg class="art cover" viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${scenes[id] || ''}</svg>`;
+      // games in their own files register a cover: Art.covers[id] = () => '<svg body 160x100>'
+      const own = Art.covers[id];
+      return `<svg class="art cover" viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${own ? own() : scenes[id] || ''}</svg>`;
     },
+    covers: {},
+    // gradients a game's drawings share: defined once in a 0-size svg (never inside a drawing, which may be hidden)
+    addDefs(id, defs) {
+      const add = () => {
+        if (document.getElementById(id)) return;
+        const d = document.createElement('div');
+        d.id = id;
+        d.innerHTML = `<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>${defs}</defs></svg>`;
+        document.body.prepend(d);
+      };
+      if (document.body) add();
+      else document.addEventListener('DOMContentLoaded', add);
+    },
+    // the inside of an Art drawing, for nesting it in a cover: <g transform>${Art.inner(Art.ball())}</g>
+    inner: (s) => s.replace(/<\/?svg[^>]*>/g, ''),
   };
 
   window.Art = Art;

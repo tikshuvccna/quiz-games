@@ -54,6 +54,18 @@ function run(game) {
           } else if (y.phase === 'shoot') {
             const a = board && board.ast[0];
             setTimeout(() => s.emit('player:action', a ? { type: 'shoot', data: { id: a.id } } : { type: 'skip' }), 60);
+          } else if (y.phase === 'sprint') {
+            setTimeout(() => s.emit('player:action', { type: 'sprint', data: { heat: 0.9 } }), 60);
+          } else if (y.phase === 'paint') {
+            setTimeout(() => s.emit('player:action', { type: 'paint', data: { cells: y.patch.cells.map((c, k) => [c, y.patch.px[k]]) } }), 60);
+          } else if (y.phase === 'spin') {
+            setTimeout(() => s.emit('player:action', { type: 'spin' }), 60);
+          } else if (y.phase === 'flip') {
+            const h = y.cards.map((c, i) => [c, i]).filter(([c]) => c.s === 'hidden').map(([, i]) => i);
+            if (h.length) setTimeout(() => s.emit('player:action', { type: 'flip', data: { card: h[Math.floor(Math.random() * h.length)] } }), 60);
+          } else if (y.phase === 'aim') {
+            const free = y.sea.map((v, i) => [v, i]).filter(([v]) => v === 0).map(([, i]) => i);
+            if (free.length) setTimeout(() => s.emit('player:action', { type: 'fire', data: { cell: free[Math.floor(Math.random() * free.length)] } }), 60);
           }
         });
         s.emit('player:join', { pin: r.pin, name }, () => {});
@@ -75,6 +87,6 @@ function run(game) {
 }
 
 (async () => {
-  for (const g of process.argv[2] ? [process.argv[2]] : ['classic', 'pyramid', 'territory', 'tug', 'penalty', 'snowball', 'gems', 'race', 'closer', 'tower', 'fishing', 'bomb', 'asteroids', 'dragon', 'rocket']) await run(g);
+  for (const g of process.argv[2] ? [process.argv[2]] : ['classic', 'pyramid', 'territory', 'tug', 'penalty', 'snowball', 'gems', 'race', 'closer', 'tower', 'fishing', 'bomb', 'asteroids', 'dragon', 'rocket', 'robot', 'paint', 'wheel', 'pairs', 'fleet']) await run(g);
   process.exit(0);
 })();

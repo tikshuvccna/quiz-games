@@ -62,6 +62,19 @@ NAMES.slice(0, count).forEach((name, i) => {
     } else if (y.phase === 'shoot') {
       const a = board && board.ast.sort((p, q) => q.y - p.y)[0];
       send(a ? 'shoot' : 'skip', a ? { id: a.id } : undefined, 500);
+    } else if (y.phase === 'sprint') {
+      send('sprint', { heat: 0.4 + Math.random() * 0.75 }, 1800);
+    } else if (y.phase === 'paint') {
+      const k = Math.random() < 0.8 ? y.patch.cells.length : Math.floor(y.patch.cells.length / 2);
+      send('paint', { cells: y.patch.cells.slice(0, k).map((c, j) => [c, y.patch.px[j]]) }, 5000);
+    } else if (y.phase === 'spin') {
+      send('spin', undefined, 1200);
+    } else if (y.phase === 'flip') {
+      const h = y.cards.map((c, j) => [c, j]).filter(([c]) => c.s === 'hidden').map(([, j]) => j);
+      if (h.length) send('flip', { card: h[Math.floor(Math.random() * h.length)] }, 1200);
+    } else if (y.phase === 'aim') {
+      const free = y.sea.map((v, j) => [v, j]).filter(([v]) => v === 0).map(([, j]) => j);
+      if (free.length) send('fire', { cell: free[Math.floor(Math.random() * free.length)] }, 1500);
     }
   });
   s.emit('player:join', { pin, name }, (r) => console.log(name, r.ok ? 'joined' : r.error));

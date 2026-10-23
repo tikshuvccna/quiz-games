@@ -15,7 +15,8 @@ This file collects the requested changes in one place so they can be implemented
 - Deliverables:
   - [ ] Research list of ~50+ candidate games with source/popularity notes and age range.
   - [ ] Per-game spec: rules, scoring, min/max players, how it maps to quiz questions.
-  - [ ] Game registry so a new game = one folder/file.
+  - [x] Game registry so a new game = one folder/file (server file + client file + optional CSS, cover via `Art.covers`).
+  - [x] Batch 1 (2026-10-23): Robot Run, Chill Art (paint by numbers), Wheel of fortune, Memory pairs, Battleship. 20 games in total. See PROJECT_SUMMARY.md 3.1.
 
 ## 2. Audio and video assets
 
