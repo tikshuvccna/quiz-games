@@ -38,14 +38,14 @@
       d = await r.json();
       if (!r.ok) throw new Error(d.error || 'שגיאה');
     } catch (e) {
-      app.innerHTML = `<div class="sh-gone"><div class="logo"><div class="logo-mark">${Art.star()}</div><div class="logo-text">משחקי חידון</div></div><h2>${esc(e.message || 'הקישור לא נמצא')}</h2><div class="muted">ייתכן שהקישור בוטל, או שהמחשב ששיתף כבוי.</div></div>`;
+      app.innerHTML = `<div class="sh-gone"><div class="logo"><div class="logo-mark">${Art.star()}</div><div class="logo-text">פיצוץ מוחות</div></div><h2>${esc(e.message || 'הקישור לא נמצא')}</h2><div class="muted">ייתכן שהקישור בוטל, או שהמחשב ששיתף כבוי.</div></div>`;
       return;
     }
     const copy = d.perm === 'copy';
     const total = d.quizzes.reduce((s, q) => s + q.count, 0);
     app.innerHTML = `
       <header class="sh-head">
-        <div class="logo"><div class="logo-mark">${Art.star()}</div><div class="logo-text">משחקי חידון</div></div>
+        <div class="logo"><div class="logo-mark">${Art.star()}</div><div class="logo-text">פיצוץ מוחות</div></div>
         <span class="sh-badge">${copy ? '📥 שותף איתך לצפייה ולהעתקה' : '👀 שותף איתך לצפייה'}</span>
       </header>
       <section class="sh-hero card">

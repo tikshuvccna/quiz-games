@@ -150,7 +150,7 @@ async function unpackQuiz(zip, prefix, folderPath) {
 // .qgz / .zip made by packageQuiz / packageFolder; target = the library folder to put it in
 async function importPackage(zip, target = '') {
   const man = JSON.parse(await zip.file('manifest.json').async('string'));
-  if (man.app !== APP) throw new Error('זה לא קובץ של משחקי חידון');
+  if (man.app !== APP) throw new Error('זה לא קובץ של פיצוץ מוחות');
   const base = Q.cleanFolder(target);
   if (man.kind === 'quiz') {
     const q = await unpackQuiz(zip, '', base);
@@ -283,7 +283,7 @@ async function importFromLink(url, target = '') {
     throw new Error('הקישור לא תקין');
   }
   const m = u.pathname.match(/\/share\/([\w-]{8,40})/);
-  if (!/^https?:$/.test(u.protocol) || !m) throw new Error('זה לא קישור שיתוף של משחקי חידון');
+  if (!/^https?:$/.test(u.protocol) || !m) throw new Error('זה לא קישור שיתוף של פיצוץ מוחות');
   const res = await fetch(`${u.origin}/share/${m[1]}/package`, { signal: AbortSignal.timeout(20000) }).catch(() => null);
   if (!res) throw new Error('אין חיבור למחשב ששיתף (בדקו שהוא דולק ובאותה רשת)');
   if (res.status === 403) throw new Error('הקישור הזה מאפשר רק צפייה, לא העתקה');

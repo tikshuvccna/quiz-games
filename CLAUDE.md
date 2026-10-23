@@ -8,7 +8,7 @@ Hebrew (RTL) live classroom game platform in the spirit of Kahoot's game modes. 
 - They chat in English. Everything shown to players and teachers is in Hebrew.
 - Visual quality matters a lot. A "prototype" look was rejected before. Use the design system in `public/css/style.css`, SVG art in `public/js/art.js`, depth and shadows, and juicy animations.
 - They approve big plans quickly and then expect delivery. Finish, test, and report honestly what was verified and what wasn't.
-- Ask before running anything that uses their accounts. The Google Flow Music tool lives at `E:\esacpe-planner\escaperoom-design\.claude\skills\google-flow\scripts\flow_music.py`. Its account is tikshuv.ccna@gmail.com. Music prompts are in `music/music-prompts.md`.
+- Ask before running anything that uses their accounts. The Google Flow Music tool lives at `E:\esacpe-planner\escaperoom-design\.claude\skills\google-flow\scripts\flow_music.py`. Music prompts are in `music/music-prompts.md`.
 
 ## Conventions
 - A game is `server/games/<id>.js` (extends `base.js`, or `classic.js` for host-paced quiz modes) plus `public/js/games/<id>.js`, registered in `server/room.js` (`GAMES`) and in the script tags of both `public/host.html` and `public/index.html`.

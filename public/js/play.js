@@ -22,7 +22,7 @@ function showJoin(error = '') {
   app.className = 'screen center join';
   app.innerHTML = `
     <div class="join-art"><div class="fl">${Art.item('gem')}</div><div class="fl">${Art.castle('#ff4fa3')}</div><div class="fl">${Art.item('crown')}</div><div class="fl">${Art.rock(4)}</div></div>
-    <div class="logo"><div class="logo-mark">${Art.star()}</div><div class="logo-text">משחקי חידון</div></div>
+    <div class="logo"><div class="logo-mark">${Art.star()}</div><div class="logo-text">פיצוץ מוחות</div></div>
     <div class="card">
       <form class="form" id="f" autocomplete="off">
         <input class="input" id="pin" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="קוד משחק" value="${esc(urlPin)}" aria-label="קוד משחק">

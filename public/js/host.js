@@ -73,7 +73,7 @@ socket.on('host:replaced', () => {
   U.clearCountdown();
   app.className = 'screen center wait';
   app.dataset.view = 'replaced';
-  app.innerHTML = `<div class="logo"><div class="logo-mark">${Art.star()}</div><div class="logo-text">משחקי חידון</div></div>
+  app.innerHTML = `<div class="logo"><div class="logo-mark">${Art.star()}</div><div class="logo-text">פיצוץ מוחות</div></div>
     <h2>המשחק נפתח בחלון אחר</h2><div class="muted">המסך הזה כבר לא שולט במשחק.</div>
     <button class="btn" style="max-width:320px" onclick="location.reload()">החזירו את השליטה לכאן</button>`;
 });
@@ -120,7 +120,7 @@ function renderLobby() {
     app.className = 'screen lobby';
     app.innerHTML = `
       <div class="lobby-head">
-        <div class="logo"><div class="logo-mark">${Art.star()}</div><div class="logo-text">משחקי חידון</div></div>
+        <div class="logo"><div class="logo-mark">${Art.star()}</div><div class="logo-text">פיצוץ מוחות</div></div>
         <div class="lobby-round" id="round"></div>
         ${U.soundBtn()}
       </div>

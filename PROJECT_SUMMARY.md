@@ -1,6 +1,6 @@
 # Quiz Games: project summary, status and roadmap
 
-A Hebrew (RTL) live classroom game platform in the spirit of **Kahoot's game modes ("experiences")**. Students join from phones or PCs with a PIN. In each game, answering questions earns a resource or turn, which is spent in a mini-game shown on the big screen. There is also a classic Kahoot-style quiz and quiz-based team modes.
+**BrainBlast · פיצוץ מוחות** (public name since 2026-10-23; the repo is public, the README is the download page). A Hebrew (RTL) live classroom game platform in the spirit of **Kahoot's game modes ("experiences")**. Students join from phones or PCs with a PIN. In each game, answering questions earns a resource or turn, which is spent in a mini-game shown on the big screen. There is also a classic Kahoot-style quiz and quiz-based team modes.
 
 - **Runs on**: the local network (LAN) only. The internet version with a database comes later (Phase E).
 - **Language**: Hebrew UI. The chat with the user is in English.
