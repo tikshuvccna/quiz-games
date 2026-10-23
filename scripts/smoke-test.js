@@ -54,6 +54,12 @@ function run(game) {
           } else if (y.phase === 'shoot') {
             const a = board && board.ast[0];
             setTimeout(() => s.emit('player:action', a ? { type: 'shoot', data: { id: a.id } } : { type: 'skip' }), 60);
+          } else if (y.phase === 'dive') {
+            setTimeout(() => s.emit('player:action', { type: 'dive', data: { hits: 0, pearls: y.act.pearls.map((_, k) => k) } }), 60);
+          } else if (y.phase === 'climb') {
+            setTimeout(() => s.emit('player:action', { type: 'climb', data: { picks: y.act.rows.map((r) => r.indexOf(0)) } }), 60);
+          } else if (y.phase === 'dash') {
+            setTimeout(() => s.emit('player:action', { type: 'dash', data: { moves: y.act.obs } }), 60);
           } else if (y.phase === 'sprint') {
             setTimeout(() => s.emit('player:action', { type: 'sprint', data: { heat: 0.9 } }), 60);
           } else if (y.phase === 'paint') {
@@ -87,6 +93,6 @@ function run(game) {
 }
 
 (async () => {
-  for (const g of process.argv[2] ? [process.argv[2]] : ['classic', 'pyramid', 'territory', 'tug', 'penalty', 'snowball', 'gems', 'race', 'closer', 'tower', 'fishing', 'bomb', 'asteroids', 'dragon', 'rocket', 'robot', 'paint', 'wheel', 'pairs', 'fleet']) await run(g);
+  for (const g of process.argv[2] ? [process.argv[2]] : ['classic', 'pyramid', 'territory', 'tug', 'penalty', 'snowball', 'gems', 'race', 'closer', 'tower', 'fishing', 'bomb', 'asteroids', 'dragon', 'rocket', 'robot', 'paint', 'wheel', 'pairs', 'fleet', 'sub', 'lava', 'zombie']) await run(g);
   process.exit(0);
 })();

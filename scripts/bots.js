@@ -5,6 +5,14 @@ const pin = process.argv[2];
 const count = Number(process.argv[3] || 5);
 const NAMES = ['נועם', 'מיכל', 'עידו', 'שירה', 'אורי', 'תמר', 'איתי', 'רוני', 'גיל', 'ליאור'];
 
+// the chase games' phone actions (sub / lava / zombie), played well most of the time
+function chaseMove(y, good = Math.random() < 0.75) {
+  const a = y.act;
+  if (y.phase === 'dive') return { hits: good ? 0 : 2, pearls: a.pearls.map((_, k) => k).filter(() => good || Math.random() < 0.5) };
+  if (y.phase === 'climb') return { picks: a.rows.map((r) => (good ? r.indexOf(0) : r.indexOf(1))) };
+  return { moves: a.obs.map((o) => (good ? o : 'up')) };
+}
+
 NAMES.slice(0, count).forEach((name, i) => {
   const s = io(process.env.QG_URL || 'http://localhost:3000');
   let board = null;
@@ -62,6 +70,18 @@ NAMES.slice(0, count).forEach((name, i) => {
     } else if (y.phase === 'shoot') {
       const a = board && board.ast.sort((p, q) => q.y - p.y)[0];
       send(a ? 'shoot' : 'skip', a ? { id: a.id } : undefined, 500);
+    } else if (y.phase === 'mini' && y.mini.stage === 'play' && !y.mini.done) {
+      const m = y.mini;
+      if (s.miniSent !== m.id) {
+        s.miniSent = m.id;
+        setTimeout(() => {
+          const code = board && board.mini && board.mini.code;
+          const data = m.kind === 'mash' ? { taps: 20 + Math.floor(Math.random() * 40) } : m.kind === 'code' ? { seq: Math.random() < 0.7 && code ? code : [0, 1, 2, 3] } : { hits: m.pops.map((_, k) => k).filter(() => Math.random() < 0.7) };
+          s.emit('player:action', { type: 'mini', data });
+        }, Math.min(m.ms - 300, 2000 + Math.random() * 3000));
+      }
+    } else if (['dive', 'climb', 'dash'].includes(y.phase)) {
+      send(y.phase, chaseMove(y), 2000);
     } else if (y.phase === 'sprint') {
       send('sprint', { heat: 0.4 + Math.random() * 0.75 }, 1800);
     } else if (y.phase === 'paint') {

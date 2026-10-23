@@ -4,7 +4,7 @@ A Hebrew (RTL) live classroom game platform in the spirit of **Kahoot's game mod
 
 - **Runs on**: the local network (LAN) only. The internet version with a database comes later (Phase E).
 - **Language**: Hebrew UI. The chat with the user is in English.
-- **Last updated**: 2026-10-23. Phases A (questions) and B (classic quiz + quiz modes) are done, plus music, and ROADMAP.md items 4–8 (question media, folders and sharing, import, backgrounds). Phase D (new games) is in progress: batch 1 (5 games) shipped 2026-10-23, so there are 20 games.
+- **Last updated**: 2026-10-23. Phases A (questions) and B (classic quiz + quiz modes) are done, plus music, and ROADMAP.md items 4–8 (question media, folders and sharing, import, backgrounds). Phase D (new games) is in progress: batch 1 (5 games) and batch 2 (the co-op chase family: 3 new games plus checkpoint mini-games) shipped 2026-10-23, so there are 23 games.
 
 ---
 
@@ -23,14 +23,15 @@ A Hebrew (RTL) live classroom game platform in the spirit of **Kahoot's game mod
 
 | Command | What it checks |
 |---|---|
-| `node scripts/smoke-test.js [game]` | Bots play a short round of every game (20) and print the state and results. |
+| `node scripts/smoke-test.js [game]` | Bots play a short round of every game (23) and print the state and results. |
+| `node scripts/chase-test.js [game]` | The co-op chase games (robot, sub, lava, zombie): bots race to the goal, all three checkpoint mini-games run, phones are parked and resumed, nobody gets stuck; the sub's diving mode; checkpoints switched off; junk packets are clamped. About 7 minutes. |
 | `node scripts/feature-test.js` | Name modes and reroll, 3 teams, reward settings, winner text, rematch with the same PIN, the report, an individual game played in teams. 14 checks. |
 | `node scripts/classic-test.js` | Classic quiz: every stage, team averages, the second-chance round for the bottom 5. |
 | `node scripts/pyramid-test.js` | The Lost Pyramid (4 teams), the accuracy style and the confidence style. |
 | `node scripts/demo.js <game> 8 9999` | A room with 8 bots for visual demos. Put the printed pin and token into the browser's `sessionStorage.host`, reload `/host.html`, and press start. |
 | `node scripts/bots.js <pin> [n]` | Adds n bots to an existing room (they answer every question type, including confidence). |
 
-All suites passed on 2026-10-23 (smoke, feature, classic, pyramid, freeform, import, library).
+All suites passed on 2026-10-23 (smoke, chase, feature, classic, pyramid; freeform, import and library earlier the same day).
 
 ---
 
@@ -42,6 +43,7 @@ server/
   room.js         Room: PIN, lobby, teams (2-6), countdown, timer/tick, rematch, stats + report, host/player state
   games/base.js   QuizGame: the shared per-player question loop, reward charge (need/amount), turns, answer log
   games/*.js      one game per file (see 3.1); classic.js = host-paced quiz; pyramid.js extends classic
+  games/chase.js  shared engine of the co-op chase games (goal, rubber-band chaser, checkpoint mini-games); robot/sub/lava/zombie extend it
   qtypes.js       question types: normalize / playable / present (phone payload) / check (server grading)
   quizzes.js      quiz library in the admin-chosen folder (config.json), media, xlsx import/export (exceljs)
   teams.js        the 6 teams (name + color)
@@ -54,6 +56,7 @@ public/
   js/question.js  QView: renders every question type on the phone
   js/art.js       hand-drawn SVG art (mascots, game objects, lobby covers)
   js/games/*.js   per-game client: hostPlaying / hostEnded / hud / playerPhase / playerEnded
+  js/games/chase.js  window.Chase: shared host header + mini-map, kid figure, checkpoint mini-game overlay and phone screens (loaded first in the bundle)
   css/            style.css (design system) · games.css · games2.css · platform.css · questions.css · classic.css · pyramid.css · editor.css
 questions/sample.json   the built-in 20-question sample quiz
 quizzes/                default quiz folder (the admin can choose another in the editor)
@@ -90,7 +93,7 @@ scripts/                tests, bots, demo
 
 ## 3. What exists today
 
-### 3.1 Games (20)
+### 3.1 Games (23)
 
 | # | Game | Mode | What answering earns / the action on the phone |
 |---|---|---|---|
@@ -109,11 +112,16 @@ scripts/                tests, bots, demo
 | 13 | ☄️ מגני כדור הארץ | Co-op | Laser shots at falling asteroids, with waves and a boss. |
 | 14 | 🐉 קרב הדרקון | Co-op | A sword-timing meter against a boss that attacks the class. |
 | 15 | 🚀 טיל לירח | Co-op | A Simon memory sequence fuels the class rocket to the moon. |
-| 16 | 🤖 בורחים מהרובוט | Co-op (easy / normal / hard) | Like Kahoot's Robot Run. Hold-to-sprint: let go before the engine overheats. A rubber-band robot chases the class and zaps it back when it catches up; wrong answers speed it up. Reach the exit door. |
+| 16 | 🤖 בורחים מהרובוט | Co-op (easy / normal / hard) | Like Kahoot's Robot Run. Hold-to-sprint: let go before the engine overheats. A rubber-band robot chases the class and zaps it back when it catches up; wrong answers speed it up. Reach the exit door. Checkpoint mini-games at 25/50/75% (see below). |
 | 17 | 🎨 ציור במספרים | Co-op | Like Chill Art. A paintbrush = a patch of about 10 squares of a big paint-by-numbers picture: pick a color, drag over its squares. Pictures are generated (5 seeded scenes), the grid grows with the class, finished pictures go to a gallery. |
 | 18 | 🎡 גלגל המזל | Individual or teams | Spin a 12-segment wheel: points, ×2, 1000 jackpot, steal from / swap with the player just above you, or lose half. The server picks the segment; the phone animates it. |
 | 19 | 🃏 זיכרון זוגות | 2–4 teams | One shared 6×4 board (same layout on the host and the phones). Flip two cards; a pair goes to your team and earns another flip (up to 3). A cleared board deals a new one. |
 | 20 | 🚢 קרב ספינות | 2 teams | Battleship on 8×8 seas with hidden fleets. Aim and fire from the phone; a hit earns another shot (up to 2). Points for hits, sinking ships and destroying a fleet (a new fleet then sails in). |
+| 21 | 🐟 צוללת ההצלה | Co-op (easy / normal / hard) | Like Kahoot's Submarine Squad. A 6-second steering run: drag the sub up and down past mines and grab pearls. Every metre charges the sonar; a full sonar = 15 seconds of diving mode (everything ×2, the anglerfish falls behind). |
+| 22 | 🌋 הרצפה היא לבה | Co-op (easy / normal / hard) | Climb out of a volcano before the lava. Five rows of stones: tap a cool one on each row before the lava reaches your feet; a hot stone crumbles and ends the climb. Graded on the server. |
+| 23 | 🧟 בורחים מהזומבים | Co-op (easy / normal / hard) | Run to the safe house ahead of silly zombies. Five obstacles: swipe up (jump), down (slide) or left / right (dodge); arrow keys on a computer. Graded on the server. |
+
+**Chase games (16, 21–23)** share `server/games/chase.js`. At 25%, 50% and 75% of the way the whole class stops for a checkpoint mini-game (rotating): ⚡ mash (tap as fast as you can), 🔐 door code (type the code shown only on the big screen), ✨ pop (tap the sparks). The class average sets the bonus (up to 3 stars, a jump forward and the chaser pushed back). Phones are parked during it and resume exactly where they were. Each game themes the three (robot: jam the robot, sub: turbo propeller, lava: cool the lava, zombie: build a barricade). The room option "מיני-משחק בנקודות הציון" turns them off. None start in the last 30 seconds.
 
 ### 3.2 Platform
 
@@ -179,8 +187,8 @@ scripts/                tests, bots, demo
 | Treasure Trove | ✅ מרדף היהלומים |
 | The Lost Pyramid | ✅ הפירמידה האבודה |
 | Tallest Tower (teams complete floors) | 🟡 מגדל השמיים exists (individual or teams); ⏳ a team-floors version |
-| Robot Run (co-op escape, hold-to-boost, mini-games) | ✅ בורחים מהרובוט (no mini-games between yet) |
-| Submarine Squad (co-op, hold to speed up, "diving mode") | ⏳ Phase D |
+| Robot Run (co-op escape, hold-to-boost, mini-games) | ✅ בורחים מהרובוט, with checkpoint mini-games |
+| Submarine Squad (co-op, hold to speed up, "diving mode") | ✅ צוללת ההצלה (steer past mines; sonar → diving mode) |
 | Chill Art (co-op paint-by-numbers reveals a picture) | ✅ ציור במספרים |
 | Cosmic Quest (space navigation, collect stars) | ⏳ Phase D |
 | Marble Race (correct = marble, luck race at the end) | ⏳ Phase D |
@@ -195,12 +203,9 @@ Agreed order: A ✅ → B ✅ → **D (now)** → C → E.
 
 ### Phase D: new games (in progress)
 
-Built in batches of 5. **Batch 1 (done 2026-10-23)**: Robot Run, Chill Art, Wheel of fortune, Memory pairs, Battleship (games 16–20 above).
+Built in batches of 5. **Batch 1 (done 2026-10-23)**: Robot Run, Chill Art, Wheel of fortune, Memory pairs, Battleship (games 16–20 above). **Batch 2 (done 2026-10-23)**: the co-op chase family on one shared engine: checkpoint mini-games for Robot Run, then Submarine Squad, Floor is Lava, Zombie Run (games 21–23).
 
-**Still to build: co-op "escape / together" games**
-1. **Submarine Squad**: hold to speed the sub away from a fish; when the progress bar fills, a "diving mode" mini-game.
-2. **The floor is lava / climb**.
-3. **Zombie run to the safe house** (or "outrun the tide").
+Next agreed step: ROADMAP item 9 (online / LAN mode), then more games from the list below.
 
 **Still to build: from the user's request**
 1. **Classic Asteroids**: fly your own ship for a few seconds after a correct answer, with a phone joystick and fire button. Real-time.

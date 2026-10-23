@@ -15,10 +15,10 @@ Hebrew (RTL) live classroom game platform in the spirit of Kahoot's game modes. 
 - Validate every client message on the server. Answers are graded only on the server (`server/qtypes.js`).
 - Use `this.later()` instead of `setTimeout` inside games. After an action, call `this.turnDone(p)`, not `nextQuestion`.
 - Phone view keys must include `you.qid + ':' + you.turn`, or repeated turns won't redraw.
-- Short CSS class names can collide across games: the `.goal` class from tug once broke the penalty banner. Prefix new classes per game (`pk-`, `sb-`, `fs-`, `bm-`, `rk-`, `cl-`, `pyr-` …).
+- Short CSS class names can collide across games: the `.goal` class from tug once broke the penalty banner. Prefix new classes per game (`pk-`, `sb-`, `fs-`, `bm-`, `rk-`, `cl-`, `pyr-`, `ch-` shared chase parts, `sq-` sub, `lav-` lava (`lv-` is taken), `zb-` zombie …). State classes too: a bare `.play` or `.wait` on a game element picks up the phone screen's global rules.
 
 ## Testing
-- Start the server: `node server/index.js` (port 3000). Then run `node scripts/smoke-test.js`, `feature-test.js`, `classic-test.js` and `pyramid-test.js`.
+- Start the server: `node server/index.js` (port 3000). Then run `node scripts/smoke-test.js`, `feature-test.js`, `classic-test.js`, `pyramid-test.js` and `chase-test.js` (the co-op chase games, about 7 minutes).
 - To restart only this server, stop the node process whose command line contains `server/index.js`. **Never kill every node.exe**: that also kills Playwright drivers, such as the music tool's.
 - Visual checks use the Playwright MCP. Host at 1366×768, phone tab at 390×800. Call `bringToFront()` on the phone tab before screenshots: background tabs pause CSS animations, so elements look invisible.
 - The confirm dialogs on the host ("לסיים את המשחק?") block Playwright scripts. Use `socket.emit('host:end')` through `page.evaluate` instead.

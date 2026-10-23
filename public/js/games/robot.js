@@ -62,6 +62,12 @@
     <g transform="translate(86 42) scale(.46)">${Art.inner(runner('#ff5a5f'))}</g><g transform="translate(110 40) scale(.46)">${Art.inner(runner('#3b8eff'))}</g><g transform="translate(132 44) scale(.42)">${Art.inner(runner('#2ee59d'))}</g>
     <path d="M74 60 L80 52 L78 60 L86 56" fill="none" stroke="#fff35c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
 
+  const THEME = {
+    mash: { icon: '⚡', title: 'תקעו את הרובוט!', sub: 'הקישו הכי מהר שאפשר כדי לשבש לו את המעגלים', host: 'מקישים! הרובוט מתחיל לגמגם…' },
+    code: { icon: '🔐', title: 'קוד דלת המחסן', sub: 'הקלידו בטלפון את הקוד שמופיע על המסך הגדול', host: 'הקלידו את הקוד לדלת:' },
+    pop: { icon: '🔩', title: 'תפסו את הברגים', sub: 'הרובוט מתפרק! געו בכל בורג שעף', host: 'אוספים ברגים בטלפונים!', spark: '🔩' },
+  };
+
   Games.robot = {
     // ---------- host ----------
     hostPlaying(app, st) {
@@ -86,7 +92,7 @@
         this.names = '';
       }
       const p = Math.min(1, b.run / b.goal);
-      const gap = Math.max(0, b.run - b.robot);
+      const gap = Math.max(0, b.run - b.chaser);
       U.hostTick(st, `${st.players.length} רצים · כולם ביחד`);
       document.getElementById('pbar').style.width = p * 100 + '%';
       document.getElementById('ptxt').textContent = Math.round(p * 100) + '%';
@@ -99,7 +105,7 @@
       // mini map
       document.getElementById('tfill').style.width = p * 100 + '%';
       document.getElementById('trun').style.left = p * 100 + '%';
-      document.getElementById('tbot').style.left = Math.min(1, b.robot / b.goal) * 100 + '%';
+      document.getElementById('tbot').style.left = Math.min(1, b.chaser / b.goal) * 100 + '%';
       // the robot creeps closer as the gap shrinks; the exit door slides in near the end
       const near = Math.max(0, Math.min(1, gap / (b.goal * 0.14)));
       const stage = document.getElementById('stage');
@@ -118,6 +124,7 @@
         this.seen = e.id;
         this.fx(e);
       }
+      Chase.host(stage, b.mini, THEME);
     },
 
     fx(e) {
@@ -129,7 +136,7 @@
         U.bump(el, e.perfect ? 'rb-dash-big' : 'rb-dash');
         U.floatText(stage, `+${e.gain} ${e.name}`, r.left - s.left + r.width / 2, r.top - s.top, e.perfect ? 'gold' : 'good');
         U.burst(stage, r.left - s.left, r.bottom - s.top - 8, ['#fff', '#8af5c8', '#ffd23f'], e.perfect ? 14 : 6, 50);
-      } else if (e.kind === 'zap') {
+      } else if (e.kind === 'caught') {
         const flash = document.getElementById('flash');
         U.bump(flash, 'on');
         U.bump(document.getElementById('bot'), 'rb-fire');
@@ -147,7 +154,7 @@
       U.hostResults(app, st, {
         lost: !r.victory,
         title: r.victory ? '🎉 ברחנו מהרובוט!' : `הגענו ל־${r.pct}% מהדרך`,
-        sub: r.victory ? `כל הכבוד לכל הכיתה!${r.zaps ? ` (נתפסנו ${r.zaps} פעמים בדרך)` : ''}` : 'הרובוט ניצח הפעם. בסיבוב הבא נברח!',
+        sub: r.victory ? `כל הכבוד לכל הכיתה!${r.catches ? ` (נתפסנו ${r.catches} פעמים בדרך)` : ''}` : 'הרובוט ניצח הפעם. בסיבוב הבא נברח!',
         body: `<div class="end-visual rb-end ${r.victory ? 'win' : ''}"><div class="rb-end-door">${door()}</div><div class="rb-end-bot">${robot()}</div><div class="rb-end-run">${runner('#ff5a5f')}${runner('#3b8eff')}${runner('#2ee59d')}</div></div>`,
         table: U.table(r.players, [
           ['#', (p, i) => i + 1],
@@ -165,6 +172,7 @@
     },
 
     playerPhase(app, you, ctx) {
+      if (Chase.phone(app, you, ctx, THEME)) return true;
       if (you.phase === 'sprint') {
         if (!ctx.setView('sprint' + you.qid + ':' + you.turn)) return true;
         this.sprint(app, you, ctx);
@@ -172,7 +180,7 @@
       }
       if (you.phase === 'sprinted') {
         if (!ctx.setView('sprinted' + you.qid + ':' + you.turn)) return true;
-        const s = you.sprint;
+        const s = you.res;
         U.sfx(s.burnt ? 'bad' : s.perfect ? 'win' : 'good');
         app.innerHTML = `${ctx.topBar()}<div class="act-result">
           <div class="ar-art rb-go ${s.burnt ? 'burnt' : ''}">${runner(ctx.teamColor() === '#7c4dff' ? U.color(you.name) : ctx.teamColor())}</div>

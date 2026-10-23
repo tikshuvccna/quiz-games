@@ -28,7 +28,7 @@ const bundle = (dir, ext, first = []) => {
   files = [...first.filter((f) => files.includes(f)), ...files.filter((f) => !first.includes(f))];
   return files.map((f) => `/* ${dir}/${f} */\n` + fs.readFileSync(path.join(PUBLIC, dir, f), 'utf8')).join('\n');
 };
-app.get('/js/games-all.js', (req, res) => res.type('application/javascript').set('Cache-Control', 'no-cache').send(bundle('js/games', '.js', ['classic.js'])));
+app.get('/js/games-all.js', (req, res) => res.type('application/javascript').set('Cache-Control', 'no-cache').send(bundle('js/games', '.js', ['classic.js', 'chase.js'])));
 app.get('/css/games-all.css', (req, res) => res.type('text/css').set('Cache-Control', 'no-cache').send(bundle('css/games', '.css')));
 
 // no-cache = the browser revalidates (cheap ETag check), so updated files always show up

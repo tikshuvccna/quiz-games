@@ -1,0 +1,80 @@
+/* ---------- zombie run: dusk street chase ---------- */
+.zb-street { direction: ltr; background: linear-gradient(180deg, #2a1747, #6b2d72 45%, #d46a6a 70%, #ffb07a); --zx: 10%; --house: 0; }
+.zb-moon { position: absolute; right: 12%; top: 8%; width: 9cqh; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fffbe6, #ffe9a8); box-shadow: 0 0 40px rgba(255, 240, 180, .8); }
+.zb-moon::after { content: ''; position: absolute; left: 50%; top: 30%; width: 22%; height: 22%; border-radius: 50%; background: rgba(200, 170, 110, .45); }
+.zb-city { position: absolute; left: 0; width: 200%; bottom: 30%; height: 34%; background:
+  linear-gradient(#2a1747, #2a1747) 0 40% / 7% 60% no-repeat, linear-gradient(#2a1747, #2a1747) 8% 10% / 6% 90% no-repeat, linear-gradient(#2a1747, #2a1747) 15% 55% / 9% 45% no-repeat, linear-gradient(#2a1747, #2a1747) 25% 25% / 5% 75% no-repeat, linear-gradient(#2a1747, #2a1747) 31% 45% / 8% 55% no-repeat, linear-gradient(#2a1747, #2a1747) 40% 15% / 6% 85% no-repeat,
+  linear-gradient(#2a1747, #2a1747) 50% 40% / 7% 60% no-repeat, linear-gradient(#2a1747, #2a1747) 58% 10% / 6% 90% no-repeat, linear-gradient(#2a1747, #2a1747) 65% 55% / 9% 45% no-repeat, linear-gradient(#2a1747, #2a1747) 75% 25% / 5% 75% no-repeat, linear-gradient(#2a1747, #2a1747) 81% 45% / 8% 55% no-repeat, linear-gradient(#2a1747, #2a1747) 90% 15% / 6% 85% no-repeat;
+  animation: zbcity 14s linear infinite; }
+.zb-city::after { content: ''; position: absolute; inset: 20% 0 0 0; background: radial-gradient(circle, #ffd86b 0 2px, transparent 3px) 0 0 / 38px 30px; opacity: .55; -webkit-mask: linear-gradient(90deg, #000 0 7%, transparent 7% 8%, #000 8% 14%, transparent 14% 15%, #000 15% 24%, transparent 24% 50%, #000 50% 57%, transparent 57% 58%, #000 58% 64%, transparent 64% 65%, #000 65% 74%, transparent 74%); mask: linear-gradient(90deg, #000 0 7%, transparent 7% 8%, #000 8% 14%, transparent 14% 15%, #000 15% 24%, transparent 24% 50%, #000 50% 57%, transparent 57% 58%, #000 58% 64%, transparent 64% 65%, #000 65% 74%, transparent 74%); }
+.zb-city.far { bottom: 34%; height: 40%; opacity: .45; filter: blur(1px); animation-duration: 30s; transform: scaleX(-1); }
+.zb-city.far::after { display: none; }
+@keyframes zbcity { to { translate: -50% 0; } }
+.zb-lamps { position: absolute; left: 0; width: 200%; bottom: 30%; height: 40%; display: flex; justify-content: space-around; animation: zbcity 4s linear infinite; }
+.zb-lamps i { position: relative; width: 8px; height: 100%; background: #1e1145; border-radius: 4px 4px 0 0; }
+.zb-lamps i::before { content: ''; position: absolute; top: -4px; left: -14px; width: 36px; height: 12px; border-radius: 6px; background: #1e1145; }
+.zb-lamps i::after { content: ''; position: absolute; top: 6px; left: -60px; width: 128px; height: 160%; background: radial-gradient(ellipse at 50% 0, rgba(255, 230, 150, .4), transparent 65%); }
+.zb-road { position: absolute; left: 0; right: 0; bottom: 0; height: 32%; background: linear-gradient(180deg, #8a7f9e 0 8%, #4a4560 8% 12%, #3b3550 12%); box-shadow: inset 0 10px 18px rgba(0, 0, 0, .35); }
+.zb-road::after { content: ''; position: absolute; left: 0; right: 0; top: 52%; height: 8px; background: repeating-linear-gradient(90deg, #fff 0 60px, transparent 60px 120px); opacity: .7; animation: rbfloor .45s linear infinite; }
+.zb-house { position: absolute; right: 3%; bottom: 22%; height: 46%; aspect-ratio: 140 / 130; transform: translateX(calc((1 - var(--house)) * 150%)); opacity: calc(var(--house) + .0001); transition: transform 1s var(--spring), opacity 1s; filter: drop-shadow(0 0 30px rgba(138, 245, 200, .7)); z-index: 2; }
+.zb-horde { position: absolute; left: var(--zx); bottom: 12%; width: 22%; height: 32%; transition: left 1s cubic-bezier(.4, 1.3, .5, 1); z-index: 3; }
+.zb-z { position: absolute; bottom: calc(var(--i) % 2 * 12%); left: calc(var(--i) * 20%); height: calc(80% - var(--i) % 2 * 12%); aspect-ratio: 80 / 110; z-index: calc(5 - var(--i) % 2); animation: zbshamble .9s ease-in-out infinite alternate; animation-delay: calc(var(--i) * -.3s); }
+.zb-z .art, .zb-block .art { width: 100%; height: 100%; }
+@keyframes zbshamble { from { rotate: -5deg; translate: 0 0; } to { rotate: 5deg; translate: 0 -4%; } }
+.zb-zombie-art .zb-legA { transform-origin: 34px 74px; animation: zbleg .9s ease-in-out infinite alternate; }
+.zb-zombie-art .zb-legB { transform-origin: 46px 74px; animation: zbleg .9s ease-in-out infinite alternate-reverse; }
+.zb-zombie-art .zb-arms { transform-origin: 30px 54px; animation: zbarms 1.2s ease-in-out infinite alternate; }
+.zb-zombie-art .zb-head { transform-origin: 40px 44px; animation: zbhead 1.8s ease-in-out infinite alternate; }
+@keyframes zbleg { from { transform: rotate(-14deg); } to { transform: rotate(14deg); } }
+@keyframes zbarms { to { transform: rotate(-8deg); } }
+@keyframes zbhead { to { transform: rotate(10deg); } }
+.zb-horde.zb-lunge { animation: zblunge .8s var(--spring); }
+@keyframes zblunge { 40% { transform: translateX(20%) scale(1.08); } }
+.zb-horde.zb-rage { animation: zbrage .6s; }
+@keyframes zbrage { 30% { transform: translateX(6%); filter: drop-shadow(0 0 16px #b8f07a); } }
+.ch-close .zb-z { animation-duration: .45s; }
+.zb-pack { left: 46%; bottom: 10%; width: 36%; height: 46%; }
+.zb-end { position: relative; min-height: 320px; direction: ltr; border-radius: var(--r-lg); overflow: hidden; background: linear-gradient(180deg, #2a1747, #b8487a 70%, #3b3550 70%); }
+.zb-end-house { position: absolute; right: 3%; bottom: 14%; height: 50%; aspect-ratio: 140 / 130; filter: drop-shadow(0 0 30px rgba(138, 245, 200, .7)); }
+.zb-end-horde { position: absolute; left: 0; bottom: 10%; display: flex; height: 38%; }
+.zb-end-horde .art { height: 100%; width: auto; aspect-ratio: 80 / 110; margin-left: -6%; }
+.zb-end-run { position: absolute; left: 36%; bottom: 12%; display: flex; gap: 4px; height: 26%; }
+.zb-end-run .art { height: 100%; width: auto; aspect-ratio: 60 / 80; }
+.zb-end.win .zb-end-run { left: 44%; animation: floaty 2s ease-in-out infinite; }
+.zb-end.win .zb-end-horde { filter: grayscale(.4) brightness(.8); height: 30%; }
+.zb-end:not(.win) .zb-end-horde { left: 8%; }
+/* phone: a road running into the distance */
+.zb-phone { background: #3b3550; touch-action: none; perspective: 600px; }
+.zb-psky { position: absolute; inset: 0 0 62% 0; background: linear-gradient(180deg, #2a1747, #b8487a 70%, #ffb07a); }
+.zb-psky::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 40%; background: linear-gradient(#2a1747, #2a1747) 5% 100% / 12% 70% no-repeat, linear-gradient(#2a1747, #2a1747) 20% 100% / 10% 100% no-repeat, linear-gradient(#2a1747, #2a1747) 68% 100% / 14% 80% no-repeat, linear-gradient(#2a1747, #2a1747) 88% 100% / 10% 60% no-repeat; }
+.zb-proad { position: absolute; left: 0; right: 0; bottom: 0; top: 38%; background: linear-gradient(180deg, #4a4560, #3b3550); clip-path: polygon(40% 0, 60% 0, 100% 100%, 0 100%); }
+.zb-proad i { position: absolute; top: 0; bottom: 0; width: 6px; background: repeating-linear-gradient(180deg, #fff 0 24px, transparent 24px 48px); opacity: .6; animation: zbdash .4s linear infinite; }
+.zb-proad i:nth-child(1) { left: 44%; transform: skewX(-24deg); transform-origin: top; } .zb-proad i:nth-child(2) { left: 56%; transform: skewX(24deg); transform-origin: top; }
+@keyframes zbdash { to { background-position: 0 48px; } }
+.zb-obs { position: absolute; left: 50%; top: 36%; width: 54%; transform: translate(-50%, 0) scale(.12); transform-origin: 50% 100%; opacity: 0; z-index: 2; }
+.zb-obs.go { animation: zbcome var(--ms) cubic-bezier(.5, 0, .9, .6) forwards; }
+@keyframes zbcome { 0% { top: 36%; transform: translate(-50%, -100%) scale(.12); opacity: 0; } 12% { opacity: 1; } 100% { top: 96%; transform: translate(-50%, -100%) scale(1.15); opacity: 1; } }
+.zb-obs.past { animation: zbpast .3s ease-in forwards; }
+@keyframes zbpast { from { top: 96%; transform: translate(-50%, -100%) scale(1.15); opacity: 1; } to { top: 120%; transform: translate(-50%, -100%) scale(1.6); opacity: 0; } }
+.zb-thing .art { width: 100%; height: auto; aspect-ratio: 2; display: block; }
+.zb-obs.down .zb-thing { margin-bottom: 50%; }
+.zb-obs.left .zb-thing { translate: 30% 0; }
+.zb-obs.right .zb-thing { translate: -30% 0; }
+.zb-block { display: flex; height: 0; padding-bottom: 70%; position: relative; }
+.zb-block .art { position: absolute; top: 0; width: 46%; height: auto; aspect-ratio: 80 / 110; }
+.zb-block .art:last-child { left: 44%; }
+.zb-arrow { position: absolute; left: 50%; top: -40%; transform: translateX(-50%); font-size: 2.6rem; line-height: 1; color: #fff35c; text-shadow: 0 3px 0 rgba(0, 0, 0, .5), 0 0 14px rgba(255, 243, 92, .7); animation: beat .5s ease-in-out infinite; }
+.zb-me { position: absolute; left: calc(50% + var(--lane) * 28%); bottom: 4%; width: 24%; aspect-ratio: 60 / 80; transform: translateX(-50%); transition: left .18s ease-out; z-index: 3; filter: drop-shadow(0 6px 6px rgba(0, 0, 0, .45)); }
+.zb-me.do-up { animation: zbjump .55s ease-out; }
+@keyframes zbjump { 45% { translate: 0 -70%; } }
+.zb-me.do-down .art { transform: scaleY(.5) scaleX(1.15); transform-origin: bottom; transition: transform .12s; }
+.zb-me.trip { animation: zbtrip .5s; }
+@keyframes zbtrip { 30% { rotate: -25deg; filter: brightness(1.6) drop-shadow(0 0 10px #ff4d6d); } }
+.zb-chasers { position: absolute; left: -6%; bottom: -4%; width: 34%; display: flex; z-index: 4; opacity: .9; }
+.zb-chasers .art { width: 60%; height: auto; aspect-ratio: 80 / 110; margin-left: -20%; animation: zbshamble .7s ease-in-out infinite alternate; }
+.zb-marks { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 5; direction: ltr; }
+.zb-marks i { width: 18px; height: 18px; border-radius: 50%; background: rgba(0, 0, 0, .4); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .4); }
+.zb-marks i.ok { background: #2ee59d; box-shadow: 0 0 10px #2ee59d, inset 0 0 0 2px #fff; animation: bigpop .3s var(--spring); }
+.zb-marks i.bad { background: #ff4d6d; box-shadow: inset 0 0 0 2px #fff; animation: bigpop .3s var(--spring); }
+.zb-swipe { position: absolute; left: 50%; bottom: 40%; transform: translateX(-50%); padding: 6px 16px; border-radius: 999px; background: rgba(255, 255, 255, .9); color: var(--ink); font-weight: 900; z-index: 5; transition: opacity .4s; pointer-events: none; animation: floaty 1.2s ease-in-out infinite; }
+.ar-art.zb-go { width: 110px; height: auto; aspect-ratio: 60 / 80; }

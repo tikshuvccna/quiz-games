@@ -4,7 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const SKIP = new Set(['base.js', 'index.js']);
+const SKIP = new Set(['base.js', 'chase.js', 'index.js']);
 const GAMES = {};
 const list = [];
 for (const f of fs.readdirSync(__dirname).sort()) {
