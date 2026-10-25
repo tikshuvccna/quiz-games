@@ -105,7 +105,7 @@ class QuizGame {
       const r = this.constructor.reward || ['תור', 'תורות'];
       extra.note = `${extra.note ? extra.note + ' · ' : ''}עוד ${left} ${left > 1 ? 'תשובות נכונות' : 'תשובה נכונה'} ל${r[0]}`;
     }
-    g.last = { correct, rewarded, correctText, streak: g.streak, explain: q.explain || '', ...extra };
+    g.last = { correct, rewarded, correctText, streak: g.streak, explain: q.explain || '', afterImage: qt.afterImage(q, this.room.quizData.mediaBase), ...extra };
     g.phase = 'feedback';
     this.room.pushPlayer(p);
     this.room.scheduleHostPush();

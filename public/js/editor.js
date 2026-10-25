@@ -51,7 +51,7 @@
     if (type === 'type') q.accept = [''];
     if (type === 'slider') q.slider = { min: 0, max: 100, step: 1, answer: 50, tol: 0 };
     if (type === 'order') q.items = ['', '', ''];
-    if (type === 'pin') q.pin = { x: 50, y: 50, r: 10 };
+    if (type === 'pin') q.pin = { shape: 'circle', x: 50, y: 50, r: 10 };
     if (type === 'puzzle') { q.puzzle = { rows: 3, cols: 3 }; q.time = 60; }
     if (type === 'slide') q.points = 0;
     return q;
@@ -67,6 +67,8 @@
     if (q.revealSec) n.revealSec = q.revealSec;
     if (q.video) n.video = q.video;
     if (q.explain) n.explain = q.explain;
+    if (q.explainImage) n.explainImage = q.explainImage;
+    if (q.imageWhen) n.imageWhen = q.imageWhen;
     if ((type === 'quiz' || type === 'poll') && q.answers && q.type !== 'tf') n.answers = q.answers.map((a) => ({ text: a.text, correct: type === 'quiz' && !!a.correct }));
     return n;
   }
@@ -668,8 +670,9 @@
     drawAnswers();
   }
 
-  async function upload(file) {
+  async function upload(file, slot) {
     const isVideo = file.type.startsWith('video/');
+    if (slot === 'explain' && isVideo) return toast('תמונת ההסבר צריכה להיות תמונה', true);
     if (!file.type.startsWith('image/') && !isVideo) return toast('רק תמונות או סרטונים', true);
     if (!isVideo && file.size > 12 * 1024 * 1024) return toast('התמונה גדולה מדי (עד 12MB)', true);
     if (isVideo && file.size > 300 * 1024 * 1024) return toast('הסרטון גדול מדי (עד 300MB)', true);
@@ -679,6 +682,7 @@
     try {
       const r = await api(`/quizzes/${encodeURIComponent(quiz.id)}/media`, { method: 'POST', body: file, headers: { 'Content-Type': file.type } });
       if (isVideo) q.video = { file: r.name, start: 0, end: 0 };
+      else if (slot === 'explain') q.explainImage = r.name;
       else q.image = r.name;
       dirty();
       drawAll();
@@ -765,10 +769,14 @@
     }
 
     if (q.type === 'pin') {
+      const rect = q.pin.shape === 'rect';
       box.innerHTML = q.image
-        ? `<div class="muted ae-tip">לחצו על התמונה כדי לסמן את המקום הנכון. העיגול הוא האזור שנחשב לתשובה נכונה.</div>
-           <div class="pin-box"><div class="pin-ed" id="pinEd"><img src="${mediaUrl(q.image)}" alt=""><i class="pin-zone" style="left:${q.pin.x}%;top:${q.pin.y}%;--r:${q.pin.r}"></i></div></div>
-           <label class="ae-rad">גודל האזור <input type="range" id="pinR" min="2" max="40" value="${q.pin.r}"></label>
+        ? `<div class="pin-shapes"><button data-shape="circle" class="${rect ? '' : 'on'}">⭕ עיגול<small>נקודה במקום מסוים</small></button><button data-shape="rect" class="${rect ? 'on' : ''}">▭ מלבן<small>שורה, עמודה, אזור או קו שלם</small></button></div>
+           <div class="muted ae-tip">${rect ? 'גררו על התמונה כדי לצייר את המלבן (לחיצה אחת מזיזה אותו). המלבן הוא האזור שנחשב לתשובה נכונה.' : 'לחצו על התמונה כדי לסמן את המקום הנכון. העיגול הוא האזור שנחשב לתשובה נכונה.'}</div>
+           <div class="pin-box"><div class="pin-ed" id="pinEd"><img src="${mediaUrl(q.image)}" alt="" draggable="false">${QMedia.pinZone(q.pin, 'pin-zone')}</div></div>
+           ${rect
+             ? `<div class="pin-sizes"><label class="ae-rad">רוחב <input type="range" dir="ltr" id="pinW" min="1" max="100" value="${q.pin.w}"></label><label class="ae-rad">גובה <input type="range" dir="ltr" id="pinH" min="1" max="100" value="${q.pin.h}"></label></div>`
+             : `<label class="ae-rad">גודל האזור <input type="range" dir="ltr" id="pinR" min="2" max="40" value="${q.pin.r}"></label>`}
            <div class="row"><label class="btn ghost sm">🖼️ החלפת תמונה<input type="file" id="pinFile" accept="image/*" hidden></label><button class="btn ghost sm" id="pinX">הסרת תמונה</button></div>`
         : `<div class="drop" id="pinDrop"><div class="drop-hint">📍 העלו תמונה (מפה, שרטוט, גוף האדם…) ואז סמנו עליה את המקום הנכון</div><input type="file" id="pinFile" accept="image/*" hidden></div>`;
       const file = document.getElementById('pinFile');
@@ -780,15 +788,63 @@
         pd.ondrop = (e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) upload(f); };
         return;
       }
-      const ed = document.getElementById('pinEd');
-      U.fitImage(ed, ed.querySelector('img'));
-      ed.onclick = (e) => {
-        const r = ed.getBoundingClientRect();
-        q.pin.x = Math.max(0, Math.min(100, ((e.clientX - r.left) / r.width) * 100));
-        q.pin.y = Math.max(0, Math.min(100, ((e.clientY - r.top) / r.height) * 100));
+      box.querySelector('.pin-shapes').onclick = (e) => {
+        const b = e.target.closest('[data-shape]');
+        if (!b || b.dataset.shape === q.pin.shape) return;
+        q.pin = b.dataset.shape === 'rect'
+          ? { shape: 'rect', x: q.pin.x, y: q.pin.y, w: 30, h: 12, ar: q.pin.ar }
+          : { shape: 'circle', x: q.pin.x, y: q.pin.y, r: 10, ar: q.pin.ar };
         rerender();
       };
-      document.getElementById('pinR').oninput = (e) => { q.pin.r = Number(e.target.value); ed.querySelector('.pin-zone').style.setProperty('--r', q.pin.r); soft(); };
+      const ed = document.getElementById('pinEd');
+      const img = ed.querySelector('img');
+      U.fitImage(ed, img);
+      // remember the picture's proportions: the server keeps the circle round with it
+      const keepAr = () => {
+        if (!img.naturalWidth) return;
+        const ar = Math.round((img.naturalWidth / img.naturalHeight) * 1000) / 1000;
+        if (q.pin.ar !== ar) { q.pin.ar = ar; dirty(); }
+      };
+      if (img.complete) keepAr();
+      img.addEventListener('load', keepAr);
+      const zone = () => { ed.querySelector('.pin-zone').outerHTML = QMedia.pinZone(q.pin, 'pin-zone'); soft(); };
+      const at = (e) => {
+        const r = ed.getBoundingClientRect();
+        return { x: Math.max(0, Math.min(100, ((e.clientX - r.left) / r.width) * 100)), y: Math.max(0, Math.min(100, ((e.clientY - r.top) / r.height) * 100)) };
+      };
+      if (rect) {
+        // drag = draw a new rectangle; a click without dragging moves it
+        let start = null;
+        ed.onpointerdown = (e) => { e.preventDefault(); start = at(e); ed.setPointerCapture(e.pointerId); };
+        ed.onpointermove = (e) => {
+          if (!start) return;
+          const p = at(e);
+          if (Math.abs(p.x - start.x) < 1 && Math.abs(p.y - start.y) < 1) return;
+          q.pin.x = (start.x + p.x) / 2;
+          q.pin.y = (start.y + p.y) / 2;
+          q.pin.w = Math.max(1, Math.abs(p.x - start.x));
+          q.pin.h = Math.max(1, Math.abs(p.y - start.y));
+          start.moved = true;
+          zone();
+        };
+        ed.onpointerup = (e) => {
+          if (start && !start.moved) {
+            const p = at(e);
+            q.pin.x = Math.max(q.pin.w / 2, Math.min(100 - q.pin.w / 2, p.x));
+            q.pin.y = Math.max(q.pin.h / 2, Math.min(100 - q.pin.h / 2, p.y));
+          }
+          start = null;
+          rerender();
+        };
+        document.getElementById('pinW').oninput = (e) => { q.pin.w = Number(e.target.value); zone(); };
+        document.getElementById('pinH').oninput = (e) => { q.pin.h = Number(e.target.value); zone(); };
+      } else {
+        ed.onclick = (e) => {
+          Object.assign(q.pin, at(e));
+          rerender();
+        };
+        document.getElementById('pinR').oninput = (e) => { q.pin.r = Number(e.target.value); zone(); };
+      }
       document.getElementById('pinX').onclick = () => { delete q.image; rerender(); drawList(); };
       return;
     }
@@ -828,7 +884,9 @@
       ${q.type === 'slide' ? '' : `<label>⭐ ניקוד<select id="sPts">${POINTS.map(([v, l]) => `<option value="${v}" ${v === q.points ? 'selected' : ''}>${l}</option>`).join('')}</select></label>`}
       ${q.image && q.type !== 'pin' && q.type !== 'puzzle' ? `<label>🌫️ חשיפת התמונה<select id="sReveal">${[['', 'מיד'], ['blur', 'טשטוש שמתבהר'], ['tiles', 'אריחים שנעלמים']].map(([v, l]) => `<option value="${v}" ${(q.reveal || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
         ${q.reveal ? `<label>⏳ משך החשיפה<select id="sRevealSec">${[[0, 'לאורך כל הזמן'], [5, '5 שניות'], [10, '10 שניות'], [15, '15 שניות'], [20, '20 שניות'], [30, '30 שניות'], [45, '45 שניות'], [60, 'דקה']].map(([v, l]) => `<option value="${v}" ${(q.revealSec || 0) === v ? 'selected' : ''}>${l}</option>`).join('')}</select><small class="muted">מי שעונה מהר, לפני שרואים הכל, מקבל יותר נקודות</small></label>` : ''}` : ''}
-      ${q.type === 'slide' ? '' : `<label>💡 הסבר אחרי התשובה<textarea id="sExplain" maxlength="200" rows="3" placeholder="למה זו התשובה? (לא חובה)">${esc(q.explain || '')}</textarea></label>`}
+      ${q.image && q.type !== 'pin' && q.type !== 'puzzle' && q.type !== 'slide' ? `<label>👁️ מתי להציג את התמונה<select id="sWhen"><option value="">בזמן השאלה</option><option value="after" ${q.imageWhen === 'after' ? 'selected' : ''}>רק אחרי התשובה (להסבר)</option></select></label>` : ''}
+      ${q.type === 'slide' ? '' : `<label>💡 הסבר אחרי התשובה<textarea id="sExplain" maxlength="200" rows="3" placeholder="למה זו התשובה? (לא חובה)">${esc(q.explain || '')}</textarea></label>
+      <div class="ex-img"><span>🖼️ תמונה להסבר <small>(מוצגת אחרי התשובה)</small></span>${q.explainImage ? `<div class="ex-thumb"><img src="${mediaUrl(q.explainImage)}" alt=""><button id="exImgX" title="הסרה">✕</button></div>` : `<label class="btn ghost sm">⬆ העלאת תמונה<input type="file" id="exImgFile" accept="image/*" hidden></label>`}</div>`}
       <div class="side-note">במשחקים (לא בחידון הקלאסי) אין הגבלת זמן, וניקוד כפול = מתקדמים מהר יותר לתור הבא.</div>
       <div class="probs" id="probs">${probsHtml(q)}</div>
       <div class="side-stats">${quiz.questions.length} שאלות · ${quiz.questions.filter((x) => !problems(x).length).length} מוכנות</div>`;
@@ -837,10 +895,15 @@
       if (e.target.id === 'sTime') { q.time = Number(e.target.value); dirty(); }
       if (e.target.id === 'sPts') { q.points = Number(e.target.value); dirty(); }
       if (e.target.id === 'sReveal') { if (e.target.value) q.reveal = e.target.value; else { delete q.reveal; delete q.revealSec; } dirty(); drawSide(); }
+      if (e.target.id === 'sWhen') { if (e.target.value) q.imageWhen = e.target.value; else delete q.imageWhen; dirty(); }
+      if (e.target.id === 'exImgFile' && e.target.files[0]) upload(e.target.files[0], 'explain');
       if (e.target.id === 'sRevealSec') { const v = Number(e.target.value); if (v) q.revealSec = v; else delete q.revealSec; dirty(); }
     };
     side.oninput = (e) => {
       if (e.target.id === 'sExplain') { q.explain = e.target.value; dirty(); }
+    };
+    side.onclick = (e) => {
+      if (e.target.id === 'exImgX') { delete q.explainImage; dirty(); drawSide(); }
     };
   }
 

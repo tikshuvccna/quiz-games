@@ -30,15 +30,22 @@ window.QMedia = (function () {
       const tiles = rank.map((k, i) => `<i style="--d:${((k / n) * sec * 0.88).toFixed(2)}s;--h:${(i * 37) % 360}"></i>`).join('');
       return `<div class="${cls} rv-tiles" style="--rt:${sec}s"><div class="rv-frame"><img src="${esc(src)}" alt="">${cover}<div class="rv-grid" style="--c:${cols};--r:${rows}">${tiles}</div></div></div>`;
     }
-    return `<div class="${cls} ${reveal === 'blur' && !done ? 'reveal' : ''}" style="--rt:${sec}s"><img src="${esc(src)}" alt="">${cover}</div>`;
+    // the frame is sized to the picture's real proportions (mount), so tall or wide pictures are never cut
+    return `<div class="${cls} ${reveal === 'blur' && !done ? 'reveal' : ''}" style="--rt:${sec}s"><div class="rv-frame"><img src="${esc(src)}" alt="">${cover}</div></div>`;
   }
 
-  // after a picture is in the page: size tile covers to the picture's real proportions
+  // after a picture is in the page: size its frame to the picture's real proportions inside the free space
   function mount(root) {
     (root || document).querySelectorAll('.rv-frame:not([data-fit])').forEach((f) => {
       f.dataset.fit = 1;
       U.fitImage(f, f.querySelector('img'));
     });
+  }
+
+  // the zone that counts as right on a pin question: a circle (radius in % of the width) or a rectangle
+  function pinZone(pin, cls) {
+    if (pin.shape === 'rect') return `<i class="${cls} rect" style="left:${pin.x - pin.w / 2}%;top:${pin.y - pin.h / 2}%;width:${pin.w}%;height:${pin.h}%"></i>`;
+    return `<i class="${cls}" style="left:${pin.x}%;top:${pin.y}%;--r:${pin.r}"></i>`;
   }
 
   // ---------- video ----------
@@ -275,5 +282,5 @@ window.QMedia = (function () {
     return { order: () => at.slice() };
   }
 
-  return { picture, mount, video, cuts, piecePath, pieceSvg, puzzleOutline, jigsaw, size, rng };
+  return { picture, mount, pinZone, video, cuts, piecePath, pieceSvg, puzzleOutline, jigsaw, size, rng };
 })();

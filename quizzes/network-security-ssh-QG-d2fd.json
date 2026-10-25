@@ -1,0 +1,275 @@
+{
+  "title": "network-security-ssh-QG",
+  "description": "",
+  "folder": "",
+  "background": "",
+  "updated": "2026-10-25T09:35:06.135Z",
+  "questions": [
+    {
+      "type": "quiz",
+      "text": "מה משמעות האות C במודל האבטחה הבסיסי CIA?",
+      "time": 20,
+      "points": 1,
+      "explain": "C היא Confidentiality – שמירה על סודיות המידע, כך שגורם לא מורשה לא יוכל לקרוא אותו.",
+      "answers": [
+        {
+          "text": "Cryptography – הצפנת מידע",
+          "correct": false
+        },
+        {
+          "text": "Control – בקרת גישה למידע",
+          "correct": false
+        },
+        {
+          "text": "Confidentiality – חשאיות",
+          "correct": true
+        },
+        {
+          "text": "Connectivity – קישוריות",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "באיזו פעולה בודקים שהמידע לא שונה בדרך ושלימותו נשמרה?",
+      "time": 20,
+      "points": 1,
+      "explain": "בדיקת שלימות המידע מתבצעת באמצעות גיבוב.",
+      "answers": [
+        {
+          "text": "גיבוב של תוכן המידע (Hash)",
+          "correct": true
+        },
+        {
+          "text": "הצפנת המידע (Encryption)",
+          "correct": false
+        },
+        {
+          "text": "גיבוי מלא של המידע (Backup)",
+          "correct": false
+        },
+        {
+          "text": "אימות ביומטרי של המשתמש",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "באיזה מצב הרשאה ניתן לבצע בדיקות בסיסיות בלבד, ללא הגדרות?",
+      "time": 20,
+      "points": 1,
+      "explain": "ב-User mode (הסימון >) אפשר לבצע בדיקות בלבד ולא להגדיר דבר.",
+      "answers": [
+        {
+          "text": "מצב מאופשר (Privileged)",
+          "correct": false
+        },
+        {
+          "text": "מצב הגדרה גלובלי (Global)",
+          "correct": false
+        },
+        {
+          "text": "מצב הגדרת ממשק (Interface mode)",
+          "correct": false
+        },
+        {
+          "text": "מצב משתמש רגיל (User mode)",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "מה היתרון העיקרי של SSH על פני Telnet?",
+      "time": 20,
+      "points": 1,
+      "explain": "SSH הוא פרוטוקול שליטה מרוחקת מאובטח: המידע מוצפן, ולכן מרחרח רואה רק גיבוב של תווים.",
+      "answers": [
+        {
+          "text": "החיבור אינו מצריך כתובת IP בתוך הרכיב",
+          "correct": false
+        },
+        {
+          "text": "המידע מוצפן וגורם זר לא יקרא אותו",
+          "correct": true
+        },
+        {
+          "text": "החיבור אפשרי רק דרך כבל קונסול ישיר",
+          "correct": false
+        },
+        {
+          "text": "החיבור מאפשר 16 משתמשים בו-זמנית",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "text": "איזו פקודה מציגה את קובץ ההגדרות השמור ב-NVRAM, שנטען בהפעלת הרכיב?",
+      "time": 30,
+      "points": 2,
+      "explain": "הפקודה show startup-config מציגה את ההגדרות השמורות; running-config מציגה את ההגדרות הפעילות.",
+      "accept": [
+        "show startup-config",
+        "sh startup-config",
+        "show startup",
+        "sh start",
+        "show start"
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "בפלט ההגדרות שבתמונה: איזו שורה שומרת את הסיסמה בצורה החזקה ביותר?",
+      "time": 30,
+      "points": 1,
+      "image": "mvnmt6avd716bf.png",
+      "explain": "enable secret עם הספרה 5 משתמשת בגיבוב MD5; הספרה 7 היא הצפנה חלשה שקל לפרוץ, והשאר שמורות כטקסט גלוי.",
+      "answers": [
+        {
+          "text": "שורה 1",
+          "correct": false
+        },
+        {
+          "text": "שורה 2",
+          "correct": false
+        },
+        {
+          "text": "שורה 3",
+          "correct": false
+        },
+        {
+          "text": "שורה 4",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "הוגדרה סיסמה בקו הקונסול (password) אך לא הוקלדה הפקודה login. מה יקרה?",
+      "time": 20,
+      "points": 1,
+      "explain": "ללא הפקודה login הרכיב אינו מבקש סיסמה כלל.",
+      "answers": [
+        {
+          "text": "הרכיב לא יבקש כלל סיסמה בהתחברות",
+          "correct": true
+        },
+        {
+          "text": "הרכיב יבקש סיסמה ויקבל כל קלט",
+          "correct": false
+        },
+        {
+          "text": "הרכיב יחסום כל התחברות דרך הקונסול",
+          "correct": false
+        },
+        {
+          "text": "הרכיב יבקש סיסמה רק מחיבורים מרוחקים",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "order",
+      "text": "סדרו את השלבים להתחברות telnet למתג. מהו השלב הראשון?",
+      "time": 30,
+      "points": 2,
+      "explain": "קודם נותנים למתג כתובת IP (SVI), אחר כך מוודאים תקשורת בעזרת ping, ורק אז מתחברים ב-telnet.",
+      "items": [
+        "הגדרת כתובת IP לממשק VLAN",
+        "בדיקת ping אל המתג",
+        "התחברות ב-telnet אל המתג"
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "מהי רמת ההרשאה הגבוהה ביותר, ומה היא מאפשרת?",
+      "time": 20,
+      "points": 1,
+      "explain": "רמות ההרשאה הן 0 עד 15 (16 רמות); רמה 15 מקנה את כל ההרשאות.",
+      "answers": [
+        {
+          "text": "16 – כל הפקודות האפשריות ברכיב",
+          "correct": false
+        },
+        {
+          "text": "15 – בדיקות בסיסיות בלבד ברכיב",
+          "correct": false
+        },
+        {
+          "text": "1 – כל הפקודות האפשריות ברכיב הרשת",
+          "correct": false
+        },
+        {
+          "text": "15 – כל הפקודות האפשריות ברכיב",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "המחשב שבתרשים מבצע ping אל כתובת המתג ולא מקבל reply. מה הסיבה?",
+      "time": 30,
+      "points": 1,
+      "image": "mvnmt6aw33c93e.png",
+      "explain": "המחשב והמתג נמצאים ברשתות שונות (192.168.2.0 ו-192.168.1.0) ללא נתב ביניהם, ולכן אין תקשורת. סיסמאות ופרוטוקול ניהול לא משפיעים על ping.",
+      "answers": [
+        {
+          "text": "אין נתב המחבר בין הרשתות השונות",
+          "correct": true
+        },
+        {
+          "text": "מתג בשכבה 2 אינו מגיב להודעות echo",
+          "correct": false
+        },
+        {
+          "text": "לא הוגדרה סיסמה בקו ה-vty במתג",
+          "correct": false
+        },
+        {
+          "text": "חסרה הפקודה transport input telnet",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "pin",
+      "text": "הקישו על השורה שקובעת באיזה פרוטוקול מותר להתחבר אל הרכיב מרחוק",
+      "time": 30,
+      "points": 2,
+      "image": "mvnmt6az582da7.png",
+      "explain": "transport input קובע את הפרוטוקול הנכנס (אל הרכיב); transport output קובע את הפרוטוקול היוצא ממנו.",
+      "pin": {
+        "x": 32,
+        "y": 58,
+        "r": 12
+      }
+    },
+    {
+      "type": "quiz",
+      "text": "מה חייבים להגדיר לפני שהפקודה crypto key generate rsa תיצור מפתחות?",
+      "time": 30,
+      "points": 1,
+      "explain": "המפתח נוצר מ-hostname ומ-domain-name, ולכן יש להגדיר אותם קודם.",
+      "answers": [
+        {
+          "text": "סיסמת enable secret ושם משתמש מקומי חדש",
+          "correct": false
+        },
+        {
+          "text": "שם hostname ושם דומיין (domain-name)",
+          "correct": true
+        },
+        {
+          "text": "כתובת IP תקינה בממשק VLAN 1 של הרכיב",
+          "correct": false
+        },
+        {
+          "text": "הפקודה transport input ssh בקו vty",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

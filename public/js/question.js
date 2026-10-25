@@ -149,7 +149,7 @@ window.QView = (function () {
         mark.classList.remove('hidden');
         mark.style.left = x + '%';
         mark.style.top = y + '%';
-        U.bump(mark, 'drop');
+        U.bump(mark, 'pin-drop'); // not 'drop': the gems game owns that class
         box.querySelector('#qpSend').disabled = false;
       };
       box.querySelector('#qpSend').onclick = () => at && send(at);

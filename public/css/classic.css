@@ -1,5 +1,5 @@
-/* =====================================================================
-   Classic quiz (Kahoot-style) — big screen + phone
+﻿/* =====================================================================
+   Classic quiz (Kahoot-style) ג€” big screen + phone
    ===================================================================== */
 .host-game.untimed .hg-timer { display: none; }
 .classic-stage { background: radial-gradient(ellipse at 50% 0%, #4b2aa8, #22125e 60%, #160b40); }
@@ -20,7 +20,7 @@
 /* question */
 .cl-q { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 14px; }
 .cl-mid { flex: 1; min-height: 0; display: grid; grid-template-columns: 150px 1fr 150px; grid-template-rows: minmax(0, 1fr); align-items: center; gap: 16px; }
-.cl-media { min-height: 0; height: 100%; display: grid; place-items: center; }
+.cl-media { min-height: 0; min-width: 0; height: 100%; display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); place-items: center; }
 .cl-img { max-height: 100%; height: 100%; display: grid; place-items: center; overflow: hidden; border-radius: var(--r-lg); }
 .cl-img img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: var(--r-lg); box-shadow: var(--lift), var(--drop); }
 .cl-img.reveal img { animation: reveal var(--rt, 20s) linear forwards; }
@@ -59,14 +59,15 @@
 .cl-order span { padding: 12px 20px; border-radius: var(--r); font-weight: 900; font-size: 1.3rem; background: hsl(calc(var(--i) * 70 + 200) 70% 48%); box-shadow: 0 5px 0 rgba(0, 0, 0, .3); display: flex; gap: 10px; align-items: center; }
 .cl-order.rv span { animation: popin .5s var(--spring) both; animation-delay: calc(var(--i) * 150ms); }
 .cl-order b { width: 30px; height: 30px; border-radius: 50%; background: rgba(0, 0, 0, .25); display: grid; place-items: center; }
-.cl-pinbox { width: 100%; height: 100%; display: grid; place-items: center; }
+.cl-pinbox { width: 100%; height: 100%; min-height: 0; min-width: 0; display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); place-items: center; }
 .cl-pinframe { position: relative; border-radius: var(--r); overflow: hidden; box-shadow: var(--lift), var(--drop); }
 .cl-pinframe img { width: 100%; height: 100%; display: block; }
 .cl-pin { position: absolute; width: 14px; height: 14px; margin: -7px; border-radius: 50%; background: #ff4d6d; border: 2px solid #fff; animation: popin .4s var(--spring) both; }
 .cl-pin.ok { background: var(--green); }
 .cl-target { position: absolute; width: calc(var(--r) * 2%); aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; border: 4px dashed #fff; box-shadow: 0 0 24px #2ee59d; }
+.cl-target.rect { aspect-ratio: auto; transform: none; border-radius: 6px; background: rgba(46, 229, 157, .18); }
 .cl-slide { flex: 1; display: flex; flex-direction: column; gap: 16px; align-items: center; justify-content: center; }
-.cl-slide .cl-img { max-height: 60vh; height: auto; }
+.cl-slide .cl-img { height: 54vh; width: min(1100px, 100%); }
 .cl-lines { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 .cl-lines span { padding: 8px 18px; border-radius: 999px; font-weight: 900; font-size: 1.15rem; background: var(--glass); box-shadow: inset 0 0 0 2px rgba(255, 210, 63, .45); animation: popin .5s var(--spring) both; animation-delay: calc(var(--i) * 250ms + .6s); }
 
@@ -104,3 +105,17 @@
 .cl-img.rv-tiles { width: 100%; }
 .cl-explain { align-self: center; max-width: 900px; padding: 10px 22px; border-radius: var(--r); background: rgba(255, 210, 63, .14); box-shadow: inset 0 0 0 2px rgba(255, 210, 63, .35); font-size: 1.25rem; font-weight: 800; text-align: center; animation: popin .5s var(--spring) .4s both; }
 .cl-pz .pz-outline { position: absolute; inset: 0; }
+
+/* pictures sit in a frame sized to their own proportions (QMedia.mount) */
+.cl-img { width: 100%; min-height: 0; min-width: 0; grid-template: minmax(0, 1fr) / minmax(0, 1fr); }
+.cl-img .rv-frame { border-radius: var(--r-lg); box-shadow: var(--lift), var(--drop); }
+.cl-img .rv-frame img { border-radius: 0; box-shadow: none; }
+
+/* zoom on the picture after the answer */
+.cl-zoom { position: absolute; top: 10px; inset-inline-end: 10px; z-index: 3; width: 46px; height: 46px; border: 0; border-radius: 50%; cursor: pointer; font-size: 1.3rem; background: rgba(0, 0, 0, .55); color: #fff; box-shadow: 0 3px 0 rgba(0, 0, 0, .35); transition: transform .15s var(--spring); }
+.cl-zoom:hover { transform: scale(1.12); background: rgba(0, 0, 0, .75); }
+.cl-zoomed { position: fixed; inset: 0; z-index: 450; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; background: rgba(5, 2, 20, .92); cursor: zoom-out; animation: fadein .25s; }
+.cl-zoomed img { max-width: 94vw; max-height: 74vh; object-fit: contain; border-radius: var(--r-lg); box-shadow: var(--drop); animation: popin .4s var(--spring); }
+.clz-q { font-size: clamp(1.4rem, 2.6vw, 2.2rem); font-weight: 900; text-align: center; }
+.clz-ex { max-width: 1100px; padding: 12px 24px; border-radius: var(--r); background: rgba(255, 210, 63, .16); box-shadow: inset 0 0 0 2px rgba(255, 210, 63, .4); font-size: clamp(1.2rem, 2.2vw, 1.8rem); font-weight: 800; text-align: center; }
+.clz-x { position: absolute; top: 18px; inset-inline-start: 18px; width: 48px; height: 48px; border-radius: 50%; border: 0; cursor: pointer; font-size: 1.3rem; background: rgba(255, 255, 255, .12); color: #fff; }

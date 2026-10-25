@@ -66,6 +66,9 @@ function normalize(raw) {
   }
   const ex = str(raw.explain, 200).trim();
   if (ex) q.explain = ex;
+  // a picture for after the answer (to explain), and/or the question picture held back until the answer
+  if (raw.explainImage) q.explainImage = str(raw.explainImage, 200);
+  if (raw.imageWhen === 'after' && q.image) q.imageWhen = 'after';
   if (type === 'quiz' || type === 'poll') {
     q.answers = (Array.isArray(raw.answers) ? raw.answers : []).slice(0, 6).map((a) => ({ text: str(a && a.text, 120), correct: type === 'quiz' && !!(a && a.correct) }));
   } else if (type === 'tf') {
@@ -83,8 +86,14 @@ function normalize(raw) {
   } else if (type === 'order') {
     q.items = (Array.isArray(raw.items) ? raw.items : []).map((s) => str(s, 80).trim()).filter(Boolean).slice(0, 6);
   } else if (type === 'pin') {
+    // circle: r = radius in % of the picture's width (ar = width / height keeps it round on any picture)
+    // rect: w × h in % of the picture's width / height (a row, a column, a whole line on a map…)
     const p = raw.pin || {};
-    q.pin = { x: clamp(num(p.x, 50), 0, 100), y: clamp(num(p.y, 50), 0, 100), r: clamp(num(p.r, 10), 2, 50) };
+    const base = { x: clamp(num(p.x, 50), 0, 100), y: clamp(num(p.y, 50), 0, 100) };
+    if (p.shape === 'rect') q.pin = { shape: 'rect', ...base, w: clamp(num(p.w, 20), 1, 100), h: clamp(num(p.h, 10), 1, 100) };
+    else q.pin = { shape: 'circle', ...base, r: clamp(num(p.r, 10), 2, 50) };
+    const ar = num(p.ar, 0);
+    if (ar >= 0.1 && ar <= 10) q.pin.ar = Math.round(ar * 1000) / 1000;
   } else if (type === 'puzzle') {
     const p = raw.puzzle || {};
     q.puzzle = { rows: clamp(Math.round(num(p.rows, 3)), 2, 5), cols: clamp(Math.round(num(p.cols, 3)), 2, 5) };
@@ -107,8 +116,9 @@ function playable(q) {
 // what the phone gets + the private state needed to check the answer
 function present(q, mediaBase) {
   const out = { type: q.type, text: q.text, time: q.time, points: q.points };
-  if (q.image) out.image = mediaBase + encodeURIComponent(q.image);
-  if (q.reveal) {
+  const held = q.imageWhen === 'after' && q.type !== 'pin' && q.type !== 'puzzle';
+  if (q.image && !held) out.image = mediaBase + encodeURIComponent(q.image);
+  if (q.reveal && !held) {
     out.reveal = q.reveal;
     out.revealSec = Math.min(q.revealSec || q.time, q.time);
   }
@@ -141,6 +151,21 @@ function correctText(q) {
   if (q.type === 'pin') return 'המקום המסומן בתמונה';
   if (q.type === 'puzzle') return 'התמונה השלמה';
   return '';
+}
+
+// the picture to show after the answer (explanation picture, or the question picture held back), or ''
+function afterImage(q, mediaBase) {
+  const f = q.explainImage || (q.imageWhen === 'after' && q.type !== 'pin' && q.type !== 'puzzle' ? q.image : '');
+  return f ? mediaBase + encodeURIComponent(f) : '';
+}
+
+// is (x, y) (percent of the picture) inside the pin zone?
+function inPin(pin, x, y) {
+  const dx = x - pin.x;
+  const dy = y - pin.y;
+  if (pin.shape === 'rect') return Math.abs(dx) <= pin.w / 2 + 1e-9 && Math.abs(dy) <= pin.h / 2 + 1e-9;
+  // height-percent → width-percent, so the zone is the same round circle the teacher drew
+  return Math.hypot(dx, dy / (pin.ar || 1)) <= pin.r + 1e-9;
 }
 
 // → { valid, ok, chosen } ; valid=false means a malformed answer to ignore
@@ -178,8 +203,7 @@ function check(q, state, data) {
     const x = Number(data.x);
     const y = Number(data.y);
     if (!Number.isFinite(x) || !Number.isFinite(y)) return { valid: false };
-    const d = Math.hypot(x - q.pin.x, y - q.pin.y);
-    return { valid: true, ok: d <= q.pin.r, chosen: `(${Math.round(x)}%, ${Math.round(y)}%)` };
+    return { valid: true, ok: inPin(q.pin, x, y), chosen: `(${Math.round(x)}%, ${Math.round(y)}%)` };
   }
   if (q.type === 'puzzle') {
     // order[cell] = the piece put in that cell; piece k belongs in cell k
@@ -192,4 +216,4 @@ function check(q, state, data) {
   return { valid: false };
 }
 
-module.exports = { TYPES, SCORED, TIMES, POINTS, REVEALS, REVEAL_SECS, VIDEO_FILE, normalize, playable, present, check, correctText, norm };
+module.exports = { TYPES, SCORED, TIMES, POINTS, REVEALS, REVEAL_SECS, VIDEO_FILE, normalize, playable, present, check, correctText, norm, inPin, afterImage };

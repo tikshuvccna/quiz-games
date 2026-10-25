@@ -204,10 +204,34 @@ const cellText = (c) => {
 };
 
 // Extra columns after Kahoot's own (all optional; Kahoot ignores them):
-//   Type, Points, Image, Video, Reveal, Accept, Slider, Items, Pin, Puzzle, Explanation
-const EXTRA_COLS = /^(type|points|image|video|reveal|accept|slider|items|pin|puzzle|explanation)\b/i;
+//   Type, Points, Image, Video, Reveal, Accept, Slider, Items, Pin, Puzzle, Explanation, AfterImage
+const EXTRA_COLS = /^(afterimage|type|points|image|video|reveal|accept|slider|items|pin|puzzle|explanation)\b/i;
 const IMG_EXT = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
 const parts = (s) => String(s || '').split('|').map((x) => x.trim()).filter(Boolean);
+
+// width × height of a PNG / GIF / JPEG / WebP from its first bytes (no image library needed)
+function imageSize(b) {
+  try {
+    if (!b || b.length < 30) return null;
+    if (b.readUInt32BE(0) === 0x89504e47) return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
+    if (b.toString('ascii', 0, 3) === 'GIF') return { w: b.readUInt16LE(6), h: b.readUInt16LE(8) };
+    if (b.toString('ascii', 0, 4) === 'RIFF' && b.toString('ascii', 8, 12) === 'WEBP') {
+      const kind = b.toString('ascii', 12, 16);
+      if (kind === 'VP8X') return { w: 1 + b.readUIntLE(24, 3), h: 1 + b.readUIntLE(27, 3) };
+      if (kind === 'VP8L') { const v = b.readUInt32LE(21); return { w: 1 + (v & 0x3fff), h: 1 + ((v >> 14) & 0x3fff) }; }
+      if (kind === 'VP8 ') return { w: b.readUInt16LE(26) & 0x3fff, h: b.readUInt16LE(28) & 0x3fff };
+    }
+    if (b[0] === 0xff && b[1] === 0xd8) {
+      for (let i = 2; i < b.length - 9;) {
+        if (b[i] !== 0xff) { i++; continue; }
+        const m = b[i + 1];
+        if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) return { w: b.readUInt16BE(i + 7), h: b.readUInt16BE(i + 5) };
+        i += 2 + b.readUInt16BE(i + 2);
+      }
+    }
+  } catch {}
+  return null;
+}
 
 function parseVideo(s) {
   s = String(s || '').trim();
@@ -254,6 +278,13 @@ function rowToRaw(cells, head, images, note) {
     if (images.has(imgName)) base.image = imgName;
     else note(head.x_image, images.size ? `התמונה "${imgRaw}" לא נמצאה ב-zip` : `התמונה "${imgRaw}" לא צורפה (העלו zip עם תיקיית images)`, 'warn');
   }
+  // a picture shown after the answer, to explain it
+  const afRaw = get('x_afterimage');
+  if (afRaw) {
+    const afName = path.basename(afRaw.replace(/\\/g, '/')).toLowerCase();
+    if (images.has(afName)) base.explainImage = afName;
+    else note(head.x_afterimage, `התמונה "${afRaw}" לא נמצאה ב-zip`, 'warn');
+  }
   const rv = get('x_reveal').toLowerCase();
   if (rv) {
     if (/^(yes|true|1|כן|blur|טשטוש)$/i.test(rv)) base.reveal = 'blur';
@@ -295,8 +326,13 @@ function rowToRaw(cells, head, images, note) {
   } else if (type === 'pin') {
     const n = parts(get('x_pin')).map(Number);
     if (!base.image) down(head.x_image || head.x_type, 'שאלת סימון צריכה תמונה');
-    else if (n.length >= 2 && n.every(Number.isFinite) && n[0] >= 0 && n[0] <= 100 && n[1] >= 0 && n[1] <= 100) special = { ...base, type: 'pin', pin: { x: n[0], y: n[1], r: n[2] || 10 } };
-    else down(head.x_pin || head.x_type, `סימון צריך x|y|radius באחוזים (קיבלנו "${get('x_pin')}")`);
+    else if (n.length >= 2 && n.every(Number.isFinite) && n[0] >= 0 && n[0] <= 100 && n[1] >= 0 && n[1] <= 100) {
+      // x|y|radius = circle, x|y|width|height = rectangle (a row, a column, a whole line)
+      const dim = imageSize(images.get(base.image).buffer);
+      const ar = dim ? dim.w / dim.h : undefined;
+      const pin = n.length >= 4 ? { shape: 'rect', x: n[0], y: n[1], w: n[2], h: n[3], ar } : { shape: 'circle', x: n[0], y: n[1], r: n[2] || 10, ar };
+      special = { ...base, type: 'pin', pin };
+    } else down(head.x_pin || head.x_type, `סימון צריך x|y|radius (עיגול) או x|y|width|height (מלבן) באחוזים (קיבלנו "${get('x_pin')}")`);
   } else if (type === 'puzzle') {
     const m = get('x_puzzle').match(/^(\d)\s*[x×*]\s*(\d)$/i);
     if (!base.image) down(head.x_image || head.x_type, 'פאזל צריך תמונה');
@@ -370,13 +406,15 @@ async function importXlsx(buffer, title, images = new Map()) {
   // copy each used picture into the quiz's media folder once
   const stored = new Map();
   for (const q of questions) {
-    if (!q.image) continue;
-    if (!stored.has(q.image)) {
-      const img = images.get(q.image);
-      stored.set(q.image, img ? saveMedia(id, img.buffer, img.mime) : null);
+    for (const key of ['image', 'explainImage']) {
+      if (!q[key]) continue;
+      if (!stored.has(q[key])) {
+        const img = images.get(q[key]);
+        stored.set(q[key], img ? saveMedia(id, img.buffer, img.mime) : null);
+      }
+      if (stored.get(q[key])) q[key] = stored.get(q[key]);
+      else delete q[key];
     }
-    if (stored.get(q.image)) q.image = stored.get(q.image);
-    else delete q.image;
   }
   save(id, { title: title || 'חידון מיובא', questions });
   return { id, count: questions.length, images: [...stored.values()].filter(Boolean).length, issues: issues.slice(0, 300), ...stats };
@@ -408,11 +446,11 @@ async function importAny(buffer, title) {
 async function templateXlsx(id) {
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Quiz', { views: [{ rightToLeft: true }] });
-  ws.columns = [{ width: 6 }, { width: 50 }, { width: 26 }, { width: 26 }, { width: 26 }, { width: 26 }, { width: 16 }, { width: 20 }, { width: 10 }, { width: 8 }, { width: 18 }, { width: 28 }, { width: 9 }, { width: 24 }, { width: 22 }, { width: 24 }, { width: 14 }, { width: 9 }];
+  ws.columns = [{ width: 6 }, { width: 50 }, { width: 26 }, { width: 26 }, { width: 26 }, { width: 26 }, { width: 16 }, { width: 20 }, { width: 10 }, { width: 8 }, { width: 18 }, { width: 28 }, { width: 9 }, { width: 24 }, { width: 22 }, { width: 24 }, { width: 14 }, { width: 9 }, { width: 30 }, { width: 16 }];
   ws.addRow(['', 'תבנית חידון (תואמת לתבנית של Kahoot)']).font = { bold: true, size: 16 };
   ws.addRow(['', 'מלאו שאלה בכל שורה. זמן: 5/10/20/30/60/90/120/240 שניות. תשובה נכונה: מספר התשובה (למשל 2, או 1,3 לכמה תשובות). העמודות אחרי "Correct answer" (I ואילך) אופציונליות: Kahoot מתעלם מהן והתוכנית שלנו קוראת אותן.']);
   ws.addRow([]);
-  const head = ws.addRow(['#', 'Question - שאלה', 'Answer 1 - תשובה 1', 'Answer 2 - תשובה 2', 'Answer 3 - תשובה 3', 'Answer 4 - תשובה 4', 'Time limit (sec) - זמן', 'Correct answer(s) - נכונות', 'Type', 'Points', 'Image', 'Video', 'Reveal', 'Accept', 'Slider', 'Items', 'Pin', 'Puzzle']);
+  const head = ws.addRow(['#', 'Question - שאלה', 'Answer 1 - תשובה 1', 'Answer 2 - תשובה 2', 'Answer 3 - תשובה 3', 'Answer 4 - תשובה 4', 'Time limit (sec) - זמן', 'Correct answer(s) - נכונות', 'Type', 'Points', 'Image', 'Video', 'Reveal', 'Accept', 'Slider', 'Items', 'Pin', 'Puzzle', 'Explanation', 'AfterImage']);
   head.font = { bold: true, color: { argb: 'FFFFFFFF' } };
   head.eachCell((c, cn) => (c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: cn > 8 ? 'FF1E7B4F' : 'FF46178F' } }));
   // extras: Type, Points, Image, Video, Reveal, Accept, Slider, Items, Pin, Puzzle (type "puzzle" is not played yet)
@@ -435,4 +473,4 @@ async function templateXlsx(id) {
   return wb.xlsx.writeBuffer();
 }
 
-module.exports = { SAMPLE_ID, folder, setFolder, list, load, save, create, duplicate, remove, mediaDir, saveMedia, mediaPath, questionsFor, importXlsx, importAny, templateXlsx, validId, newId, cleanFolder, fileOf, IMG_EXT };
+module.exports = { SAMPLE_ID, folder, setFolder, list, load, save, create, duplicate, remove, mediaDir, saveMedia, mediaPath, questionsFor, importXlsx, importAny, templateXlsx, validId, newId, cleanFolder, fileOf, IMG_EXT, imageSize };

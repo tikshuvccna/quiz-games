@@ -98,6 +98,7 @@ async function addQuiz(zip, prefix, id) {
     for (const x of q.questions) {
       if (x.image) used.add(x.image);
       if (x.video && x.video.file) used.add(x.video.file);
+      if (x.explainImage) used.add(x.explainImage);
     }
     for (const f of fs.readdirSync(dir)) if (used.has(f)) zip.file(prefix + 'media/' + f, fs.readFileSync(path.join(dir, f)));
   }

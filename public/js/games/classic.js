@@ -39,12 +39,15 @@
 
   function media(q, rv) {
     if (q.type === 'pin') {
-      const pins = rv ? rv.pins.map(([x, y, ok]) => `<i class="cl-pin ${ok ? 'ok' : ''}" style="left:${x}%;top:${y}%"></i>`).join('') + `<i class="cl-target" style="left:${rv.target.x}%;top:${rv.target.y}%;--r:${rv.target.r}"></i>` : '';
+      const pins = rv ? rv.pins.map(([x, y, ok]) => `<i class="cl-pin ${ok ? 'ok' : ''}" style="left:${x}%;top:${y}%"></i>`).join('') + QMedia.pinZone(rv.target, 'cl-target') : '';
       return `<div class="cl-pinbox"><div class="cl-pinframe" id="pinFrame"><img src="${esc(q.image)}" alt="">${pins}</div></div>`;
     }
     if (q.type === 'puzzle') return `<div class="cl-pinbox"><div class="cl-pinframe cl-pz" id="pinFrame" data-pz="1"><img src="${esc(q.image)}" alt=""></div></div>`;
     // the question video plays on the big screen (with sound) while the class answers
     if (q.video && !rv) return QMedia.video(q.video, { autoplay: true, cls: 'cl-video' });
+    // after the answer: the explanation picture (or the picture that was held back), with a zoom button
+    const shown = rv && rv.afterImage ? rv.afterImage : q.image;
+    if (rv && shown) return QMedia.picture(shown, { cls: 'cl-img', done: true, cover: `<button class="cl-zoom" data-zoom="${esc(shown)}" title="הגדלה">🔍</button>` });
     return q.image ? QMedia.picture(q.image, { reveal: q.reveal, revealSec: q.revealSec, cls: 'cl-img', done: !!rv }) : '';
   }
 
@@ -138,6 +141,8 @@
         box.querySelectorAll('.cl-row .sc').forEach((el, i) => setTimeout(() => U.countTo(el, b.board[i].score, 900), 250 + i * 120));
       }
       QMedia.mount(box);
+      const zb = box.querySelector('[data-zoom]');
+      if (zb) zb.onclick = () => this.zoom(zb.dataset.zoom, b.reveal && b.reveal.explain, q.text);
       // pins sit on the picture's real proportions
       const pf = document.getElementById('pinFrame');
       if (pf) U.fitImage(pf, pf.querySelector('img'));
@@ -147,6 +152,20 @@
         if (img.complete && img.naturalWidth) draw();
         else img.addEventListener('load', draw, { once: true });
       }
+    },
+
+    // full-screen picture after the answer, so the teacher can explain it (click / Esc closes)
+    zoom(src, explain, text) {
+      document.getElementById('clZoom')?.remove();
+      const z = document.createElement('div');
+      z.id = 'clZoom';
+      z.className = 'cl-zoomed';
+      z.innerHTML = `<div class="clz-q">${esc(text || '')}</div><img src="${esc(src)}" alt="">${explain ? `<div class="clz-ex">💡 ${esc(explain)}</div>` : ''}<button class="clz-x">✕</button>`;
+      document.body.appendChild(z);
+      const close = () => { z.remove(); removeEventListener('keydown', key); };
+      const key = (e) => { if (e.key === 'Escape') close(); };
+      z.onclick = close;
+      addEventListener('keydown', key);
     },
 
     hostEnded(app, st) {
@@ -209,6 +228,7 @@
           ${r.conf === 1 && you.stage !== undefined && !this.pyramidMode ? `<div class="pill">🚀 ${r.ok ? 'הבוסט הצליח!' : 'הבוסט נכשל'}</div>` : ''}
           ${r.ok && r.streak >= 2 ? `<div class="streak">${Art.flame()} רצף ${r.streak}</div>` : ''}
           ${!r.ok && !poll && you.correctText ? `<div class="fb-answer">התשובה הנכונה<b>${esc(you.correctText)}</b></div>` : ''}
+          ${you.afterImage ? `<img class="fb-pic" src="${esc(you.afterImage)}" alt="">` : ''}
           ${you.explain ? `<div class="fb-explain">${esc(you.explain)}</div>` : ''}
           <div class="fb-note">מקום ${you.rank}${you.above ? (you.above.gap > 0 ? ` · עוד ${you.above.gap} ${this.ptsUnit || 'נק׳'} כדי לעקוף את ${esc(you.above.name)}` : ` · צמוד ל־${esc(you.above.name)}!`) : you.rank === 1 ? ' · אתם בראש! 👑' : ''}</div></div>`;
         if (!poll) {

@@ -35,6 +35,9 @@ async function sheet() {
   ws.addRow([7, 'Pin without a picture', 'a', 'b', 'c', 'd', 20, '1', 'pin', 1, 'missing.png', '', '', '', '', '', '10|10|10']);
   ws.addRow([8, 'Puzzle (not played yet)', 'a', 'b', 'c', 'd', 20, '4', 'puzzle', 1, '', '', '', '', '', '', '', '3x3']);
   ws.addRow([9, 'Poll', 'x', 'y', 'z', 'w', 20, '1', 'poll']);
+  ws.getRow(2).getCell(19).value = 'AfterImage';
+  ws.addRow([11, 'With an explanation picture', 'a', 'b', 'c', 'd', 20, '1', 'quiz', 1, '', '', '', '', '', '', '', '', 'q06.png']);
+  ws.addRow([10, 'Which row?', 'top', 'middle', 'bottom', 'none', 30, '2', 'pin', 1, 'q05-dot.png', '', '', '', '', '', '50|45|100|10']);
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
 
@@ -47,7 +50,7 @@ async function sheet() {
     let r = await Q.importAny(xlsx, 'plain');
     let quiz = Q.load(r.id);
     const byText = (t) => quiz.questions.find((q) => q.text === t);
-    check('xlsx: 9 questions imported', r.count === 9, r);
+    check('xlsx: 11 questions imported', r.count === 11, r);
     check('xlsx: type question', byText('Type it').type === 'type' && byText('Type it').accept.includes('paris') && byText('Type it').points === 2);
     check('xlsx: slider question', byText('What year').type === 'slider' && byText('What year').slider.answer === 1948);
     check('xlsx: order question', byText('Which is first').type === 'order' && byText('Which is first').items.length === 4);
@@ -68,7 +71,11 @@ async function sheet() {
     r = await Q.importAny(buf, 'withzip');
     quiz = Q.load(r.id);
     const pin = quiz.questions.find((q) => q.text === 'Point at the red dot');
-    check('zip: 9 questions and 2 pictures', r.count === 9 && r.images === 2, r);
+    check('zip: 11 questions and 2 pictures', r.count === 11 && r.images === 2, r);
+    const ex = quiz.questions.find((q) => q.text === 'With an explanation picture');
+    check('zip: AfterImage becomes the explanation picture', ex.explainImage && !!Q.mediaPath(r.id, ex.explainImage), ex);
+    const row = quiz.questions.find((q) => q.text === 'Which row?');
+    check('zip: 4 numbers make a rectangle pin with the picture proportions', row.type === 'pin' && row.pin.shape === 'rect' && row.pin.w === 100 && row.pin.ar === 1, row.pin);
     check('zip: pin question is a pin with a stored picture', pin.type === 'pin' && pin.pin.x === 40 && !!Q.mediaPath(r.id, pin.image));
     const vq = quiz.questions.find((q) => q.text === 'Video question');
     check('zip: picture names are case-insensitive', !!Q.mediaPath(r.id, vq.image));

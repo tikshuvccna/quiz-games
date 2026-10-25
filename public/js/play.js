@@ -190,6 +190,7 @@ function render(was) {
         <div class="fb-title">${l.correct ? 'נכון!' : 'לא נכון'}</div>
         ${l.correct && l.streak >= 2 ? `<div class="streak">${Art.flame()} רצף ${l.streak}</div>` : ''}
         ${l.correct ? (l.note ? `<div class="fb-note">${esc(l.note)}</div>` : '') : `<div class="fb-answer">התשובה הנכונה<b>${esc(l.correctText)}</b></div>${l.note ? `<div class="fb-note">${esc(l.note)}</div>` : ''}`}
+        ${l.afterImage ? `<img class="fb-pic" src="${esc(l.afterImage)}" alt="">` : ''}
         ${l.explain && !l.correct ? `<div class="fb-explain">${esc(l.explain)}</div>` : ''}
       </div>`;
     if (l.correct) {

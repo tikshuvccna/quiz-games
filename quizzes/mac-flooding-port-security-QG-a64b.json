@@ -1,0 +1,279 @@
+{
+  "title": "mac-flooding-port-security-QG",
+  "description": "",
+  "folder": "",
+  "background": "",
+  "updated": "2026-10-25T09:59:21.187Z",
+  "questions": [
+    {
+      "type": "quiz",
+      "text": "מאיזו כתובת בפריים שהתקבל הסוויץ' לומד לאיזה פורט מחובר המארח?",
+      "time": 20,
+      "points": 1,
+      "explain": "הסוויץ' קורא את ה-Source MAC ורושם אותה בטבלה לצד הפורט שממנו הגיע הפריים.",
+      "answers": [
+        {
+          "text": "Destination MAC (כתובת MAC של היעד)",
+          "correct": false
+        },
+        {
+          "text": "Source IP (כתובת IP של השולח)",
+          "correct": false
+        },
+        {
+          "text": "Source MAC (כתובת MAC של השולח)",
+          "correct": true
+        },
+        {
+          "text": "Destination IP (כתובת IP של היעד)",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "text": "איך נקראת הטבלה בסוויץ' שבה רשומות הכתובות שנלמדו, לצד הפורט של כל אחת? (באנגלית)",
+      "time": 30,
+      "points": 1,
+      "explain": "הטבלה נקראת MAC Table (או CAM Table).",
+      "accept": [
+        "MAC Table",
+        "MAC address table",
+        "mac-address-table",
+        "CAM Table",
+        "CAM table",
+        "CAM",
+        "MAC table"
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "איזה ממצא בפלט שבתמונה מעיד על מתקפת MAC Flooding על הסוויץ'?",
+      "time": 30,
+      "points": 1,
+      "image": "mvnnohob6d2217.png",
+      "explain": "מתקפת MAC Flooding ממלאת את הטבלה בהרבה כתובות MAC שונות, כולן על אותו פורט.",
+      "answers": [
+        {
+          "text": "אותה כתובת MAC מופיעה במספר פורטים שונים בו-זמנית",
+          "correct": false
+        },
+        {
+          "text": "הרשומות הן מסוג STATIC ושויכו ידנית ע\"י מנהל הרשת",
+          "correct": false
+        },
+        {
+          "text": "כל הרשומות שייכות ל-VLAN 1 במקום ל-VLAN נפרד לכל פורט",
+          "correct": false
+        },
+        {
+          "text": "כתובות MAC רבות ושונות נלמדו על אותו פורט (Fa0/23)",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "לאחר כמה זמן, כברירת מחדל, נמחקת רשומה דינמית מטבלת ה-MAC אם המארח לא שלח פריימים?",
+      "time": 20,
+      "points": 1,
+      "explain": "רשומות דינמיות נמחקות כברירת מחדל לאחר 5 דקות ללא פעילות של המארח.",
+      "answers": [
+        {
+          "text": "דקה אחת",
+          "correct": false
+        },
+        {
+          "text": "חמש דקות",
+          "correct": true
+        },
+        {
+          "text": "שלוש דקות",
+          "correct": false
+        },
+        {
+          "text": "שעה אחת",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "איזו פקודה משייכת כתובת MAC מסוימת לפורט באופן סטטי, כך שרק היא תורשה לשלוח דרכו?",
+      "time": 30,
+      "points": 1,
+      "explain": "mac-address [MAC] משייכת כתובת באופן סטטי ע\"י מנהל הרשת; sticky לומד כתובת אוטומטית.",
+      "answers": [
+        {
+          "text": "switchport port-security mac-address sticky",
+          "correct": false
+        },
+        {
+          "text": "switchport port-security violation restrict",
+          "correct": false
+        },
+        {
+          "text": "switchport port-security mac-address [MAC]",
+          "correct": true
+        },
+        {
+          "text": "switchport port-security maximum 1",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "order",
+      "text": "סדרו את פקודות הפעלת Port-Security לפי הסדר (במצב בחירה: מהי הפקודה הראשונה?)",
+      "time": 30,
+      "points": 1,
+      "explain": "קודם נכנסים לממשק, אחר כך מגדירים access, מפעילים port-security ורק אז מגדירים maximum.",
+      "items": [
+        "כניסה לתצורת הממשק הרצוי (interface fa0/1)",
+        "הגדרת הממשק למצב access (switchport mode access)",
+        "הפעלת port-security על הממשק (switchport)",
+        "הגבלת מספר הכתובות המקסימלי לעשר (maximum)"
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "מה נכון לגבי אופן שיוך הכתובות לפורטים, לפי הטבלה שבתמונה?",
+      "time": 30,
+      "points": 1,
+      "image": "mvnnohog7dc65f.png",
+      "explain": "SecureConfigured = שויכה ידנית; SecureSticky = נלמדה אוטומטית ע\"י מצב sticky.",
+      "answers": [
+        {
+          "text": "Fa0/1 נלמדה אוטומטית ו-Fa0/2 שויכה ידנית ע\"י מנהל הרשת",
+          "correct": false
+        },
+        {
+          "text": "שני הפורטים שויכו ידנית ע\"י מנהל הרשת באמצעות פקודה סטטית",
+          "correct": false
+        },
+        {
+          "text": "שני הפורטים נלמדו אוטומטית על ידי הסוויץ' לאחר הפעלת האבטחה",
+          "correct": false
+        },
+        {
+          "text": "Fa0/1 שויכה ידנית ע\"י מנהל הרשת ו-Fa0/2 נלמדה אוטומטית לבד",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "מדוע מתקפת MAC Overflow עלולה לגרום ל-DoS עוד לפני שטבלת ה-MAC התמלאה?",
+      "time": 30,
+      "points": 1,
+      "explain": "ריבוי הפריימים מעמיס על עיבוד המתג, ופריימים אמיתיים נופלים – גם לפני שהטבלה מלאה.",
+      "answers": [
+        {
+          "text": "הסוויץ' מוחק את הרשומות הסטטיות ומנתק את המארחים מהרשת",
+          "correct": false
+        },
+        {
+          "text": "ריבוי הפריימים מעמיס על הסוויץ' ופריימים אמיתיים נזרקים",
+          "correct": true
+        },
+        {
+          "text": "הפריימים המזויפים משנים את ה-VLAN של כל הפורטים בסוויץ'",
+          "correct": false
+        },
+        {
+          "text": "פריימי broadcast של התוקף יוצרים לולאה ומשתקים את הסוויץ'",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "לפי הפלט בתמונה, באיזה פורט כבר בוצעו הפרות, ומהו העונש המוגדר בו?",
+      "time": 30,
+      "points": 1,
+      "image": "mvnnohoh4cbf4a.png",
+      "explain": "בפורט Fa0/2 נרשמו 3 הפרות והעונש המוגדר בו הוא Restrict.",
+      "answers": [
+        {
+          "text": "פורט Fa0/2, המוגדר עם עונש Shutdown",
+          "correct": false
+        },
+        {
+          "text": "פורט Fa0/1, המוגדר עם העונש Shutdown",
+          "correct": false
+        },
+        {
+          "text": "פורט Fa0/2, המוגדר עם עונש Restrict",
+          "correct": true
+        },
+        {
+          "text": "פורט Fa0/3, המוגדר עם עונש Protect",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "pin",
+      "text": "איזו שורה בפלט מראה שהפורט כובה אוטומטית בעקבות הפרה (error-disabled)? הקישו עליה",
+      "time": 30,
+      "points": 2,
+      "image": "mvnnohoi1cbd7e.png",
+      "explain": "Port Status: Secure-shutdown מראה שהפורט נכבה אוטומטית בעקבות הפרה (error-disabled).",
+      "pin": {
+        "x": 80.7,
+        "y": 20.8,
+        "r": 8
+      }
+    },
+    {
+      "type": "quiz",
+      "text": "מה ההבדל בין העונש protect לבין העונש restrict בעת הפרה ב-port-security?",
+      "time": 30,
+      "points": 2,
+      "explain": "ב-protect וב-restrict הפריים נחסם והפורט ממשיך לעבוד; restrict מוסיף תיעוד ההפרות.",
+      "answers": [
+        {
+          "text": "ב-protect הפורט נכבה אוטומטית, וב-restrict הוא ממשיך לעבוד",
+          "correct": false
+        },
+        {
+          "text": "ב-restrict הפורט נכבה אוטומטית, וב-protect הוא ממשיך לעבוד",
+          "correct": false
+        },
+        {
+          "text": "ב-protect הפריים המפר עובר הלאה, ורק ב-restrict הוא נחסם",
+          "correct": false
+        },
+        {
+          "text": "שניהם חוסמים את הפריים המפר, אך רק restrict רושם את ההפרה",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "הוגדר aging type inactivity ו-aging time 10. מחשב מורשה שולח נתונים ברציפות. מתי תימחק הכתובת?",
+      "time": 60,
+      "points": 2,
+      "explain": "ב-inactivity השעון מתרענן בכל פעילות, ולכן הכתובת נמחקת רק אחרי 10 דקות ללא פעילות.",
+      "answers": [
+        {
+          "text": "לא תימחק כל עוד יש פעילות בפורט, כי השעון מתרענן",
+          "correct": true
+        },
+        {
+          "text": "תימחק 10 דקות לאחר השיוך, גם אם המחשב ממשיך לשלוח",
+          "correct": false
+        },
+        {
+          "text": "תימחק רק אם המנהל מבצע shutdown ו-no shutdown לפורט",
+          "correct": false
+        },
+        {
+          "text": "תימחק מיד כשהמחשב מפסיק לשלוח נתונים, בלי המתנה",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

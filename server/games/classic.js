@@ -24,14 +24,14 @@ class ClassicGame extends QuizGame {
   static teamAvg = true; // team score = average of its members (like Kahoot)
   static blurb = 'החידון הקלאסי: כולם עונים על אותה שאלה מהמסך הגדול. תשובה נכונה ומהירה = יותר נקודות, רצפים נותנים בונוס, ובין השאלות יש לוח מובילים. אפשר גם בקבוצות.';
   static tickMs = 500;
-  static defaults = { duration: 600, count: 0, order: 'original', advance: 'manual', bonus: 'on', style: 'speed', timer: 'question' };
+  static defaults = { duration: 600, count: 0, order: 'original', advance: 'manual', bonus: 'off', style: 'speed', timer: 'question' };
   static options = [
     { key: 'style', label: 'סגנון ניקוד', choices: [['speed', 'קלאסי: מהירות + דיוק'], ['accuracy', 'דיוק בלבד (נקודה לכל נכונה)'], ['confidence', 'ביטחון: בוסט או בטוח']] },
     { key: 'timer', label: 'זמן לשאלה', choices: [['question', 'לפי השאלה'], ['unlimited', 'ללא הגבלה']] },
     { key: 'count', label: 'מספר שאלות', choices: [[0, 'כל השאלות'], [5, '5'], [10, '10'], [15, '15'], [20, '20']] },
     { key: 'order', label: 'סדר השאלות', choices: [['original', 'לפי החידון'], ['shuffle', 'מעורבב']] },
     { key: 'advance', label: 'מעבר בין שלבים', choices: [['manual', 'ידני (לחיצה)'], ['auto', 'אוטומטי']] },
-    { key: 'bonus', label: 'הזדמנות שנייה ל־5 האחרונים', choices: [['on', 'כן'], ['off', 'לא']] },
+    { key: 'bonus', label: 'הזדמנות שנייה ל־5 האחרונים', choices: [['off', 'לא'], ['on', 'כן']] },
   ];
 
   start() {
@@ -247,7 +247,7 @@ class ClassicGame extends QuizGame {
     }
     this.rank();
     // what the class answered
-    const rv = { correctText: qt.correctText(q), answered: cur.answers.size, right, explain: q.explain || '' };
+    const rv = { correctText: qt.correctText(q), answered: cur.answers.size, right, explain: q.explain || '', afterImage: qt.afterImage(q, this.room.quizData.mediaBase) };
     if (q.type === 'quiz' || q.type === 'tf' || q.type === 'poll') {
       rv.dist = cur.state.order.map(() => 0);
       for (const a of cur.answers.values()) {
@@ -403,7 +403,7 @@ class ClassicGame extends QuizGame {
     // reveal / board: my own result + who is right above me
     const list = this.rank();
     const above = g.rank > 1 ? list[g.rank - 2] : null;
-    return { ...base, phase: can ? 'c_result' : 'c_watch_res', res: g.res, correctText: cur.reveal ? cur.reveal.correctText : '', explain: cur.reveal ? cur.reveal.explain : '', above: above ? { name: above.name, gap: above.g.score - g.score } : null };
+    return { ...base, phase: can ? 'c_result' : 'c_watch_res', res: g.res, correctText: cur.reveal ? cur.reveal.correctText : '', explain: cur.reveal ? cur.reveal.explain : '', afterImage: cur.reveal ? cur.reveal.afterImage : '', above: above ? { name: above.name, gap: above.g.score - g.score } : null };
   }
 
   results() {
