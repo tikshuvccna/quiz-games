@@ -7,6 +7,7 @@ const qt = require('../qtypes');
 const { shuffle } = require('../shuffle');
 
 const READY_MS = 3500; // question text alone before the answers open
+const MULT_MS = 2200; // the ×2 / ×3 / ×4 splash before it
 const AUTO_REVEAL_MS = 5500;
 const AUTO_BOARD_MS = 6500;
 const BONUS_PLAYERS = 5;
@@ -54,10 +55,19 @@ class ClassicGame extends QuizGame {
     this.lines = [];
     this.timer = null;
     this.eligible = null; // Set of player ids (bonus round), null = everyone
-    for (const p of this.players()) {
-      p.g = { score: 0, streak: 0, bestStreak: 0, correct: 0, wrong: 0, rank: 0, prevRank: 0, res: null, fastest: null, conf: 1, boosts: 0 };
-    }
+    for (const p of this.players()) p.g = this.freshG();
     this.next();
+  }
+
+  freshG() {
+    return { score: 0, streak: 0, bestStreak: 0, correct: 0, wrong: 0, rank: 0, prevRank: 0, res: null, fastest: null, conf: 1, boosts: 0 };
+  }
+
+  // joins in the middle: answers from the next question on
+  lateInit(p) {
+    p.g = this.freshG();
+    p.g.rank = this.players().filter((o) => o.g).length;
+    return true;
   }
 
   score(p) {
@@ -92,7 +102,8 @@ class ClassicGame extends QuizGame {
     this.stage = 'ready';
     this.lines = [];
     this.pushEveryone();
-    this.schedule(() => this.open(), READY_MS);
+    // a ×2 / ×3 / ×4 question gets an extra moment for its splash before the question text
+    this.schedule(() => this.open(), READY_MS + (q.points >= 2 ? MULT_MS : 0));
   }
 
   startBonus() {
@@ -393,7 +404,7 @@ class ClassicGame extends QuizGame {
     const base = { score: g.score, rank: g.rank, streak: g.streak, qid: this.qid(), qnum: this.i + 1, total: this.list.length, bonus: this.inBonus, stage: this.stage };
     const can = this.canAnswer(p);
     if (!cur) return { ...base, phase: 'c_ready' };
-    if (this.stage === 'ready') return { ...base, phase: can ? 'c_ready' : 'c_watch', text: cur.q.text };
+    if (this.stage === 'ready') return { ...base, phase: can ? 'c_ready' : 'c_watch', text: cur.q.text, points: cur.q.points };
     if (this.stage === 'slide') return { ...base, phase: 'c_slide', q: cur.payload };
     if (this.stage === 'question') {
       if (!can) return { ...base, phase: 'c_watch' };

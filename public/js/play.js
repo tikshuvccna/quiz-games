@@ -7,9 +7,15 @@ let boardState = null;
 let session = null; // { pin, token }
 let prevPhase = null;
 
+// this tab's seat; the device also remembers it, so closing the browser by mistake and coming back
+// (same link / same code) returns the player to their game with everything they did so far
 const store = {
   get() { try { return JSON.parse(sessionStorage.getItem('player') || 'null'); } catch { return null; } },
-  set(v) { try { v ? sessionStorage.setItem('player', JSON.stringify(v)) : sessionStorage.removeItem('player'); } catch {} },
+  saved() { try { return JSON.parse(localStorage.getItem('qg-player') || 'null'); } catch { return null; } },
+  set(v) {
+    try { v ? sessionStorage.setItem('player', JSON.stringify(v)) : sessionStorage.removeItem('player'); } catch {}
+    try { v ? localStorage.setItem('qg-player', JSON.stringify({ ...v, at: Date.now() })) : localStorage.removeItem('qg-player'); } catch {}
+  },
 };
 
 // ---- join screen ----
@@ -48,6 +54,7 @@ function showJoin(error = '') {
       session = { pin: r.pin, token: r.token };
       store.set(session);
       U.sfx('pop');
+      if (r.back) U.toast && U.toast('ברוכים השבים! ההתקדמות שלכם נשמרה 💪');
     });
   };
   document.getElementById('f').onsubmit = (e) => {
@@ -73,7 +80,8 @@ function showJoin(error = '') {
       const n = document.getElementById('name');
       n.classList.remove('hidden');
       document.getElementById('pin').classList.add('locked');
-      document.getElementById('go').textContent = 'יאללה!';
+      document.getElementById('go').textContent = r.running ? 'הצטרפו למשחק ▶' : 'יאללה!';
+      if (r.running) n.placeholder = 'הכינוי שלך (חוזרים? אותו כינוי)';
       n.focus();
     });
   };
@@ -88,8 +96,36 @@ socket.on('connect', () => {
     socket.emit('player:rejoin', session, (r) => {
       if (!r || !r.ok) { store.set(null); session = null; showJoin(); }
     });
+    return;
+  }
+  // a new tab (or the browser was closed): come back to the game this device was in, unless it is
+  // still open in another tab. A link with a different code means a new game.
+  const saved = store.saved();
+  const urlPin = new URLSearchParams(location.search).get('pin');
+  if (saved && Date.now() - (saved.at || 0) < 6 * 3600 * 1000 && (!urlPin || urlPin === saved.pin)) {
+    socket.emit('player:rejoin', { ...saved, soft: true }, (r) => {
+      if (r && r.ok) { session = { pin: saved.pin, token: saved.token }; store.set(session); }
+      else if (app.dataset.view !== 'join') showJoin();
+    });
   }
 });
+
+// a player photo: cut to a centered square, 160 px, small JPEG (kept in memory on the server only)
+function sendPhoto(file) {
+  const img = new Image();
+  img.onload = () => {
+    const S = 160;
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const s = Math.min(img.naturalWidth, img.naturalHeight);
+    c.getContext('2d').drawImage(img, (img.naturalWidth - s) / 2, (img.naturalHeight - s) / 2, s, s, 0, 0, S, S);
+    URL.revokeObjectURL(img.src);
+    socket.emit('player:photo', { photo: c.toDataURL('image/jpeg', 0.72) });
+    U.sfx('pop');
+  };
+  img.onerror = () => alert('לא הצלחנו לקרוא את התמונה');
+  img.src = URL.createObjectURL(file);
+}
 
 socket.on('kicked', (d) => {
   store.set(null);
@@ -140,10 +176,13 @@ function render(was) {
   const ph = you.phase;
   const G = Games[you.gameId];
   if (ph !== 'countdown') U.clearCountdown();
+  if (you.photo) U.photos[you.name] = you.photo;
   U.applyScene(you.scene);
 
   if (ph === 'lobby' || ph === 'countdown' || ph === 'spectate') {
-    const key = [ph, you.gameId, you.team, you.name, you.canReroll, you.round].join(':');
+    const key = [ph, you.gameId, you.team, you.name, you.canReroll, you.round, you.photo, you.photos].join(':');
+    if (you.photo) U.photos[you.name] = you.photo;
+    else delete U.photos[you.name];
     if (ph === 'countdown' && was !== 'countdown') U.countdown(you.cd || 3000, esc(you.gameTitle));
     if (!setView(key)) return;
     app.className = 'screen center wait';
@@ -158,7 +197,12 @@ function render(was) {
       ${team}
       <h2>${ph === 'lobby' ? 'את/ה בפנים!' : ph === 'spectate' ? 'המשחק כבר רץ' : 'מתחילים!'}</h2>
       <div class="muted">${ph === 'lobby' ? 'מחכים שהמארח/ת יתחיל<span class="dots"><i></i><i></i><i></i></span>' : ''}</div>
+      ${ph === 'lobby' && you.photos ? `<label class="btn ghost photo-btn">📷 ${you.photo ? 'החלפת תמונה' : 'הוספת תמונה (לא חובה)'}<input type="file" id="photoIn" accept="image/*" capture="user" hidden></label>${you.photo ? '<button class="btn ghost photo-btn" id="photoX">הסרת התמונה</button>' : ''}` : ''}
       ${ph === 'lobby' ? U.soundBtn() : ''}`;
+    const pi = document.getElementById('photoIn');
+    if (pi) pi.onchange = (e) => e.target.files[0] && sendPhoto(e.target.files[0]);
+    const px = document.getElementById('photoX');
+    if (px) px.onclick = () => socket.emit('player:photo', { photo: '' });
     const rr = document.getElementById('reroll');
     if (rr) rr.onclick = () => { socket.emit('player:reroll'); U.sfx('pop'); };
     return;

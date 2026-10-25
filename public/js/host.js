@@ -92,13 +92,18 @@ socket.on('host:state', (s) => {
 function render(prev) {
   if (!st) return;
   U.applyScene(st.setup.scene);
+  // player photos for every avatar on the big screen
+  U.photos = Object.fromEntries((st.players || []).filter((p) => p.photo).map((p) => [p.name, p.photo]));
   if (st.phase !== 'countdown') U.clearCountdown();
   // classic quiz: the "thinking" song while answering, the scoreboard song between questions
   const cs = st.phase === 'playing' && st.board && st.board.kind === 'classic' ? st.board.stage : null;
   Music.play(st.phase === 'lobby' ? 'lobby' : st.phase === 'ended' ? 'victory' : cs && cs !== 'question' && cs !== 'ready' ? 'between' : 'game');
   if (st.phase === 'lobby') renderLobby();
   else if (st.phase === 'countdown') renderCountdown(prev);
-  else if (st.phase === 'playing') Games[st.gameId].hostPlaying(app, st);
+  else if (st.phase === 'playing') {
+    Games[st.gameId].hostPlaying(app, st);
+    joinBadge();
+  }
   else Games[st.gameId].hostEnded(app, st);
 }
 
@@ -107,6 +112,22 @@ function renderCountdown(prev) {
   if (!U.view(app, 'countdown')) return;
   app.className = 'screen center wait';
   app.innerHTML = '';
+}
+
+// during a game: a small "join now" box (code, little QR, the address) for latecomers and players coming back
+let qrSmall = { url: '', svg: '' };
+function joinBadge() {
+  const box = document.getElementById('hgJoin');
+  if (!box || !joinUrl || !st.lateJoin) return box && (box.innerHTML = '');
+  const sig = st.pin + joinUrl;
+  if (box.dataset.sig === sig) return;
+  box.dataset.sig = sig;
+  const host = joinUrl.replace(/^https?:\/\//, '').split('/')[0];
+  const draw = () => (box.innerHTML = `${qrSmall.svg ? `<div class="hj-qr">${qrSmall.svg}</div>` : ''}<div class="hj-t"><span>מצטרפים באמצע?</span><b dir="ltr">${esc(st.pin)}</b><small dir="ltr">${esc(host)}</small></div>`);
+  draw();
+  if (qrSmall.url !== joinUrl) {
+    fetch('/qr?text=' + encodeURIComponent(joinUrl)).then((r) => r.text()).then((svg) => { qrSmall = { url: joinUrl, svg }; draw(); }).catch(() => {});
+  }
 }
 
 // youtube links → video id (watch?v=, youtu.be/, embed/, shorts/)
@@ -154,6 +175,7 @@ function renderLobby() {
               <small class="muted">רקעים משלכם: שימו תמונות או סרטונים בתיקייה <b dir="ltr">backgrounds</b> של התוכנה.</small></section>
             <section><h3>🎬 סרטון בזמן ההמתנה</h3><div class="video-lib" id="videoLib"></div><div class="row"><input class="input sm" id="videoUrl" placeholder="או הדביקו קישור ליוטיוב" dir="ltr"><button class="btn sm blue" id="videoSet">הצג</button><button class="btn sm ghost" id="videoClear">הסר</button></div></section>
             <div id="musicSet">${Music.settingsHtml()}</div>
+            <section><h3>📷 תמונות שחקנים</h3><label class="lite-tog"><input type="checkbox" id="photosOn"> השחקנים יכולים להוסיף תמונה (מהמצלמה או מהגלריה) שתופיע במקום האות</label><small class="muted">התמונות נשמרות רק בזיכרון, עד סוף המשחק. לחיצה על תמונה של שחקן בלובי מסירה אותה.</small></section>
             <section><h3>🏆 טקסט למנצחים</h3><input class="input sm" id="winText" maxlength="140" placeholder="למשל: כל הכבוד! פרס מחכה לכם אצל המורה 🎁"><small class="muted">יופיע בטלפון של המנצחים ובמסך התוצאות</small></section>
           </div>
         </div>
@@ -170,6 +192,8 @@ function renderLobby() {
       if (t) { tab = t.dataset.tab; renderLobby(); }
       const f = e.target.closest('[data-filter]');
       if (f) { filter = f.dataset.filter; renderLobby(); }
+      const ph = e.target.closest('.chip.has-photo .av');
+      if (ph && confirm('להסיר את התמונה של השחקן?')) return socket.emit('host:unphoto', ph.closest('.chip').dataset.id);
       const nm = e.target.closest('[data-name-mode]');
       if (nm) socket.emit('host:setup', { nameMode: nm.dataset.nameMode });
       const sc = e.target.closest('[data-scene-pick]');
@@ -179,6 +203,8 @@ function renderLobby() {
     };
     document.getElementById('start').onclick = () => socket.emit('host:start');
     document.getElementById('games').dataset.sig = '';
+    const po = document.getElementById('photosOn');
+    po.onchange = () => socket.emit('host:setup', { photos: po.checked });
     const lm = document.getElementById('liteMode');
     lm.checked = Scenes.lite();
     lm.onchange = () => Scenes.setLite(lm.checked);
@@ -253,6 +279,7 @@ function renderLobby() {
 
   // room setup
   document.querySelectorAll('[data-name-mode]').forEach((b) => b.classList.toggle('on', b.dataset.nameMode === st.setup.nameMode));
+  document.getElementById('photosOn').checked = st.setup.photos !== false;
   const scBox = document.getElementById('scenes');
   const scList = Scenes.all();
   if (scBox.dataset.sig !== scList.map((x) => x.id).join()) {
@@ -326,10 +353,12 @@ function renderPlayers() {
       U.sfx('pop');
     }
     // names can change (auto names: reroll)
-    if (c.dataset.name !== p.name) {
+    if (c.dataset.name !== p.name || c.dataset.photo !== (p.photo || '')) {
       c.dataset.name = p.name;
+      c.dataset.photo = p.photo || '';
       c.querySelector('.av').innerHTML = U.avatar(p.name);
       c.querySelector('.nm').textContent = p.name;
+      c.classList.toggle('has-photo', !!p.photo);
     }
     c.classList.toggle('off', !p.connected);
   }

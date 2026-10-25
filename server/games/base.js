@@ -19,8 +19,24 @@ class QuizGame {
   }
 
   initPlayer(p, extra = {}) {
+    // the first player's starting values are kept for anyone who joins later
+    if (this.lateExtra === undefined) {
+      try {
+        this.lateExtra = JSON.parse(JSON.stringify(extra));
+      } catch {
+        this.lateExtra = null;
+      }
+    }
     p.g = { order: [], ptr: 0, qid: 0, phase: 'question', current: null, last: null, correct: 0, wrong: 0, streak: 0, bestStreak: 0, charge: 0, turns: 0, turn: 0, askedAt: 0, ...extra };
     this.nextQuestion(p);
+  }
+
+  // a player who joins while the game is running gets a fresh start with the same starting values
+  // (games with per-player setup, like a spawn point, override this). Returns false if it can't.
+  lateInit(p) {
+    if (!this.lateExtra) return false;
+    this.initPlayer(p, JSON.parse(JSON.stringify(this.lateExtra)));
+    return true;
   }
 
   // setTimeout that never fires after the game is over (and is cleared on stop)

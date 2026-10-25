@@ -60,6 +60,11 @@ class ChaseGame extends QuizGame {
 
   // ---- hooks for the games ----
   setup() {}
+  lateInit(p) {
+    this.initPlayer(p, { dist: 0, perfect: 0, res: null, timer: null, saved: null, ...this.playerExtra(p) });
+    return true;
+  }
+
   playerExtra() {
     return {};
   }

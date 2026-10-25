@@ -179,6 +179,16 @@ app.get('/api/backgrounds', (req, res) => res.json(Media.backgrounds()));
 app.use('/videos', express.static(Media.VIDEO_DIR, { maxAge: '1d' }));
 app.get('/api/videos', (req, res) => res.json(Media.videos()));
 
+// player photos (memory only, while the room lives)
+app.get('/photo/:pin/:pid', (req, res) => {
+  const room = Room.get(req.params.pin);
+  const p = room && room.players.get(req.params.pid);
+  if (!p || !p.photo || !room.setup.photos) return res.status(404).end();
+  const m = p.photo.match(/^data:(image\/\w+);base64,(.+)$/);
+  if (!m) return res.status(404).end();
+  res.set('Cache-Control', 'private, max-age=3600').type(m[1]).send(Buffer.from(m[2], 'base64'));
+});
+
 // question pictures (public: phones and the big screen load them)
 app.get('/media/:id/:file', (req, res) => {
   const p = Quizzes.mediaPath(req.params.id, req.params.file);
@@ -306,8 +316,22 @@ io.on('connection', (socket) => {
   on('player:check', (data, ack) => {
     const room = Room.get(str(obj(data).pin).trim());
     if (!room) return ack({ ok: false, error: 'קוד המשחק לא נמצא' });
-    if (room.phase !== 'lobby') return ack({ ok: false, error: 'המשחק כבר התחיל' });
-    ack({ ok: true, nameMode: room.setup.nameMode, scene: room.setup.scene });
+    // a typed name can also bring back someone who dropped out, so ask for it even mid-game
+    const closed = room.joinable();
+    if (closed && room.setup.nameMode !== 'custom') return ack({ ok: false, error: closed });
+    ack({ ok: true, nameMode: room.setup.nameMode, scene: room.setup.scene, running: room.phase === 'playing' });
+  });
+
+  on('player:photo', (data) => {
+    const room = socket.data.room;
+    const p = room && !socket.data.isHost && room.players.get(socket.data.playerId);
+    if (p && p.socketId === socket.id) room.setPhoto(p, str(obj(data).photo));
+  });
+
+  on('host:unphoto', (pid) => {
+    const room = hostRoom();
+    const p = room && room.players.get(str(pid));
+    if (p) room.setPhoto(p, '');
   });
 
   on('player:reroll', () => {
@@ -334,15 +358,19 @@ io.on('connection', (socket) => {
     socket.data.room = room;
     socket.data.playerId = r.player.id;
     socket.data.isHost = false;
-    ack({ ok: true, token: r.player.token, pin: room.pin });
+    if (r.reclaimed) room.attachPlayer(r.player, socket.id);
+    ack({ ok: true, token: r.player.token, pin: room.pin, back: !!r.reclaimed });
     room.pushPlayer(r.player);
+    if (room.phase === 'playing') socket.emit('board', { board: room.game.publicState(), left: room.left() });
   });
 
   on('player:rejoin', (data, ack) => {
-    const { pin, token } = obj(data);
+    const { pin, token, soft } = obj(data);
     const room = Room.get(str(pin));
     const p = room && room.findByToken(str(token));
     if (!p) return ack({ ok: false });
+    // soft = a session remembered on this device: don't take over a player who is playing in another tab
+    if (soft && p.connected && p.socketId && p.socketId !== socket.id && io.sockets.sockets.get(p.socketId)) return ack({ ok: false });
     // a second tab / stale socket of the same player stops controlling it
     if (p.socketId && p.socketId !== socket.id) {
       const old = io.sockets.sockets.get(p.socketId);

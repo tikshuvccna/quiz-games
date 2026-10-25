@@ -69,7 +69,7 @@ class Room {
     this.destroyed = false;
     this.createdAt = new Date();
     // room-wide options that survive game changes and rematches
-    this.setup = { nameMode: 'custom', scene: 'classic', video: '', winText: '', quiz: Quizzes.SAMPLE_ID };
+    this.setup = { nameMode: 'custom', scene: 'classic', video: '', winText: '', quiz: Quizzes.SAMPLE_ID, photos: true };
     this.quizData = null;
     this.quizCache = null;
     this.round = 0;
@@ -111,6 +111,7 @@ class Room {
     if (!s) return;
     if (NAME_MODES.includes(s.nameMode)) this.setup.nameMode = s.nameMode;
     if (validScene(s.scene)) this.setup.scene = s.scene;
+    if (typeof s.photos === 'boolean') this.setup.photos = s.photos;
     if (typeof s.video === 'string') this.setup.video = s.video.trim().slice(0, 300);
     if (typeof s.winText === 'string') this.setup.winText = s.winText.replace(/[\u0000-\u001f]/g, ' ').slice(0, 140);
     if (typeof s.quiz === 'string' && s.quiz !== this.setup.quiz) {
@@ -176,22 +177,67 @@ class Room {
     return new Set([...this.players.values()].map((p) => p.name));
   }
 
+  // can a new player come in now? (the lobby, the countdown, or a running game that allows late joiners)
+  joinable() {
+    if (this.phase === 'lobby' || this.phase === 'countdown') return null;
+    if (this.phase === 'playing') return this.Game.lateJoin === false ? 'המשחק הזה לא מאפשר הצטרפות באמצע. חכו לסיבוב הבא' : null;
+    return 'המשחק בדיוק נגמר. חכו רגע לסיבוב הבא ונסו שוב';
+  }
+
   addPlayer(rawName, socketId) {
-    if (this.phase !== 'lobby') return { error: 'המשחק כבר התחיל' };
-    if (this.players.size >= 200) return { error: 'החדר מלא' };
     let name;
     if (this.setup.nameMode === 'custom') {
       name = String(rawName || '').replace(/[\u0000-\u001f​-‏‪-‮]/g, '').trim().slice(0, 14);
       if (!name) return { error: 'צריך לבחור שם' };
-      for (const p of this.players.values()) if (p.name.toLowerCase() === name.toLowerCase()) return { error: 'השם כבר תפוס' };
-    } else {
-      name = randomName(this.takenNames());
+      for (const p of this.players.values()) {
+        if (p.name.toLowerCase() !== name.toLowerCase()) continue;
+        // the same name of someone who dropped out = it's them coming back: their progress is kept
+        if (!p.connected && this.phase !== 'lobby') return { player: p, reclaimed: true };
+        return { error: 'השם כבר תפוס' };
+      }
     }
+    const closed = this.joinable();
+    if (closed) return { error: closed };
+    if (this.players.size >= 200) return { error: 'החדר מלא' };
+    if (this.setup.nameMode !== 'custom') name = randomName(this.takenNames());
     const p = { id: id(), token: id(), name, socketId, connected: true, team: -1, g: null, graceTimer: null, joinedAt: Date.now(), rerolls: 0 };
     this.players.set(p.id, p);
+    if (this.phase === 'playing') this.lateJoin(p);
     this.touched = Date.now();
     this.scheduleHostPush();
     return { player: p };
+  }
+
+  // joining a running game: the smallest team, a fresh start in the game
+  lateJoin(p) {
+    const n = this.teamCount();
+    if (n >= 2) {
+      const sizes = Array.from({ length: n }, (_, t) => [...this.players.values()].filter((o) => o !== p && o.team === t).length);
+      p.team = sizes.indexOf(Math.min(...sizes));
+    }
+    try {
+      if (this.game && this.game.lateInit && this.game.lateInit(p)) this.game.addFeed(`👋 ${p.name} הצטרף/ה למשחק`, p.team);
+    } catch (e) {
+      console.error('[late join]', e);
+      p.g = null;
+    }
+  }
+
+  // an optional player photo: a small JPEG kept in memory only (never written to disk or reports)
+  setPhoto(p, data) {
+    if (data === '') {
+      p.photo = null;
+    } else {
+      if (!this.setup.photos || typeof data !== 'string' || data.length > 60000 || !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(data)) return;
+      p.photo = data;
+    }
+    p.photoV = (p.photoV || 0) + 1;
+    this.pushPlayer(p);
+    this.scheduleHostPush();
+  }
+
+  photoUrl(p) {
+    return this.setup.photos && p.photo ? `/photo/${this.pin}/${p.id}?v=${p.photoV}` : '';
   }
 
   rerollName(p) {
@@ -418,6 +464,7 @@ class Room {
       mode: this.Game.mode,
       games: Object.values(GAMES).map((G) => ({ id: G.id, title: G.title, emoji: G.emoji, mode: G.mode, blurb: G.blurb, classic: !!G.classic })),
       untimed: !!this.Game.untimed,
+      lateJoin: this.Game.lateJoin !== false,
       options: optionsFor(this.Game),
       settings: this.settings,
       setup: this.setup,
@@ -427,7 +474,7 @@ class Room {
       teamCount: this.teamCount(),
       left: this.left(),
       cd: this.phase === 'countdown' ? Math.max(0, this.startAt - Date.now()) : 0,
-      players: [...this.players.values()].map((p) => ({ id: p.id, name: p.name, team: p.team, connected: p.connected })),
+      players: [...this.players.values()].map((p) => ({ id: p.id, name: p.name, team: p.team, connected: p.connected, photo: this.photoUrl(p) })),
       board: this.phase === 'playing' ? this.game.publicState() : null,
       teamScores: this.phase === 'playing' && this.Game.mode === 'ffa' && this.teamCount() >= 2 ? this.teamScores() : null,
       results: this.results,
@@ -471,6 +518,8 @@ class Room {
       scene: this.setup.scene,
       round: this.round,
       untimed: !!this.Game.untimed,
+      photos: !!this.setup.photos,
+      photo: this.photoUrl(p),
     };
     if (this.phase === 'lobby') return { ...base, canReroll: this.setup.nameMode === 'spin' && p.rerolls < MAX_REROLLS };
     if (this.phase === 'countdown') return { ...base, cd: Math.max(0, this.startAt - Date.now()) };

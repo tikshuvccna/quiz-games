@@ -36,6 +36,15 @@ class CloserGame extends QuizGame {
     });
   }
 
+  // a late joiner gets a color and a fresh block of land like everyone else
+  lateInit(p) {
+    p.ci = this.list.length;
+    this.list.push(p);
+    this.initPlayer(p, { steps: 0, pos: 0, home: 0, trailTiles: [], captured: 0, cuts: 0, alert: null });
+    this.spawn(p, 3);
+    return true;
+  }
+
   // give a player a fresh block of land at a random free spot
   spawn(p, s) {
     const { cols, rows } = this;

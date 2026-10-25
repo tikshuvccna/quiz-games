@@ -104,8 +104,10 @@
       const q = b.q;
       if (!q) return;
       if (b.stage === 'ready') {
-        box.innerHTML = `<div class="cl-ready">${b.bonus ? '<div class="cl-bonus">⭐ הזדמנות שנייה · ניקוד כפול</div>' : ''}<div class="cl-qnum">שאלה ${b.index + 1} מתוך ${b.total}</div><div class="cl-qtext big">${esc(q.text)}</div><div class="cl-readybar"><i></i></div></div>`;
-        U.sfx('tick');
+        const mult = q.points >= 2;
+        box.innerHTML = `<div class="cl-ready ${mult ? 'after-mult' : ''}">${b.bonus ? '<div class="cl-bonus">⭐ הזדמנות שנייה · ניקוד כפול</div>' : ''}<div class="cl-qnum">שאלה ${b.index + 1} מתוך ${b.total}${mult ? ` <span class="pts-chip p${q.points}">×${q.points}</span>` : ''}</div><div class="cl-qtext big">${esc(q.text)}</div><div class="cl-readybar"><i></i></div></div>`;
+        if (mult) U.multSplash(box, q.points, true);
+        else U.sfx('tick');
       } else if (b.stage === 'slide') {
         box.innerHTML = `<div class="cl-slide">${q.text ? `<div class="cl-qtext big">${esc(q.text)}</div>` : ''}${media(q)}</div>`;
       } else if (b.stage === 'question') {
@@ -199,6 +201,7 @@
         const send = (data) => ctx.act('answer', { ...data, qid: you.qid });
         QView.render(document.getElementById('qw'), you.question, {
           noVideo: true,
+          noSplash: true,
           meta: `<span>שאלה ${you.qnum} מתוך ${you.total}${you.bonus ? ' · ⭐ כפול' : ''}</span>`,
           // confidence / pyramid: after picking an answer, say how sure you are
           onAnswer: (data) => (you.conf ? this.askConf(app, you.conf, (v) => send({ ...data, conf: v })) : send(data)),
@@ -209,7 +212,7 @@
       if (!ctx.setView(key)) return ctx.refreshTop(), true;
       let html = '';
       if (ph === 'c_ready') {
-        html = `<div class="cl-p-ready"><div class="pill">שאלה ${you.qnum} מתוך ${you.total}${you.bonus ? ' · ⭐ ניקוד כפול' : ''}</div><div class="cl-p-big">התכוננו!</div>${you.text ? `<div class="q-card">${esc(you.text)}</div>` : ''}<div class="cl-readybar"><i></i></div></div>`;
+        html = `<div class="cl-p-ready ${you.points >= 2 ? 'after-mult' : ''}"><div class="pill">שאלה ${you.qnum} מתוך ${you.total}${you.bonus ? ' · ⭐ ניקוד כפול' : ''}${you.points >= 2 ? ` · ×${you.points}` : ''}</div><div class="cl-p-big">התכוננו!</div>${you.text ? `<div class="q-card">${esc(you.text)}</div>` : ''}<div class="cl-readybar"><i></i></div></div>`;
       } else if (ph === 'c_locked') {
         html = `<div class="cl-p-wait"><div class="cl-p-icon">✔</div><h2>התשובה נשלחה!</h2><div class="muted">מחכים לשאר הכיתה<span class="dots"><i></i><i></i><i></i></span></div></div>`;
       } else if (ph === 'c_watch' || ph === 'c_watch_res') {
@@ -237,6 +240,7 @@
         }
       } else return false;
       app.innerHTML = `${ctx.topBar()}${html}`;
+      if (ph === 'c_ready' && you.points >= 2) U.multSplash(app, you.points, false);
       if (ph === 'c_result' && you.res && you.res.ok) {
         const s = app.querySelector('.fb-screen');
         const rc = s.getBoundingClientRect();

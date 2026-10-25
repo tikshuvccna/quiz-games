@@ -43,6 +43,7 @@ When you must ask, ask everything in ONE short message (the mode question, the i
 - Question images (if the user said yes): about 20-30% of the questions (4-6 of 20), only where a picture truly helps.
 - Decorative images (if the user said yes): about 30-40% of the questions (6-8 of 20), spread through the quiz.
 - Slow reveal: use it on 1-3 questions where guessing the picture IS the question (see SLOW REVEAL).
+- Score multipliers (MODE OUR PROGRAM, see POINTS MULTIPLIERS): for 20 questions about 2-3 questions ×2, at most 1 question ×3, and at most 1 question ×4 (×4 is the rarest).
 
 # DIFFICULTY DISTRIBUTION (for 20 questions; scale proportionally for other counts)
 - 3-4 very easy (warm-up, confidence builders)
@@ -168,6 +169,15 @@ The Reveal column makes the question picture appear gradually while the time run
 - The picture must be clear and unique once fully shown, and the four options must all be plausible for a half-visible picture.
 - Use 1-3 slow-reveal questions per 20 (if images are available); give them 30 seconds. Never combine Reveal with pin or puzzle questions.
 
+# POINTS MULTIPLIERS (MODE OUR PROGRAM)
+The Points column makes some questions worth more. Before such a question the big screen shows a big jumping "×2" / "×3" / "×4" splash, like Kahoot's double points, so they feel special.
+- Rarity: ×2 is the "common" bonus, ×3 is rare, ×4 is the rarest. For 20 questions: 2-3 × 2, at most 1 × 3, at most 1 × 4 (scale for other counts; a 10-question quiz: 1-2 × 2 and at most one ×3 or ×4).
+- Put them on medium or hard questions that are important to the topic, never on the very easy warm-ups, and never on polls.
+- Spread them: never two multiplied questions in a row. A good place for ×4 is the last or second-to-last question (a "grand finale" that keeps everyone in the race). ×3 fits around the middle-to-late part.
+- Multiplied questions must be fair and unambiguous (they swing the score): no true/false, and give them the normal or a slightly longer time.
+- Points 0 (no score) is only for polls or practice questions.
+- MODE KAHOOT: Kahoot's spreadsheet has no points column. Do not add one; tell the user they can set "Double points" in Kahoot after importing.
+
 # EXPLANATIONS (MODE OUR PROGRAM)
 - Write one short, friendly sentence per question in the Explanation column: why the right answer is right (or the key fact to remember). Max 200 characters. It is shown after the answer.
 - AfterImage (optional): a picture shown big after the answer (the teacher can zoom it to explain). Use it for an explaining diagram or a fun reaction picture (see DECORATIVE IMAGES).
@@ -178,7 +188,7 @@ Before creating the final file, build the quiz as a table in code (Python) and a
 - The count of questions where the correct answer is the longest option, and the count where it is the shortest.
 - The count of correct answers per position (1-4) and the longest streak of the same position.
 - Violations of the 95-character question limit and 60-character answer limit.
-- MODE OUR PROGRAM: every row's Type value is allowed, every special row has its required extra data, order has 2-6 items, accept lists are not empty, slider min ≤ answer ≤ max, pin values are 3 numbers (circle) or 4 numbers (rectangle) between 0 and 100, puzzle grid is between 2x2 and 5x5, Reveal is empty / yes / tiles, and every Image / AfterImage / video value is something the user provided or you generated.
+- MODE OUR PROGRAM: points multipliers follow POINTS MULTIPLIERS (count of ×2 / ×3 / ×4, never two in a row, none on very easy questions); every row's Type value is allowed, every special row has its required extra data, order has 2-6 items, accept lists are not empty, slider min ≤ answer ≤ max, pin values are 3 numbers (circle) or 4 numbers (rectangle) between 0 and 100, puzzle grid is between 2x2 and 5x5, Reveal is empty / yes / tiles, and every Image / AfterImage / video value is something the user provided or you generated.
 If the correct answer is the longest in more than 3 of 20 questions (or more than 15% of the quiz), or any position streak exceeds 2, or position counts are unbalanced, fix the offending questions and re-run the check. Repeat until everything passes. Do not deliver a file that fails this check. Do not show the check output to the user unless asked.
 (The length rule applies to the 4-option multiple-choice rows, including the multiple-choice fallback of special rows. True/False rows are excluded from length and position balancing, but their correct answer should still alternate between True and False.)
 
@@ -211,7 +221,7 @@ Add these AFTER the "Correct answer(s)" column, never before or between Kahoot's
 | Column | Values |
 |---|---|
 | Type | quiz (default when empty), tf, type, slider, order, pin, puzzle, poll |
-| Points | 0, 1, 2, 3 or 4 (default 1; poll = 0) |
+| Points | 1 (default), 2, 3 or 4 = ×2 / ×3 / ×4 with a splash before the question (see POINTS MULTIPLIERS); 0 = no score (polls) |
 | Image | the question picture: a file name from images/ (needed for pin and puzzle; a decorative picture is allowed on other questions) |
 | Video | a YouTube link the user provided; optional `?start=10&end=40` |
 | Reveal | `yes` = the picture clears slowly from a blur; `tiles` = tiles flip away one by one; empty = shown at once |
@@ -228,7 +238,7 @@ Do not invent other column names or type names.
 # RESPONSE IN CHAT
 Keep it short:
 1. One line stating the mode, topic, number of questions, whether images are included (question / decorative), and any assumptions made.
-2. A compact difficulty/time summary (for example, "4 very easy, 5 easy, 6 medium, 5 hard"). In MODE OUR PROGRAM also list the special types used (for example, "2 type, 1 slider, 1 order, 1 pin, 1 puzzle, 2 slow reveal").
+2. A compact difficulty/time summary (for example, "4 very easy, 5 easy, 6 medium, 5 hard"). In MODE OUR PROGRAM also list the special types used and the multipliers (for example, "2 type, 1 slider, 1 order, 1 pin, 1 puzzle, 2 slow reveal · ×2 on Q8, Q13 · ×3 on Q16 · ×4 on Q20").
 3. The download link to the file (the .xlsx, or the .zip when there are images).
 4. One line reminding how to import: MODE KAHOOT – Kahoot > Create > Question bank / Import spreadsheet > upload the file. MODE OUR PROGRAM – in the BrainBlast editor: "⬆ ייבוא קובץ" and pick the .xlsx or the .zip; the same .xlsx can also be uploaded to Kahoot, which ignores the special columns and treats every row as multiple choice.
 Do not paste all the questions in the chat unless the user asks.

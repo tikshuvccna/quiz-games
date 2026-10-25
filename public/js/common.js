@@ -32,9 +32,21 @@ window.U = {
     const P = ['#ff5a5f', '#ff8a3d', '#ffc83d', '#2ee59d', '#22c7e8', '#3b8eff', '#8b5cf6', '#ff4fa3', '#14b8a6', '#f472b6', '#a3e635', '#fb7185'];
     return P[U.hash(name) % P.length];
   },
+  // player photos (name → url), filled from the room state; a photo replaces the letter
+  photos: {},
   avatar(name, color) {
     const c = color || U.color(name);
+    const ph = U.photos[name];
+    if (ph) return `<span class="avatar ph" style="--av:${c};background-image:url('${U.esc(ph)}')"></span>`;
     return `<span class="avatar" style="--av:${c}">${U.esc([...String(name).trim()][0] || '?')}</span>`;
+  },
+  // a short message at the top of the screen
+  toast(text) {
+    const t = document.createElement('div');
+    t.className = 'top-toast';
+    t.textContent = text;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3600);
   },
 
   // ---------- timing mini-games ----------
@@ -218,6 +230,23 @@ window.U = {
     return `<button class="sound-btn" type="button" title="צלילים" aria-label="צלילים">${Art.sound(U.sound.on)}</button>`;
   },
 
+  // ---------- ×2 / ×3 / ×4 splash (Kahoot-style "double points") ----------
+  multSplash(host, points, big = true) {
+    if (!host || !(points >= 2)) return;
+    const LABEL = { 2: 'ניקוד כפול!', 3: 'ניקוד משולש!', 4: 'ניקוד מרובע!' };
+    const d = document.createElement('div');
+    d.className = `mult-splash m${points} ${big ? 'big' : ''}`;
+    d.innerHTML = `<div class="ms-rays"></div><div class="ms-badge"><b>×${points}</b></div><div class="ms-label">${LABEL[points] || ''}</div>`;
+    host.appendChild(d);
+    setTimeout(() => {
+      const r = d.getBoundingClientRect();
+      const hr = host.getBoundingClientRect();
+      U.burst(host, r.left - hr.left + r.width / 2, r.top - hr.top + r.height / 2, ['#ffd23f', '#ff4fa3', '#22c7e8', '#2ee59d', '#fff'], big ? 34 : 18, big ? 260 : 140);
+      U.sfx('win');
+    }, 420);
+    setTimeout(() => d.remove(), 2300);
+  },
+
   // ---------- 3 · 2 · 1 · GO overlay ----------
   countdown(msLeft, sub = '') {
     let ov = document.getElementById('countdown');
@@ -264,6 +293,7 @@ window.U = {
         <div class="hg-brand"><div class="hg-cover">${Art.cover(st.gameId)}</div><div><b>${U.esc(st.gameTitle)}</b><small id="hgSub"></small></div></div>
         <div class="hg-stats">${stats}</div>
         <div class="hg-teams" id="hgTeams"></div>
+        <div class="hg-join" id="hgJoin"></div>
         <div class="hg-timer" id="hgTimer"><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="19" class="trk"/><circle cx="22" cy="22" r="19" class="prg" id="hgRing"/></svg><span id="hgLeft"></span></div>
         <button class="hg-end" id="endBtn" title="סיום משחק">סיום</button>
       </header>
@@ -419,3 +449,8 @@ document.addEventListener('click', (e) => {
 document.addEventListener('pointerdown', () => { if (U.sound.on) U.sound.unlock(); }, { passive: true });
 // iOS: stop double-tap zoom on game controls without blocking scrolling
 document.addEventListener('dblclick', (e) => { if (!e.target.closest('input, textarea, select')) e.preventDefault(); }, { passive: false });
+// a picture shown after the answer: tap to see it big, tap again to close
+document.addEventListener('click', (e) => {
+  const p = e.target.closest('.fb-pic');
+  if (p) p.classList.toggle('zoomed');
+});

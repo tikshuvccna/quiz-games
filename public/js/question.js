@@ -17,6 +17,7 @@ window.QView = (function () {
   function render(box, q, opts) {
     draw(box, q, opts);
     QMedia.mount(box);
+    if (q.points >= 2 && !opts.noSplash) U.multSplash(box.closest('.screen') || box, q.points, false);
   }
 
   function draw(box, q, { meta = '', onAnswer, noVideo = false }) {
