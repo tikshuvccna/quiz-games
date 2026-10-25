@@ -1,0 +1,273 @@
+{
+  "title": "AAA-TACACS-RADIUS-QG",
+  "description": "",
+  "folder": "",
+  "background": "",
+  "updated": "2026-10-25T10:44:11.944Z",
+  "questions": [
+    {
+      "type": "quiz",
+      "text": "איזה שלב במודל ה-AAA בודק שהמתחבר הוא אכן מי שהוא טוען שהוא?",
+      "time": 20,
+      "points": 1,
+      "explain": "Authentication הוא שלב האימות, שבו מוודאים את זהות המתחבר.",
+      "answers": [
+        {
+          "text": "הרשאות משתמש (Authorization)",
+          "correct": false
+        },
+        {
+          "text": "תיעוד פעולות (Accounting)",
+          "correct": false
+        },
+        {
+          "text": "אימות מתחבר (Authentication)",
+          "correct": true
+        },
+        {
+          "text": "זיהוי רכיבים (Identification)",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "מה מתועד בשלב ה-Accounting של מודל ה-AAA?",
+      "time": 20,
+      "points": 1,
+      "explain": "Accounting מתעד את כל הפקודות והניסיונות שמתבצעים ברכיב.",
+      "answers": [
+        {
+          "text": "הפקודות וניסיונות הכניסה שבוצעו ברכיב",
+          "correct": true
+        },
+        {
+          "text": "רמות ההרשאה שהוגדרו לכל משתמש ברכיב",
+          "correct": false
+        },
+        {
+          "text": "שמות המשתמשים והססמאות שהוגדרו ברכיב",
+          "correct": false
+        },
+        {
+          "text": "המפתח המשותף שהוגדר מול שרת ה-AAA בנתב",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "מה היתרון המרכזי של שרת AAA לעומת הגדרת משתמשים מקומית על הרכיב?",
+      "time": 20,
+      "points": 1,
+      "explain": "שרת AAA מאפשר לנהל משתמשים ועמדות רבות במקום אחד.",
+      "answers": [
+        {
+          "text": "העברת חבילות מהירה יותר בין הנתבים ברשת",
+          "correct": false
+        },
+        {
+          "text": "הצפנה אוטומטית של כל התעבורה העוברת ברשת",
+          "correct": false
+        },
+        {
+          "text": "ביטול הצורך להגדיר ססמה על קווי ה-vty ברכיב",
+          "correct": false
+        },
+        {
+          "text": "ניהול מרוכז של משתמשים רבים ועמדות עבודה",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "מה מגדיר הפרמטר privilege 15 בפקודה username admin privilege 15 secret full?",
+      "time": 20,
+      "points": 1,
+      "explain": "privilege קובע את רמת ההרשאה של המשתמש, ו-15 היא הרמה הגבוהה ביותר.",
+      "answers": [
+        {
+          "text": "מספר הניסיונות המרבי להקלדת הססמה – 15",
+          "correct": false
+        },
+        {
+          "text": "רמת ההרשאה של המשתמש בנתב – הגבוהה ביותר",
+          "correct": true
+        },
+        {
+          "text": "משך הזמן המרבי להתחברות המשתמש לנתב – 15 דקות",
+          "correct": false
+        },
+        {
+          "text": "מספר קווי ה-vty שהמשתמש רשאי לפתוח – 15",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "מה חייב להיות זהה בהגדרות הנתב ובהגדרות שרת ה-AAA כדי שיתקשרו ביניהם?",
+      "time": 20,
+      "points": 1,
+      "explain": "הנתב והשרת חייבים להגדיר אותו מפתח משותף.",
+      "answers": [
+        {
+          "text": "המפתח המשותף (key) שנקבע לאימות הקשר",
+          "correct": true
+        },
+        {
+          "text": "שם רשימת השיטה (method list) שהוגדרה בנתב",
+          "correct": false
+        },
+        {
+          "text": "רמת ה-privilege של כל משתמש מקומי בנתב",
+          "correct": false
+        },
+        {
+          "text": "מספר הקו שבו משתמשים להתחברות לנתב מרחוק",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "איזו קביעה נכונה לגבי אופן הפעולה של RADIUS ושל TACACS+?",
+      "time": 30,
+      "points": 1,
+      "explain": "RADIUS משלב אימות והרשאות, ו-TACACS+ מפריד בין שלושת התהליכים.",
+      "answers": [
+        {
+          "text": "TACACS+ משלב אימות והרשאות, ומפריד תיעוד",
+          "correct": false
+        },
+        {
+          "text": "RADIUS מבצע אימות, הרשאות ותיעוד בנפרד זה מזה",
+          "correct": false
+        },
+        {
+          "text": "RADIUS משלב אימות והרשאות, ומפריד את התיעוד",
+          "correct": true
+        },
+        {
+          "text": "TACACS+ מבצע את שלושת התהליכים יחד בפעולה אחת",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "באילו פורטים משתמש RADIUS לצורך אימות (Authentication)?",
+      "time": 20,
+      "points": 1,
+      "explain": "RADIUS מאמת בפורטים 1812 או 1645, ומתעד בפורטים 1813 או 1646.",
+      "answers": [
+        {
+          "text": "49 או 1645",
+          "correct": false
+        },
+        {
+          "text": "1812 או 1813",
+          "correct": false
+        },
+        {
+          "text": "1813 או 1646",
+          "correct": false
+        },
+        {
+          "text": "1812 או 1645",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "type": "pin",
+      "text": "הנתב הוגדר עם tacacs-server host 10.0.0.128. איזה התקן ברשת מנהל מולו את האימות?",
+      "time": 30,
+      "points": 1,
+      "image": "mvnpa3gg61071b.png",
+      "explain": "הפקודה מפנה את הנתב לשרת TACACS+ שכתובתו 10.0.0.128.",
+      "pin": {
+        "x": 72.5,
+        "y": 80,
+        "r": 9
+      }
+    },
+    {
+      "type": "type",
+      "text": "איזו רשימת שיטה מוחלת אוטומטית על line vty אך לא על console? (כתבו את שמה)",
+      "time": 30,
+      "points": 1,
+      "explain": "רשימת ברירת המחדל default נכנסת אוטומטית ל-vty, אך לא ל-console.",
+      "accept": [
+        "default",
+        "Default",
+        "DEFAULT"
+      ]
+    },
+    {
+      "type": "order",
+      "text": "סדרו את שלבי ההגדרה בנתב: איזה שלב מבצעים ראשון?",
+      "time": 30,
+      "points": 2,
+      "explain": "קודם מפעילים AAA, אחר כך יוצרים רשימת שיטה, ולבסוף מחילים אותה על הקו.",
+      "items": [
+        "הפעלת אפשרות ה-AAA בנתב (aaa new-model)",
+        "יצירת רשימת שיטה (aaa authentication login)",
+        "החלת הרשימה על הקו (login authentication)"
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "בתמונה ארבעה פאקטים. איזה מהם הוא פאקט אימות של TACACS+?",
+      "time": 60,
+      "points": 2,
+      "image": "mvnpa3grefaca7.png",
+      "explain": "TACACS+ פועל מעל TCP בפורט 49 ומצפין את כל גוף הפאקט.",
+      "answers": [
+        {
+          "text": "הפאקט הראשון (A)",
+          "correct": false
+        },
+        {
+          "text": "הפאקט השני (B)",
+          "correct": true
+        },
+        {
+          "text": "הפאקט השלישי (C)",
+          "correct": false
+        },
+        {
+          "text": "הפאקט הרביעי (D)",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "לפי ההגדרה בתמונה, שרת tacacs+ זמין אך דוחה ססמה שגויה. מה יקרה בחיבור דרך vty?",
+      "time": 60,
+      "points": 2,
+      "image": "mvnpa3gs3489bf.png",
+      "explain": "מעבר לשיטה הבאה קורה רק בבעיית תקשורת, לא כשהשרת דוחה את הסיסמה.",
+      "answers": [
+        {
+          "text": "הנתב יעבור לאימות מול שרת ה-radius",
+          "correct": false
+        },
+        {
+          "text": "הנתב יאפשר כניסה ללא ססמא לפי שיטת none",
+          "correct": false
+        },
+        {
+          "text": "הכניסה תסורב והנתב לא יעבור לשיטה הבאה",
+          "correct": true
+        },
+        {
+          "text": "הנתב יבדוק את המשתמש ברשימה המקומית (local)",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

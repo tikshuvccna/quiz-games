@@ -214,9 +214,9 @@ h1, h2, h3 { margin: 0; line-height: 1.15; font-weight: 900; }
 .gcard.sel { transform: translateY(-4px); box-shadow: 0 0 0 4px var(--yellow), 0 9px 0 rgba(0, 0, 0, .35), 0 0 30px rgba(255, 210, 63, .45); }
 .gcard.sel::after { content: '✓'; position: absolute; top: 8px; inset-inline-start: 8px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--yellow); color: var(--ink); font-weight: 900; box-shadow: 0 3px 0 rgba(0, 0, 0, .3); }
 .mode-teams .md { color: #ffb3bd; } .mode-ffa .md { color: #9fe8ff; } .mode-coop .md { color: #9ff5c8; }
-.game-info { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: end; padding: 12px 14px; border-radius: var(--r); background: rgba(0, 0, 0, .2); }
+.game-info { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(0, max-content); gap: 14px; align-items: end; padding: 12px 14px; border-radius: var(--r); background: rgba(0, 0, 0, .2); }
 .blurb { color: #ddd8ff; font-size: .98rem; }
-.settings { display: flex; gap: 10px; flex-wrap: wrap; }
+.settings { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; min-width: 0; }
 .settings label { display: flex; flex-direction: column; gap: 3px; color: var(--muted); font-weight: 800; font-size: .82rem; }
 .settings select {
   padding: 8px 30px 8px 12px; border-radius: 10px; border: 0; background: #0f0838; color: #fff; font-weight: 800; cursor: pointer;
