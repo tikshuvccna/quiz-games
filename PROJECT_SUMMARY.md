@@ -293,7 +293,7 @@ Next agreed step: ROADMAP item 9 (online / LAN mode), then more games from the l
 - A YouTube clip per question, with start and end times (the editor and classic host screen need it).
 - A "team talk" pause before answers lock in team quizzes.
 - Question preview "as the phone sees it" inside the editor.
-- A per-question analytics view in the report (which questions most students missed).
+- ✅ (2026-10-30) A per-question analytics view in the report: the report window has a "❓ לפי שאלות" tab (hardest first, % right, average time, the most common wrong answer).
 
 ### Phase E: internet version (later)
 Cloud hosting, a database (accounts, saved quizzes, history), sharing quizzes, web image search (Openverse needs no key; Pixabay and Unsplash need a free key), and public Kahoot link import (unofficial API; public quizzes only).

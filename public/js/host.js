@@ -527,6 +527,25 @@ function download(name, text) {
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 
+// per question across every round: how many answered, how many were right, the average time, the most common wrong answer
+function questionStats(rep) {
+  const by = new Map();
+  for (const p of rep.players) {
+    for (const a of p.answers) {
+      let q = by.get(a.q);
+      if (!q) by.set(a.q, (q = { q: a.q, answer: a.answer, n: 0, ok: 0, ms: 0, wrong: new Map() }));
+      q.n++;
+      q.ms += a.ms || 0;
+      if (a.ok) q.ok++;
+      else q.wrong.set(a.chosen, (q.wrong.get(a.chosen) || 0) + 1);
+    }
+  }
+  return [...by.values()].map((q) => {
+    const top = [...q.wrong.entries()].sort((x, y) => y[1] - x[1])[0];
+    return { q: q.q, answer: q.answer, n: q.n, pct: Math.round((q.ok / q.n) * 100), avg: q.ms / q.n / 1000, common: top ? top[0] : '', commonN: top ? top[1] : 0 };
+  }).sort((a, b) => a.pct - b.pct); // the hardest first
+}
+
 window.showReport = () => {
   socket.emit('host:report', {}, (r) => {
     if (!r || !r.ok) return;
@@ -537,16 +556,30 @@ window.showReport = () => {
     m.className = 'modal';
     m.innerHTML = `<div class="modal-card">
       <div class="modal-head"><h2>📊 דוח שחקנים</h2><span class="muted">${rep.rounds.length} סיבובים · ${rep.players.length} שחקנים</span>
-        <div class="modal-actions"><button class="btn sm blue" id="csvSum">⬇ סיכום (CSV)</button><button class="btn sm ghost" id="csvAns">⬇ כל התשובות (CSV)</button><button class="btn sm ghost" id="closeRep">✕</button></div></div>
+        <div class="modal-actions"><button class="btn sm ghost" id="tabP">👥 שחקנים</button><button class="btn sm ghost" id="tabQ">❓ לפי שאלות</button><button class="btn sm blue" id="csvSum">⬇ סיכום (CSV)</button><button class="btn sm ghost" id="csvAns">⬇ כל התשובות (CSV)</button><button class="btn sm ghost" id="closeRep">✕</button></div></div>
       <div class="modal-body">
-        <table class="rep"><thead><tr><th>שם</th><th>נקודות</th><th>נכונות</th><th>שגויות</th><th>דיוק</th>${rep.rounds.map((x) => `<th>סיבוב ${x.round}<small>${esc(x.game)}</small></th>`).join('')}</tr></thead>
+        <div id="repQs" class="hidden">${(() => {
+          const qs = questionStats(rep);
+          if (!qs.length) return '<span class="muted">אין עדיין תשובות לשאלות</span>';
+          return `<table class="rep"><thead><tr><th>שאלה</th><th>ענו</th><th>נכון</th><th>זמן ממוצע</th><th>הטעות הנפוצה</th></tr></thead><tbody>${qs.map((x) => `<tr><td>${esc(x.q)}<small class="muted">${esc(x.answer)}</small></td><td>${x.n}</td><td><span class="acc" style="--a:${x.pct}%">${x.pct}%</span></td><td>${x.avg.toFixed(1)} שנ׳</td><td>${x.common ? `${esc(x.common)} <small>(${x.commonN})</small>` : '—'}</td></tr>`).join('')}</tbody></table><div class="muted" style="margin-top:8px">הקשות ביותר למעלה. אחוזי הצלחה לפי כל התשובות בכל הסיבובים.</div>`;
+        })()}</div>
+        <div id="repPl"><table class="rep"><thead><tr><th>שם</th><th>נקודות</th><th>נכונות</th><th>שגויות</th><th>דיוק</th>${rep.rounds.map((x) => `<th>סיבוב ${x.round}<small>${esc(x.game)}</small></th>`).join('')}</tr></thead>
         <tbody>${rep.players.map((p, i) => `<tr class="rp" data-i="${i}"><td><span class="nm">${U.avatar(p.name)}${esc(p.name)}</span></td><td>${p.points}</td><td class="good-t">${p.correct}</td><td class="bad-t">${p.wrong}</td><td><span class="acc" style="--a:${p.accuracy}%">${p.accuracy}%</span></td>${rep.rounds.map((x) => { const rr = p.rounds.find((y) => y.round === x.round); return `<td>${rr ? `${rr.score}<small>מקום ${rr.rank}</small>` : '—'}</td>`; }).join('')}</tr>
           <tr class="rp-detail hidden" id="rd${i}"><td colspan="${5 + rep.rounds.length}"><div class="answers-log">${p.answers.map((a) => `<div class="al ${a.ok ? 'ok' : 'no'}"><span>${a.ok ? '✅' : '❌'}</span><b>${esc(a.q)}</b><span>ענה/תה: ${esc(a.chosen)}</span>${a.ok ? '' : `<span class="muted">נכון: ${esc(a.answer)}</span>`}<small>${(a.ms / 1000).toFixed(1)} שנ׳</small></div>`).join('') || '<span class="muted">אין תשובות</span>'}</div></td></tr>`).join('')}</tbody></table>
-        <div class="muted" style="margin-top:8px">לחצו על שחקן כדי לראות את כל התשובות שלו. עותק נשמר גם בתיקייה reports בשרת.</div>
+        <div class="muted" style="margin-top:8px">לחצו על שחקן כדי לראות את כל התשובות שלו. עותק נשמר גם בתיקייה reports בשרת.</div></div>
       </div></div>`;
     document.body.appendChild(m);
+    const tab = (q) => {
+      document.getElementById('repQs').classList.toggle('hidden', !q);
+      document.getElementById('repPl').classList.toggle('hidden', q);
+      document.getElementById('tabQ').classList.toggle('on', q);
+      document.getElementById('tabP').classList.toggle('on', !q);
+    };
+    tab(false);
     m.onclick = (e) => {
       if (e.target === m || e.target.id === 'closeRep') return m.remove();
+      if (e.target.id === 'tabQ') return tab(true);
+      if (e.target.id === 'tabP') return tab(false);
       const row = e.target.closest('.rp');
       if (row) document.getElementById('rd' + row.dataset.i).classList.toggle('hidden');
     };
