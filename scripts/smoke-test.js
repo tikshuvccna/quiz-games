@@ -11,7 +11,7 @@ function run(game) {
     host.on('host:state', (s) => (hs = s));
     host.emit('host:create', { game }, (r) => {
       host.emit('host:game', game);
-      host.emit('host:settings', { duration: 120, advance: 'auto', count: 3 });
+      host.emit('host:settings', { duration: 120, advance: 'auto', count: 3, ...JSON.parse(process.env.SETTINGS || '{}') }); // SETTINGS='{"surprise":"often"}' to try a game option
       const bots = ['דנה', 'יוסי', 'נועה'].map((name) => {
         const s = io(URL);
         let board = null;

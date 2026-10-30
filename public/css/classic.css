@@ -250,3 +250,6 @@
 .cl-qcol .cl-mid { grid-template-columns: auto 1fr auto; flex: none; }
 .cl-qcol .cl-media { display: none; }
 .cl-qcol .cl-qtext { font-size: clamp(1.2rem, 2.2vw, 2rem); }
+
+/* 🎁 a surprise at the leaderboard (steal / swap / double) */
+.cl-sur { margin: 0 auto 10px; max-width: 760px; padding: 12px 22px; border-radius: 999px; text-align: center; font-size: clamp(1.1rem, 2.6cqh, 1.7rem); font-weight: 900; color: #3a2d00; background: linear-gradient(90deg, #ffd23f, #ff9fcb); box-shadow: 0 6px 0 rgba(0, 0, 0, .25), 0 0 30px rgba(255, 210, 63, .5); animation: popin .5s var(--spring); }

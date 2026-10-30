@@ -212,12 +212,13 @@
         if (this.afterBoard) this.afterBoard(box, b);
       } else if (b.stage === 'board') {
         const teams = b.teams && b.teams.length ? `<div class="cl-teams">${b.teams.map((t, i) => `<div class="cl-team" style="${U.pal(t.color)};--w:${(t.score / Math.max(1, ...b.teams.map((x) => x.score))) * 100}%">${Art.mascot(i)}<span>${esc(t.name)}</span><b>${t.score}</b><i></i></div>`).join('')}</div>` : '';
-        box.innerHTML = `<div class="cl-board"><h2>🏆 לוח המובילים</h2>${teams}
+        box.innerHTML = `<div class="cl-board"><h2>🏆 לוח המובילים</h2>${b.surprise ? `<div class="cl-sur">${esc(b.surprise.text)}</div>` : ''}${teams}
           <div class="cl-rows">${b.board.map((p, i) => `<div class="cl-row" style="--i:${i}">
             <span class="rk">${p.rank}</span>${U.avatar(p.name, p.team >= 0 && b.teams ? b.teams[p.team].color : null)}<span class="nm">${esc(p.name)}</span>
             ${p.streak >= 3 ? `<span class="stk">${Art.flame()}${p.streak}</span>` : ''}${p.prev && p.prev > p.rank ? `<span class="up">▲${p.prev - p.rank}</span>` : ''}<b class="sc" data-n="0">0</b></div>`).join('')}</div>
           <div class="cl-lines">${(b.lines || []).map((l, i) => `<span style="--i:${i}">${esc(l)}</span>`).join('')}</div></div>`;
         box.querySelectorAll('.cl-row .sc').forEach((el, i) => setTimeout(() => U.countTo(el, b.board[i].score, 900), 250 + i * 120));
+        if (b.surprise) { U.sfx('boom'); setTimeout(() => U.shake(box, false), 200); }
       }
       if (b.stage === 'question' || b.stage === 'reveal') splitPdf(box, q);
       QMedia.mount(box);
@@ -284,6 +285,19 @@
 
     // ---------- player ----------
     hud(you) {
+      // a surprise from the leaderboard: a short note on the phone, once
+      if (you.sur && this.lastSur !== you.qid + you.sur) {
+        this.lastSur = you.qid + you.sur;
+        setTimeout(() => {
+          const t = document.createElement('div');
+          t.className = 'p-toast';
+          t.textContent = you.sur;
+          document.body.appendChild(t);
+          setTimeout(() => t.remove(), 3600);
+          U.sfx('pop');
+          if (navigator.vibrate) navigator.vibrate([30, 30, 30]);
+        }, 0);
+      }
       if (you.style === 'learn') return '';
       return `<span class="hchip">⭐ ${you.score || 0}</span>${you.rank ? `<span class="hchip">#${you.rank}</span>` : ''}`;
     },

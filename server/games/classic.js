@@ -28,7 +28,7 @@ class ClassicGame extends QuizGame {
   static teamAvg = true; // team score = average of its members (like Kahoot)
   static blurb = 'החידון הקלאסי: כולם עונים על אותה שאלה מהמסך הגדול. תשובה נכונה ומהירה = יותר נקודות, רצפים נותנים בונוס, ובין השאלות יש לוח מובילים. אפשר גם בקבוצות.';
   static tickMs = 500;
-  static defaults = { duration: 600, count: 0, order: 'original', advance: 'manual', bonus: 'off', style: 'speed', timer: 'question' };
+  static defaults = { duration: 600, count: 0, order: 'original', advance: 'manual', bonus: 'off', style: 'speed', timer: 'question', surprise: 'off' };
   static options = [
     { key: 'style', label: 'סגנון ניקוד', choices: [['speed', 'קלאסי: מהירות + דיוק'], ['accuracy', 'דיוק בלבד (נקודה לכל נכונה)'], ['confidence', 'ביטחון: בוסט או בטוח'], ['learn', 'למידה: בלי ניקוד ובלי לוח מובילים']] },
     { key: 'timer', label: 'זמן לשאלה', choices: [['question', 'לפי השאלה'], ['unlimited', 'ללא הגבלה']] },
@@ -36,6 +36,7 @@ class ClassicGame extends QuizGame {
     { key: 'order', label: 'סדר השאלות', choices: [['original', 'לפי החידון'], ['shuffle', 'מעורבב']] },
     { key: 'advance', label: 'מעבר בין שלבים', choices: [['manual', 'ידני (לחיצה)'], ['auto', 'אוטומטי']] },
     { key: 'bonus', label: 'הזדמנות שנייה ל־5 האחרונים', choices: [['off', 'לא'], ['on', 'כן']] },
+    { key: 'surprise', label: '🎁 הפתעות בלוח המובילים', choices: [['off', 'ללא'], ['sometimes', 'לפעמים'], ['often', 'הרבה']] },
   ];
 
   start() {
@@ -102,6 +103,13 @@ class ClassicGame extends QuizGame {
     const q = this.list[this.i];
     const { payload, state } = qt.present(q, this.room.quizData.mediaBase);
     this.cur = { q, payload, state, startAt: 0, deadline: 0, answers: new Map(), reveal: null };
+    // a "double points" surprise from the last leaderboard: this question counts twice (shown as a bigger multiplier)
+    if (this.dbl && q.points > 0 && qt.SCORED.has(q.type)) {
+      this.cur.dbl = true;
+      payload.points = Math.min(4, q.points * 2);
+    }
+    this.dbl = false;
+    this.sur = null;
     for (const p of this.players()) if (p.g) p.g.res = null;
     this.lines = [];
     if (this.skipReady(q)) return this.open();
@@ -113,7 +121,7 @@ class ClassicGame extends QuizGame {
 
   // how long the question text is shown alone before the answers open (a ×2 / ×3 / ×4 question gets its splash first)
   readyDelay(q) {
-    return READY_MS + (q.points >= 2 ? MULT_MS : 0);
+    return READY_MS + (q.points >= 2 || (this.cur && this.cur.dbl) ? MULT_MS : 0);
   }
 
   // true = the step opens at once, without the "get ready" moment (a lesson's slides)
@@ -241,7 +249,7 @@ class ClassicGame extends QuizGame {
 
   // Kahoot: up to 1000 × multiplier, losing up to half for slower answers; streaks add up to +500
   points(q, ms, streak) {
-    const mult = (this.inBonus ? 2 : 1) * q.points;
+    const mult = (this.inBonus ? 2 : 1) * q.points * (this.cur && this.cur.dbl ? 2 : 1);
     if (!mult) return 0;
     const T = (this.questionTime(q) || 30) * 1000; // unlimited time: speed counts over the first 30 seconds
     const base = Math.round((1 - Math.min(ms, T) / T / 2) * 1000 * mult);
@@ -410,9 +418,48 @@ class ClassicGame extends QuizGame {
     if (this.isLast()) return this.room.end();
     // learning: no leaderboard at all, straight to the next question
     if (this.style === 'learn') return this.next();
+    this.sur = this.maybeSurprise();
     this.stage = 'board';
     this.pushEveryone();
     if (!this.manual) this.schedule(() => this.next(), AUTO_BOARD_MS);
+  }
+
+  // 🎁 a surprise at the leaderboard (room setting, classic quiz only): someone steals points from the leader,
+  // two players swap scores, or the next question counts double. Returns { k, text, for: { playerId: text } } or null.
+  maybeSurprise() {
+    const S = this.room.settings.surprise;
+    if (this.constructor.id !== 'classic' || (S !== 'sometimes' && S !== 'often') || this.inBonus || this.style === 'learn') return null;
+    if (Math.random() > (S === 'often' ? 0.5 : 0.25)) return null;
+    const list = this.rank().filter((p) => p.connected && p.g.score > 0);
+    const nx = this.list[this.i + 1];
+    const kinds = [];
+    if (list.length >= 3) kinds.push('steal', 'swap');
+    if (this.style !== 'accuracy' && nx && nx.points > 0 && qt.SCORED.has(nx.type)) kinds.push('double');
+    if (!kinds.length) return null;
+    const k = kinds[Math.floor(Math.random() * kinds.length)];
+    const bottom = list.slice(Math.ceil(list.length / 2));
+    const any = (a) => a[Math.floor(Math.random() * a.length)];
+    if (k === 'double') {
+      this.dbl = true;
+      return { k, text: '🎁 הפתעה! השאלה הבאה שווה כפול!', for: {} };
+    }
+    if (k === 'steal') {
+      const lead = list[0];
+      const thief = any(bottom.filter((p) => p !== lead));
+      if (!thief) return null;
+      const amt = Math.min(lead.g.score, Math.max(100, Math.round((lead.g.score * 0.1) / 10) * 10));
+      lead.g.score -= amt;
+      thief.g.score += amt;
+      this.rank();
+      return { k, text: `🦹 הפתעה! ${thief.name} גנב/ה ${amt} נקודות מ${lead.name}!`, for: { [lead.id]: `🦹 ${thief.name} גנב/ה לכם ${amt} נקודות!`, [thief.id]: `🦹 גנבתם ${amt} נקודות מ${lead.name}!` } };
+    }
+    // swap: one of the top three with one of the bottom half (a real change of places)
+    const a = any(list.slice(0, Math.min(3, list.length)));
+    const b = any(bottom.filter((p) => p !== a && Math.abs(p.g.score - a.g.score) >= 100));
+    if (!b) return null;
+    [a.g.score, b.g.score] = [b.g.score, a.g.score];
+    this.rank();
+    return { k, text: `🔄 הפתעה! ${a.name} ו־${b.name} החליפו מקומות!`, for: { [a.id]: `🔄 החלפתם מקומות עם ${b.name}!`, [b.id]: `🔄 החלפתם מקומות עם ${a.name}!` } };
   }
 
   // host "next" button: moves to the next stage right away
@@ -501,6 +548,7 @@ class ClassicGame extends QuizGame {
     if (this.stage === 'reveal' || this.stage === 'board') {
       out.reveal = cur.reveal;
       out.lines = this.lines;
+      out.surprise = this.stage === 'board' && this.sur ? { k: this.sur.k, text: this.sur.text } : null;
       out.board = this.board5();
       const T = this.room.teams();
       if (T.length >= 2) out.teams = this.room.teamScores();
@@ -531,6 +579,7 @@ class ClassicGame extends QuizGame {
     }
     // reveal / board: my own result + who is right above me
     const list = this.rank();
+    base.sur = this.stage === 'board' && this.sur ? this.sur.for[p.id] || this.sur.text : null;
     const above = g.rank > 1 ? list[g.rank - 2] : null;
     return { ...base, phase: can ? 'c_result' : 'c_watch_res', res: g.res, correctText: cur.reveal ? cur.reveal.correctText : '', explain: cur.reveal ? cur.reveal.explain : '', afterImage: cur.reveal ? cur.reveal.afterImage : '', source: cur.reveal ? cur.reveal.source : null, above: above ? { name: above.name, gap: above.g.score - g.score } : null };
   }
