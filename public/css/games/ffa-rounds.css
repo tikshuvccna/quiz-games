@@ -62,3 +62,15 @@
 .shp-stick i { position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; margin: -22px; border-radius: 50%; background: rgba(255, 255, 255, .7); }
 .shp-fire { position: absolute; right: 14px; bottom: 14px; width: 84px; height: 84px; border-radius: 50%; border: 0; font-size: 2rem; background: #ff4d6d; box-shadow: 0 6px 0 #a3203a; touch-action: none; }
 .shp-fire:active { transform: translateY(5px); box-shadow: 0 1px 0 #a3203a; }
+
+/* marble race (mb-) */
+.mb-room { background: radial-gradient(ellipse at 50% 100%, #4a3aa8, #251a66 60%, #0e0833); }
+.mb-end { display: flex; flex-direction: column; gap: 14px; height: 100%; padding: 20px 6vw; box-sizing: border-box; background: radial-gradient(ellipse at 50% 100%, #4a3aa8, #251a66 60%, #0e0833); }
+.mb-end h1 { margin: 0; text-align: center; font-size: clamp(2rem, 6cqh, 3.4rem); }
+.mb-track { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; justify-content: center; position: relative; }
+.mb-lane { display: flex; align-items: center; gap: 12px; }
+.mb-nm { width: 8em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 800; }
+.mb-n { width: 4.5em; font-weight: 900; color: var(--yellow); }
+.mb-rail { position: relative; flex: 1; height: 28px; border-radius: 999px; background: linear-gradient(#3d2f94, #2a2078); box-shadow: inset 0 3px 6px rgba(0, 0, 0, .4); }
+.mb-rail::after { content: ''; position: absolute; right: 10px; top: 0; bottom: 0; width: 8px; background: repeating-linear-gradient(#fff 0 6px, #111 6px 12px); border-radius: 3px; }
+.mb-ball { position: absolute; left: 4%; top: -2px; width: 32px; height: 32px; margin-left: -16px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff 0 12%, var(--c) 40%, #00000055 100%); box-shadow: 0 4px 6px rgba(0, 0, 0, .4); }

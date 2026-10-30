@@ -23,7 +23,7 @@
 
 | Command | What it checks |
 |---|---|
-| `node scripts/smoke-test.js [game]` | Bots play a short round of every game (34) and print the state and results. |
+| `node scripts/smoke-test.js [game]` | Bots play a short round of every game (35) and print the state and results. |
 | `node scripts/chase-test.js [game]` | The co-op chase games (robot, sub, lava, zombie): bots race to the goal, all three checkpoint mini-games run, phones are parked and resumed, nobody gets stuck; the sub's diving mode; checkpoints switched off; junk packets are clamped. About 7 minutes. |
 | `node scripts/feature-test.js` | Name modes and reroll, 3 teams, reward settings, winner text, rematch with the same PIN, the report, an individual game played in teams. 14 checks. |
 | `node scripts/classic-test.js` | Classic quiz: every stage, team averages, the second-chance round for the bottom 5. |
@@ -115,11 +115,12 @@ scripts/                tests, bots, demo
 
 ## 3. What exists today
 
-### 3.1 Games (34)
+### 3.1 Games (35)
 
 | # | Game | Mode | What answering earns / the action on the phone |
 |---|---|---|---|
 | 1 | 🎯 חידון קלאסי | Individual or 2–4 teams (team score = average) | Kahoot classic: same question for everyone, speed + accuracy points, streaks, leaderboard with fun lines. Scoring styles: classic, accuracy only, confidence (boost or safe). Second-chance round for the bottom 5. |
+| 35 | 🔮 מרוץ גולות | Individual | **Like Kahoot's Marble Race.** Each correct answer earns a marble (2 on a streak of 3). When the time is up all the marbles race on the big screen; the server draws the finishing order with a chance in proportion to the marbles (plus a little for everyone), so the leader is not sure to win. The race plays once, then the podium by the race. |
 | 34 | 🛸 ספינת חלל | Individual (free for all) | **Asteroids.** A reward is a 12-second flight in your own ship: drag on the left as a joystick (arrows and space on a computer), hold the fire button, blow up asteroids, 3 lives. The phone plays it and reports kills and lives (trusted, capped on the server). |
 | 33 | 🍔 המבורגריה | Individual | **Burger orders.** A reward is an order: the layers are shown for a few seconds, then stack them in the same order (bottom bun first, top bun last); points per correct layer, a bonus for a perfect burger. Graded on the server. |
 | 32 | 🐍 נחש | Individual | **Snake.** A reward is 10 seconds of snake on the phone (swipe or the arrows): apples are points, a crash ends the round. Reported by the phone and capped. |
@@ -253,7 +254,7 @@ scripts/                tests, bots, demo
 | Submarine Squad (co-op, hold to speed up, "diving mode") | ✅ צוללת ההצלה (steer past mines; sonar → diving mode) |
 | Chill Art (co-op paint-by-numbers reveals a picture) | ✅ ציור במספרים |
 | Cosmic Quest (space navigation, collect stars) | ⏳ Phase D |
-| Marble Race (correct = marble, luck race at the end) | ⏳ Phase D |
+| Marble Race (correct = marble, luck race at the end) | ✅ מרוץ גולות |
 | Unplugged (no devices; Team Tiles) | ⏳ planned |
 | Professional / Lecture | 🟡 classic quiz supports info slides and polls |
 
