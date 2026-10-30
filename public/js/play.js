@@ -32,6 +32,7 @@ function showJoin(error = '') {
     <div class="card">
       <form class="form" id="f" autocomplete="off">
         <input class="input" id="pin" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="קוד משחק" value="${esc(urlPin)}" aria-label="קוד משחק">
+        <div class="roster hidden" id="roster"></div>
         <input class="input hidden" id="name" maxlength="14" placeholder="הכינוי שלך" aria-label="כינוי" enterkeyhint="go">
         <button class="btn big" type="submit" id="go">המשך</button>
         <div class="error" id="err" role="alert">${esc(error)}</div>
@@ -76,6 +77,28 @@ function showJoin(error = '') {
       if (!r.ok) return (err.textContent = r.error);
       U.applyScene(r.scene);
       if (r.nameMode !== 'custom') return join(pin, '');
+      // a class is chosen: tap your own name (everyone keeps the same name from game to game)
+      if (r.roster && r.roster.students.length) {
+        const box = document.getElementById('roster');
+        box.classList.remove('hidden');
+        box.innerHTML = `<div class="roster-t">${esc(r.roster.name)}: מי אתם?</div><div class="roster-list">${r.roster.students.map((s) => `<button type="button" class="roster-n" data-n="${esc(s.name)}" ${s.taken ? 'disabled' : ''}>${esc(s.name)}</button>`).join('')}</div><button type="button" class="link-btn" id="other">השם שלי לא ברשימה</button>`;
+        document.getElementById('pin').classList.add('locked');
+        document.getElementById('go').classList.add('hidden');
+        box.onclick = (ev) => {
+          const b = ev.target.closest('.roster-n');
+          if (b && !busy) return join(pin, b.dataset.n);
+          if (ev.target.id === 'other') {
+            box.classList.add('hidden');
+            document.getElementById('go').classList.remove('hidden');
+            askName = true;
+            const n = document.getElementById('name');
+            n.classList.remove('hidden');
+            document.getElementById('go').textContent = 'יאללה!';
+            n.focus();
+          }
+        };
+        return;
+      }
       askName = true;
       const n = document.getElementById('name');
       n.classList.remove('hidden');

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ייבוא מ־Kahoot · פיצוץ מוחות</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><span class="mark">★</span><div><b>פיצוץ מוחות</b><small>ייבוא חידונים מ־Kahoot</small></div></div>
+    <nav class="tabs" id="tabs">
+      <button data-tab="page" class="on">📄 בדף הפתוח</button>
+      <button data-tab="search">🔎 חיפוש</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="pagePane" class="pane">
+      <div class="bar"><span class="hint" id="pageHint">מחפש חידונים בדף…</span><button class="ghost" id="rescan">🔄 סריקה מחדש</button></div>
+      <div class="list" id="pageList"></div>
+    </section>
+
+    <section id="searchPane" class="pane hidden">
+      <form class="bar" id="searchForm" autocomplete="off">
+        <input id="q" type="search" placeholder="חפשו חידונים ב־Kahoot (עברית או אנגלית)…" enterkeyhint="search">
+        <button class="go" type="submit">חיפוש</button>
+      </form>
+      <div class="hint" id="searchHint">הקלידו נושא ולחצו חיפוש. אפשר לסמן כמה חידונים מכמה חיפושים.</div>
+      <div class="list" id="searchList"></div>
+      <button class="ghost more hidden" id="moreBtn">טעינת עוד תוצאות</button>
+    </section>
+  </main>
+
+  <footer class="dock">
+    <div class="sel"><b id="selCount">0</b> חידונים נבחרו <button class="link" id="selClear">ניקוי</button></div>
+    <div class="actions">
+      <button class="primary" id="saveBtn" disabled>⬇ שמירה כקובץ</button>
+      <button class="primary alt" id="sendBtn" disabled>📤 שליחה לתוכנה</button>
+    </div>
+    <details class="server" id="server">
+      <summary>⚙ כתובת התוכנה (לשליחה ישירה)</summary>
+      <div class="srv-row"><input id="serverUrl" dir="ltr" placeholder="http://localhost:3000"><button class="ghost" id="testBtn">בדיקה</button></div>
+      <small>המחשב שמריץ את פיצוץ מוחות. אפשר להעתיק את הכתובת ממסך המורה. בלי שליחה ישירה, שמרו כקובץ וייבאו בעורך: ⬆ ייבוא קובץ.</small>
+    </details>
+    <div class="status hidden" id="status"><div class="bar-track"><i id="prog"></i></div><div id="msg"></div></div>
+  </footer>
+
+  <script src="lib/jszip.min.js"></script>
+  <script src="lib/kahoot-api.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

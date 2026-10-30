@@ -30,7 +30,7 @@ class ClassicGame extends QuizGame {
   static tickMs = 500;
   static defaults = { duration: 600, count: 0, order: 'original', advance: 'manual', bonus: 'off', style: 'speed', timer: 'question' };
   static options = [
-    { key: 'style', label: 'סגנון ניקוד', choices: [['speed', 'קלאסי: מהירות + דיוק'], ['accuracy', 'דיוק בלבד (נקודה לכל נכונה)'], ['confidence', 'ביטחון: בוסט או בטוח']] },
+    { key: 'style', label: 'סגנון ניקוד', choices: [['speed', 'קלאסי: מהירות + דיוק'], ['accuracy', 'דיוק בלבד (נקודה לכל נכונה)'], ['confidence', 'ביטחון: בוסט או בטוח'], ['learn', 'למידה: בלי ניקוד ובלי לוח מובילים']] },
     { key: 'timer', label: 'זמן לשאלה', choices: [['question', 'לפי השאלה'], ['unlimited', 'ללא הגבלה']] },
     { key: 'count', label: 'מספר שאלות', choices: [[0, 'כל השאלות'], [5, '5'], [10, '10'], [15, '15'], [20, '20']] },
     { key: 'order', label: 'סדר השאלות', choices: [['original', 'לפי החידון'], ['shuffle', 'מעורבב']] },
@@ -49,7 +49,8 @@ class ClassicGame extends QuizGame {
     let extra = qs.slice(main.length).filter(scored);
     if (extra.length < BONUS_QUESTIONS) extra = extra.concat(shuffle(main.filter(scored)));
     this.main = main;
-    this.bonusQs = S.bonus === 'on' && this.room.players.size > BONUS_PLAYERS ? extra.slice(0, BONUS_QUESTIONS) : [];
+    // the learning style has no points, so no second-chance round either
+    this.bonusQs = S.bonus === 'on' && S.style !== 'learn' && this.room.players.size > BONUS_PLAYERS ? extra.slice(0, BONUS_QUESTIONS) : [];
     this.list = main;
     this.inBonus = false;
     this.i = -1;
@@ -169,6 +170,7 @@ class ClassicGame extends QuizGame {
 
   // points for one player's answer (can be negative)
   scoreFor(p, q, a, ok) {
+    if (this.style === 'learn') return 0; // learning: the class sees right and wrong, nobody earns points
     if (this.style === 'accuracy') return ok && q.points > 0 ? 1 : 0;
     let pts = ok ? this.points(q, a.ms, p.g.streak) : 0;
     // a jigsaw that is mostly right still earns part of the points (no streak)
@@ -387,6 +389,8 @@ class ClassicGame extends QuizGame {
     if (this.stage !== 'reveal') return;
     // no leaderboard after the very last question: straight to the podium
     if (this.isLast()) return this.room.end();
+    // learning: no leaderboard at all, straight to the next question
+    if (this.style === 'learn') return this.next();
     this.stage = 'board';
     this.pushEveryone();
     if (!this.manual) this.schedule(() => this.next(), AUTO_BOARD_MS);
@@ -421,6 +425,7 @@ class ClassicGame extends QuizGame {
       if (pct >= 80) out.push(`👏 ${pct}% ענו נכון! איזו כיתה חכמה`);
       else if (pct <= 30) out.push(`🤔 שאלה קשה! רק ${pct}% צדקו`);
     }
+    if (this.style === 'learn') return out.slice(0, 1);
     const climb = list.filter((p) => p.g.prevRank && p.g.prevRank - p.g.rank >= 2).sort((a, b) => b.g.prevRank - b.g.rank - (a.g.prevRank - a.g.rank))[0];
     if (climb) out.push(`🚀 ${climb.name} קפץ/ה ${climb.g.prevRank - climb.g.rank} מקומות!`);
     const hot = list.filter((p) => p.g.streak >= 3).sort((a, b) => b.g.streak - a.g.streak)[0];
@@ -487,7 +492,7 @@ class ClassicGame extends QuizGame {
   personal(p) {
     const g = p.g;
     const cur = this.cur;
-    const base = { score: g.score, rank: g.rank, streak: g.streak, qid: this.qid(), qnum: this.i + 1, total: this.list.length, bonus: this.inBonus, stage: this.stage, qtype: cur ? cur.q.type : '' };
+    const base = { score: g.score, rank: g.rank, streak: g.streak, qid: this.qid(), qnum: this.i + 1, total: this.list.length, bonus: this.inBonus, stage: this.stage, qtype: cur ? cur.q.type : '', style: this.style };
     const can = this.canAnswer(p);
     if (!cur) return { ...base, phase: 'c_ready' };
     if (this.stage === 'ready') return { ...base, phase: can ? 'c_ready' : 'c_watch', text: cur.q.text, points: cur.q.points };
@@ -513,7 +518,7 @@ class ClassicGame extends QuizGame {
 
   results() {
     const players = this.rank().map((p) => ({ name: p.name, team: p.team, score: p.g.score, correct: p.g.correct, wrong: p.g.wrong, best: p.g.bestStreak }));
-    return { kind: 'classic', players, total: this.main.length };
+    return { kind: 'classic', players, total: this.main.length, style: this.style, scored: this.main.filter((q) => qt.SCORED.has(q.type)).length };
   }
 }
 

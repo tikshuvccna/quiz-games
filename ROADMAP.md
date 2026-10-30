@@ -113,7 +113,7 @@ Requested 2026-10-26.
 
 Requested 2026-10-30.
 
-- [ ] **No-score mode** ("ללא ניקוד"): a classic-quiz scoring style where the class answers, sees the right answer and the explanation, but there are no points and no leaderboard. (A *poll* is different: one opinion question without a right answer; it already exists as a question type.)
+- [x] (done 2026-10-30: classic quiz scoring style "למידה: בלי ניקוד ובלי לוח מובילים") **No-score mode** ("ללא ניקוד"): a classic-quiz scoring style where the class answers, sees the right answer and the explanation, but there are no points and no leaderboard. (A *poll* is different: one opinion question without a right answer; it already exists as a question type.)
 - [ ] **Presentation mode / better slides**: slides with a layout (title, bullet points, picture side by side), shown full screen by the teacher between questions; a "presentation" option that plays the quiz as a lesson (slides + questions, no score).
 - [ ] **Learning modes** (like Kahoot's study modes), each student on their own phone at their own pace:
   - 🃏 **Flashcards**: question on the front, answer + explanation on the back; "I knew it" / "Again".

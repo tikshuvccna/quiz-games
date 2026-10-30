@@ -176,6 +176,9 @@ function renderLobby() {
               <small class="muted">רקעים משלכם: שימו תמונות או סרטונים בתיקייה <b dir="ltr">backgrounds</b> של התוכנה.</small></section>
             <section><h3>🎬 סרטון בזמן ההמתנה</h3><div class="video-lib" id="videoLib"></div><div class="row"><input class="input sm" id="videoUrl" placeholder="או הדביקו קישור ליוטיוב" dir="ltr"><button class="btn sm blue" id="videoSet">הצג</button><button class="btn sm ghost" id="videoClear">הסר</button></div></section>
             <div id="musicSet">${Music.settingsHtml()}</div>
+            <section><h3>👥 כיתה</h3><select class="input sm" id="classSel"><option value="">בלי כיתה (כל אחד כותב כינוי)</option></select>
+              <label class="lite-tog" style="margin-top:6px">📊 <a href="progress.html" target="_blank" style="color:var(--yellow)">כיתות והתקדמות</a> · יצירת רשימות כיתה וצפייה בהתקדמות לאורך זמן</label>
+              <small class="muted">עם כיתה, התלמידים בוחרים את השם שלהם מהרשימה, וההתקדמות של כל אחד נשמרת בין משחקים. כיתה זמינה רק כשהשחקנים כותבים כינוי בעצמם.</small></section>
             <section><h3>🛡️ סינון מילים לא יפות</h3><label class="lite-tog"><input type="checkbox" id="filterOn"> חוסם שמות וטקסטים לא הולמים (בשמות השחקנים ובתשובות שמוצגות על המסך)</label><small class="muted">רשימת המילים נמצאת בקובץ <b dir="ltr">server/badwords.json</b>, אפשר להוסיף בה מילים.</small></section>
             <section><h3>📷 תמונות שחקנים</h3><label class="lite-tog"><input type="checkbox" id="photosOn"> השחקנים יכולים להוסיף תמונה (מהמצלמה או מהגלריה) שתופיע במקום האות</label><small class="muted">התמונות נשמרות רק בזיכרון, עד סוף המשחק. לחיצה על תמונה של שחקן בלובי מסירה אותה.</small></section>
             <section><h3>🏆 טקסט למנצחים</h3><input class="input sm" id="winText" maxlength="140" placeholder="למשל: כל הכבוד! פרס מחכה לכם אצל המורה 🎁"><small class="muted">יופיע בטלפון של המנצחים ובמסך התוצאות</small></section>
@@ -219,6 +222,7 @@ function renderLobby() {
       socket.emit('host:setup', { video: vu.value });
     };
     document.getElementById('videoClear').onclick = () => { vu.value = ''; socket.emit('host:setup', { video: '' }); };
+    document.getElementById('classSel').onchange = (e) => socket.emit('host:setup', { classId: e.target.value });
     document.getElementById('filterOn').onchange = (e) => socket.emit('host:setup', { filter: e.target.checked });
     const wt = document.getElementById('winText');
     wt.onchange = () => socket.emit('host:setup', { winText: wt.value });
@@ -298,6 +302,16 @@ function renderLobby() {
   vlBox.querySelectorAll('[data-video-pick]').forEach((b) => b.classList.toggle('on', b.dataset.videoPick === st.setup.video || (youtubeId(b.dataset.videoPick) && youtubeId(b.dataset.videoPick) === youtubeId(st.setup.video))));
   const fo = document.getElementById('filterOn');
   if (fo) fo.checked = st.setup.filter !== false;
+  const cs = document.getElementById('classSel');
+  if (cs && st.classes) {
+    const sig = st.classes.map((c) => c.id + c.name + c.count).join('|');
+    if (cs.dataset.sig !== sig) {
+      cs.dataset.sig = sig;
+      cs.innerHTML = '<option value="">בלי כיתה (כל אחד כותב כינוי)</option>' + st.classes.map((c) => `<option value="${esc(c.id)}">${esc(c.name)} (${c.count} תלמידים)</option>`).join('');
+    }
+    if (document.activeElement !== cs) cs.value = st.setup.classId || '';
+    cs.disabled = st.setup.nameMode !== 'custom';
+  }
   const wt = document.getElementById('winText');
   if (document.activeElement !== wt) wt.value = st.setup.winText || '';
   const vu = document.getElementById('videoUrl');

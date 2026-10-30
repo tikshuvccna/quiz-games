@@ -8,6 +8,7 @@ const fs = require('fs');
 const Room = require('./room');
 const Quizzes = require('./quizzes');
 const Net = require('./net');
+const Classes = require('./classes');
 const Library = require('./library');
 const Freeform = require('./freeform');
 const Media = require('./media');
@@ -112,6 +113,18 @@ app.post('/api/q/freeform', express.raw({ type: () => true, limit: '30mb' }), ap
   return { questions };
 }));
 app.post('/api/q/import-link',api((req) => Library.importFromLink(req.body && req.body.url, req.body && req.body.folder)));
+
+// class rosters and how each class is doing over the games it played
+app.get('/api/q/classes', api(() => Classes.list()));
+app.get('/api/q/classes/:id', api((req) => {
+  const c = Classes.get(req.params.id);
+  if (!c) throw new Error('הכיתה לא נמצאה');
+  return c;
+}));
+app.post('/api/q/classes', api((req) => Classes.save(req.body || {})));
+app.put('/api/q/classes/:id', api((req) => Classes.save({ ...(req.body || {}), id: req.params.id })));
+app.delete('/api/q/classes/:id', api((req) => (Classes.remove(req.params.id), { ok: true })));
+app.get('/api/q/classes/:id/progress', api((req) => Classes.progress(req.params.id)));
 
 // folders
 app.get('/api/q/folders', api(() => Library.folders()));
@@ -328,7 +341,7 @@ io.on('connection', (socket) => {
     // a typed name can also bring back someone who dropped out, so ask for it even mid-game
     const closed = room.joinable();
     if (closed && room.setup.nameMode !== 'custom') return ack({ ok: false, error: closed });
-    ack({ ok: true, nameMode: room.setup.nameMode, scene: room.setup.scene, running: room.phase === 'playing' });
+    ack({ ok: true, nameMode: room.setup.nameMode, scene: room.setup.scene, running: room.phase === 'playing', roster: room.setup.nameMode === 'custom' ? room.roster() : null });
   });
 
   on('player:photo', (data) => {

@@ -5,6 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { shuffle } = require('./shuffle');
 const Filter = require('./filter');
+const Classes = require('./classes');
 const Quizzes = require('./quizzes');
 const TEAMS = require('./teams');
 const { randomName } = require('./names');
@@ -70,7 +71,7 @@ class Room {
     this.destroyed = false;
     this.createdAt = new Date();
     // room-wide options that survive game changes and rematches
-    this.setup = { nameMode: 'custom', scene: 'classic', video: '', winText: '', quiz: Quizzes.SAMPLE_ID, photos: true, filter: true };
+    this.setup = { nameMode: 'custom', scene: 'classic', video: '', winText: '', quiz: Quizzes.SAMPLE_ID, photos: true, filter: true, classId: '' };
     this.quizData = null;
     this.quizCache = null;
     this.round = 0;
@@ -114,6 +115,7 @@ class Room {
     if (validScene(s.scene)) this.setup.scene = s.scene;
     if (typeof s.photos === 'boolean') this.setup.photos = s.photos;
     if (typeof s.filter === 'boolean') this.setup.filter = s.filter;
+    if (typeof s.classId === 'string') this.setup.classId = Classes.get(s.classId) ? s.classId : '';
     if (typeof s.video === 'string') this.setup.video = s.video.trim().slice(0, 300);
     if (typeof s.winText === 'string') this.setup.winText = s.winText.replace(/[\u0000-\u001f]/g, ' ').slice(0, 140);
     if (typeof s.quiz === 'string' && s.quiz !== this.setup.quiz) {
@@ -241,6 +243,14 @@ class Room {
 
   photoUrl(p) {
     return this.setup.photos && p.photo ? `/photo/${this.pin}/${p.id}?v=${p.photoV}` : '';
+  }
+
+  // the class list for the join screen: each name and whether somebody is already using it
+  roster() {
+    const cls = this.setup.classId && Classes.get(this.setup.classId);
+    if (!cls) return null;
+    const used = new Set([...this.players.values()].filter((p) => p.connected || this.phase === 'lobby').map((p) => p.name.toLowerCase()));
+    return { name: cls.name, students: cls.students.map((n) => ({ name: n, taken: used.has(n.toLowerCase()) })) };
   }
 
   rerollName(p) {
@@ -484,7 +494,7 @@ class Room {
       };
     });
     players.sort((a, b) => b.correct - a.correct || b.points - a.points);
-    return { pin: this.pin, created: this.createdAt.toISOString(), rounds: this.rounds, players };
+    return { pin: this.pin, created: this.createdAt.toISOString(), classId: this.setup.classId || '', quiz: this.quizData ? this.quizData.title : '', rounds: this.rounds, players };
   }
 
   // ---- pushing state ----
@@ -502,6 +512,7 @@ class Room {
       settings: this.settings,
       setup: this.setup,
       quizzes: this.phase === 'lobby' ? this.quizList() : null,
+      classes: this.phase === 'lobby' ? Classes.list() : null,
       quizTitle: this.quizData ? this.quizData.title : '',
       round: this.round,
       teamCount: this.teamCount(),

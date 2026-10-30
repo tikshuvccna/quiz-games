@@ -131,7 +131,8 @@
       document.getElementById('clNum').textContent = b.q ? `${b.index + 1}/${b.total}` : '—';
       document.getElementById('clAns').textContent = `${(b.stage === 'vote' ? b.voted : b.answered) || 0}/${b.players}`;
       const next = document.getElementById('clNext');
-      const label = { ready: 'פתחו תשובות ▶', question: 'סיימו את הזמן ⏭', vote: 'סיימו הצבעה ⏭', reveal: b.last ? 'לתוצאות 🏆' : 'ללוח המובילים ▶', board: 'לשאלה הבאה ▶', slide: 'הבא ▶' }[b.stage];
+      const learn = b.style === 'learn';
+      const label = { ready: 'פתחו תשובות ▶', question: 'סיימו את הזמן ⏭', vote: 'סיימו הצבעה ⏭', reveal: b.last ? (learn ? 'לסיכום ▶' : 'לתוצאות 🏆') : learn ? 'לשאלה הבאה ▶' : 'ללוח המובילים ▶', board: 'לשאלה הבאה ▶', slide: 'הבא ▶' }[b.stage];
       next.textContent = label || 'הבא ▶';
       next.classList.toggle('hidden', !b.manual && b.stage !== 'slide');
       const key = `${b.stage}:${b.bonus}:${b.index}`;
@@ -226,6 +227,20 @@
     hostEnded(app, st) {
       if (!U.view(app, 'classic-end')) return;
       const r = st.results.players;
+      // learning style: a class summary instead of a podium
+      if (st.results.style === 'learn') {
+        const total = Math.max(1, st.results.scored);
+        const pct = r.length ? Math.round((r.reduce((s, p) => s + p.correct, 0) / (r.length * total)) * 100) : 0;
+        return U.hostResults(app, st, {
+          title: 'סיימנו!',
+          sub: `חידון קלאסי · למידה · ${st.results.total} שאלות`,
+          body: `<div class="end-visual"><div class="cl-learn-sum"><b>${pct}%</b><span>מהתשובות של הכיתה היו נכונות</span></div></div>`,
+          table: U.table(r.slice().sort((a, b) => a.name.localeCompare(b.name, 'he')), [
+            ['שם', (p) => `<span class="nm">${U.avatar(p.name)}${esc(p.name)}</span>`],
+            ['נכונות', (p) => `✅ ${p.correct} מתוך ${total}`],
+          ]),
+        });
+      }
       U.hostResults(app, st, {
         title: r[0] ? `${esc(r[0].name)} ניצח/ה!` : 'סוף החידון',
         sub: `חידון קלאסי · ${st.results.total} שאלות`,
@@ -242,6 +257,7 @@
 
     // ---------- player ----------
     hud(you) {
+      if (you.style === 'learn') return '';
       return `<span class="hchip">⭐ ${you.score || 0}</span>${you.rank ? `<span class="hchip">#${you.rank}</span>` : ''}`;
     },
 
@@ -284,13 +300,13 @@
         html = `<div class="fb-screen ${cls}">
           ${poll ? `<div class="cl-p-icon">${{ cloud: '☁️', open: '✍️', brain: '💡', qna: '❓', drop: '📍', rate: '⭐', rank: '🏅' }[you.qtype] || '📊'}</div>` : `<div class="fb-icon">${r.ok ? Art.check() : Art.cross()}</div>`}
           <div class="fb-title">${title}</div>
-          ${r.pts ? `<div class="cl-p-pts ${r.pts < 0 ? 'neg' : ''}">${r.pts > 0 ? '+' : ''}${r.pts}${this.ptsUnit ? ` <small>${this.ptsUnit}</small>` : ''}</div>` : ''}
+          ${r.pts && you.style !== 'learn' ? `<div class="cl-p-pts ${r.pts < 0 ? 'neg' : ''}">${r.pts > 0 ? '+' : ''}${r.pts}${this.ptsUnit ? ` <small>${this.ptsUnit}</small>` : ''}</div>` : ''}
           ${r.conf === 1 && you.stage !== undefined && !this.pyramidMode ? `<div class="pill">🚀 ${r.ok ? 'הבוסט הצליח!' : 'הבוסט נכשל'}</div>` : ''}
           ${r.ok && r.streak >= 2 ? `<div class="streak">${Art.flame()} רצף ${r.streak}</div>` : ''}
           ${!r.ok && !poll && you.correctText ? `<div class="fb-answer">התשובה הנכונה<b>${esc(you.correctText)}</b></div>` : ''}
           ${you.afterImage ? `<img class="fb-pic" src="${esc(you.afterImage)}" alt="">` : ''}
           ${you.explain ? `<div class="fb-explain">${esc(you.explain)}</div>` : ''}
-          <div class="fb-note">מקום ${you.rank}${you.above ? (you.above.gap > 0 ? ` · עוד ${you.above.gap} ${this.ptsUnit || 'נק׳'} כדי לעקוף את ${esc(you.above.name)}` : ` · צמוד ל־${esc(you.above.name)}!`) : you.rank === 1 ? ' · אתם בראש! 👑' : ''}</div></div>`;
+          ${you.style === 'learn' ? '' : `<div class="fb-note">מקום ${you.rank}${you.above ? (you.above.gap > 0 ? ` · עוד ${you.above.gap} ${this.ptsUnit || 'נק׳'} כדי לעקוף את ${esc(you.above.name)}` : ` · צמוד ל־${esc(you.above.name)}!`) : you.rank === 1 ? ' · אתם בראש! 👑' : ''}</div>`}</div>`;
         if (!poll) {
           U.sfx(r.ok ? 'good' : 'bad');
           if (navigator.vibrate) navigator.vibrate(r.ok ? 20 : [40, 40, 40]);
@@ -345,6 +361,10 @@
 
     playerEnded(app, you) {
       const r = you.results.players;
+      if (you.results.style === 'learn') {
+        const me = r.find((p) => p.name === you.name) || { correct: 0 };
+        return U.playerResult({ win: false, title: 'כל הכבוד על הלמידה!', big: `${me.correct}/${you.results.scored}`, bigLabel: 'תשובות נכונות', lines: ['📚 מקבלים עוד הזדמנות לתרגל, בכל פעם נהיים טובים יותר'] });
+      }
       const idx = r.findIndex((p) => p.name === you.name);
       const mine = r[idx] || { score: 0, correct: 0, best: 0 };
       return U.playerResult({
