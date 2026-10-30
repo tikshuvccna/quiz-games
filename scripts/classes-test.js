@@ -98,6 +98,61 @@ async function play(classId, names, right, extra = {}) {
   r = await api(`/classes/${id}/progress`);
   ok(r.body.sessions.length === 2, 'a game played without the class is not counted');
 
+  // ---------- the gradebook ----------
+  r = await api(`/classes/${id}/progress`);
+  const gr = r.body.grades;
+  const gd = gr.rows.find((x) => x.name === 'דנה');
+  ok(gr.columns.length === 2 && gr.rows.length === r.body.students.length, 'gradebook: a column per game, a row per student', [gr.columns.length, gr.rows.length]);
+  ok(gd && gd.values.join() === '100,80', 'gradebook: דנה 100% then 80%, oldest game first', gd);
+  const gm = gr.rows.find((x) => x.name === 'מיה');
+  ok(gm && gm.values.every((v) => v === null), 'gradebook: a student who did not play has empty cells', gm);
+
+  // ---------- teacher notes ----------
+  r = await api(`/classes/${id}/notes`, 'PUT', { name: 'דנה', text: '  חזקה בחשבון  ' });
+  ok(r.body.note === 'חזקה בחשבון', 'a note is saved (trimmed)', r.body);
+  r = await api(`/classes/${id}/progress`);
+  ok(r.body.students.find((x) => x.name === 'דנה').note === 'חזקה בחשבון' && r.body.students.find((x) => x.name === 'יוסי').note === '', 'the progress shows the note, others have none');
+  await api(`/classes/${id}/notes`, 'PUT', { name: 'דנה', text: '' });
+  r = await api(`/classes/${id}/progress`);
+  ok(r.body.students.find((x) => x.name === 'דנה').note === '', 'an empty note removes it');
+  r = await api(`/classes/nope/notes`, 'PUT', { name: 'דנה', text: 'x' });
+  ok(r.status >= 400, 'a note for an unknown class is refused');
+
+  // ---------- a class list from a file ----------
+  const parse = async (name, body) => (await fetch(URL + '/api/q/classes/parse?name=' + encodeURIComponent(name), { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body })).json();
+  let pr = await parse('people.csv', 'First Name,Last Name,Email\nDana,Cohen,a@x\nYossi,Levi,b@x\nDana,Levi,c@x\n');
+  ok(pr.students.join() === 'Dana C,Yossi,Dana L', 'CSV with First / Last name columns: first names, last initial only for duplicates', pr);
+  pr = await parse('names.txt', '﻿דנה כהן\nיוסי לוי\n\nנועה בר-אילן ארוכה מאוד\n');
+  ok(pr.students[0] === 'דנה כהן' && pr.students[1] === 'יוסי לוי' && pr.students[2].length <= 14, 'plain text lines (with a BOM); a too-long name is shortened', pr.students);
+  pr = await parse('list.csv', 'שם,כיתה\n"דנה, כהן",ז1\nיוסי,ז1\n');
+  ok(pr.students.length === 2 && pr.students[0] === 'דנה, כהן', 'a CSV with a "שם" column and a quoted comma', pr.students);
+  const wbx = new (require('exceljs').Workbook)();
+  const wsx = wbx.addWorksheet('Class');
+  wsx.addRow(['#', 'שם התלמיד']);
+  wsx.addRow([1, 'אורי']);
+  wsx.addRow([2, 'שירה']);
+  pr = await parse('class.xlsx', Buffer.from(await wbx.xlsx.writeBuffer()));
+  ok(pr.students.join() === 'אורי,שירה', 'an Excel file with a header row', pr);
+  pr = await parse('empty.csv', '');
+  ok(pr.students.length === 0, 'an empty file gives no names');
+
+  // ---------- flashcards as CSV ----------
+  const cq = await api('/quizzes', 'POST', { title: 'cards test' });
+  await api('/quizzes/' + cq.body.id, 'PUT', { title: 'cards test', questions: [
+    { type: 'quiz', text: 'Capital of France?', time: 20, explain: 'On the Seine', answers: [{ text: 'Paris', correct: true }, { text: 'Rome' }] },
+    { type: 'slide', text: 'A slide' },
+    { type: 'match', text: 'Match them', time: 30, pairs: [{ a: 'cat', b: 'meow' }, { a: 'dog', b: 'woof' }] },
+    { type: 'poll', text: 'A poll', answers: [{ text: 'x' }, { text: 'y' }] },
+  ] });
+  const csvRes = await fetch(`${URL}/api/q/quizzes/${cq.body.id}/cards.csv`);
+  const csv = Buffer.from(await csvRes.arrayBuffer()).toString('utf8'); // .text() would drop the BOM
+  ok(csvRes.status === 200 && csv.startsWith('﻿"Front","Back","Explanation"'), 'the cards CSV has a BOM and a header');
+  ok(csv.includes('"Capital of France?","Paris","On the Seine"') && csv.includes('"Match them","cat = meow') && csv.includes('dog = woof",""'), 'a card per scored question', csv);
+  ok(!csv.includes('A slide') && !csv.includes('A poll'), 'slides and polls are not cards');
+  await api('/quizzes/' + cq.body.id, 'DELETE');
+  const pg = await fetch(URL + '/print.html?quiz=x');
+  ok(pg.status === 200 && /print\.js/.test(await pg.text()), 'the print page is served');
+
   // ---------- taken names ----------
   const host = io(URL);
   const room = await new Promise((res) => host.emit('host:create', { game: 'classic' }, res));

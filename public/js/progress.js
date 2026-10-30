@@ -73,13 +73,13 @@
         <div class="pg-stat"><b>${d.students.filter((s) => s.sessions).length}/${d.class.students.length}</b><span>תלמידים שהשתתפו</span></div>
         <div class="pg-stat"><b>${d.accuracy === null ? '—' : d.accuracy + '%'}</b><span>דיוק הכיתה</span></div>
         <div class="pg-stat"><b>${d.answered}</b><span>תשובות</span></div>
-        <div class="pg-act"><button class="btn sm ghost" id="editCls">✏️ עריכת הרשימה</button><button class="btn sm ghost" id="csv">⬇ הורדה לאקסל</button></div>
+        <div class="pg-act"><button class="btn sm ghost" id="editCls">✏️ עריכת הרשימה</button><button class="btn sm ghost" id="csv">⬇ הורדה לאקסל</button><button class="btn sm ghost" id="grades" title="שורה לכל תלמיד ועמודה לכל משחק, להדבקה בגיליון הציונים">⬇ ציונים לגיליון</button></div>
       </section>
       ${done ? '' : '<div class="card pg-note">עוד לא שוחקו משחקים עם הכיתה הזו. בחדר המשחק בחרו את הכיתה תחת "👥 כיתה", ושחקו חידון: ההתקדמות תופיע כאן.</div>'}
       <section class="card">
         <h2>תלמידים</h2>
-        <div class="tbl-wrap"><table class="rep pg-table"><thead><tr><th>שם</th><th>משחקים</th><th>תשובות</th><th>דיוק</th><th>מגמה</th><th>אחרון</th></tr></thead><tbody>
-          ${d.students.map((s) => `<tr class="${s.sessions ? '' : 'off'}"><td><span class="nm">${U.avatar(s.name)}${esc(s.name)}</span>${s.inClass ? '' : ' <small class="muted">(אורח/ת)</small>'}</td><td>${s.sessions}</td><td>${s.answered}</td><td class="acc">${bar(s.accuracy)}</td><td>${spark(s.trend)}</td><td>${when(s.last)}</td></tr>`).join('')}
+        <div class="tbl-wrap"><table class="rep pg-table"><thead><tr><th>שם</th><th>משחקים</th><th>תשובות</th><th>דיוק</th><th>מגמה</th><th>אחרון</th><th>הערה</th></tr></thead><tbody>
+          ${d.students.map((s) => `<tr class="${s.sessions ? '' : 'off'}"><td><span class="nm">${U.avatar(s.name)}${esc(s.name)}</span>${s.inClass ? '' : ' <small class="muted">(אורח/ת)</small>'}</td><td>${s.sessions}</td><td>${s.answered}</td><td class="acc">${bar(s.accuracy)}</td><td>${spark(s.trend)}</td><td>${when(s.last)}</td><td><button class="pg-note-b ${s.note ? 'has' : ''}" data-note="${esc(s.name)}" title="${esc(s.note || 'הערה פרטית על התלמיד')}">${s.note ? '📝' : '＋'}</button></td></tr>`).join('')}
         </tbody></table></div>
       </section>
       <div class="pg-two">
@@ -99,7 +99,7 @@
     m.innerHTML = `<div class="modal-card pg-edit"><div class="modal-head"><h2>${cls ? '✏️ עריכת כיתה' : '+ כיתה חדשה'}</h2><div class="modal-actions"><button class="btn sm ghost" id="eClose">✕</button></div></div>
       <label class="pg-f">שם הכיתה<input class="input" id="eName" maxlength="30" placeholder="למשל: ז׳1" value="${cls ? esc(cls.name) : ''}"></label>
       <label class="pg-f">התלמידים: שם בכל שורה (אפשר להדביק מאקסל או מוורד)<textarea class="input" id="eList" rows="12" placeholder="דנה כהן&#10;יוסי לוי&#10;נועה…">${cls ? esc(cls.students.join('\n')) : ''}</textarea></label>
-      <div class="muted" id="eCount"></div>
+      <div class="row"><label class="btn ghost sm">📥 הוספה מקובץ (Excel, CSV, טקסט)<input type="file" id="eFile" accept=".xlsx,.csv,.txt,text/plain,text/csv" hidden></label><span class="muted" id="eCount"></span></div>
       <small class="muted">עד 60 תלמידים, שם עד 14 תווים. כינוי קצר (שם פרטי) נוח יותר לבחירה בטלפון. אם יש שני תלמידים עם אותו שם, הוסיפו אות: "דנה כ", "דנה ל".</small>
       <div class="row">${cls ? '<button class="btn sm ghost" id="eDel">🗑 מחיקת הכיתה</button>' : ''}<button class="btn green" id="eSave">שמירה ✓</button></div></div>`;
     document.body.appendChild(m);
@@ -107,6 +107,21 @@
     const count = () => (m.querySelector('#eCount').textContent = `${list.value.split(/[\n,;]+/).map((x) => x.trim()).filter(Boolean).length} שמות`);
     list.oninput = count;
     count();
+    // names from a file (Classroom's people list, a school export, a plain list): added to the box, nothing is lost
+    m.querySelector('#eFile').onchange = async (ev) => {
+      const f = ev.target.files[0];
+      if (!f) return;
+      try {
+        const r = await api('/classes/parse?name=' + encodeURIComponent(f.name), { method: 'POST', body: await f.arrayBuffer(), headers: { 'Content-Type': 'application/octet-stream' } });
+        if (!r.students.length) return toast('לא נמצאו שמות בקובץ', true);
+        const have = new Set(list.value.split(/[\n,;]+/).map((x) => x.trim().toLowerCase()).filter(Boolean));
+        const add = r.students.filter((n) => !have.has(n.toLowerCase()));
+        list.value = (list.value.trim() ? list.value.trim() + '\n' : '') + add.join('\n');
+        count();
+        toast(`נוספו ${add.length} שמות${r.note ? ' · ' + r.note : ''}`);
+      } catch (err) { toast(err.message, true); }
+      ev.target.value = '';
+    };
     m.onclick = async (e) => {
       if (e.target === m || e.target.id === 'eClose') return m.remove();
       if (e.target.id === 'eSave') {
@@ -141,6 +156,46 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   }
 
+  // a gradebook: a row per student, a column per game, and the average (accuracy %)
+  function gradebook() {
+    const gr = data.grades;
+    const q = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const head = ['שם', ...gr.columns.map((c) => `${new Date(c.at).toLocaleDateString('he-IL')} ${c.label}`.trim()), 'ממוצע'];
+    const rows = gr.rows.map((r) => {
+      const vals = r.values.filter((v) => v !== null);
+      return [r.name, ...r.values.map((v) => (v === null ? '' : v)), vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : ''];
+    });
+    const blob = new Blob(['\ufeff' + [head, ...rows].map((r) => r.map(q).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `grades-${data.class.name.replace(/[\\/:*?"<>|]/g, '-')}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  }
+
+  // a private note about a student
+  function noteEditor(name) {
+    const s = data.students.find((x) => x.name === name);
+    const m = document.createElement('div');
+    m.className = 'modal';
+    m.innerHTML = `<div class="modal-card pg-edit"><div class="modal-head"><h2>📝 ${esc(name)}</h2><div class="modal-actions"><button class="btn sm ghost" id="nClose">✕</button></div></div>
+      <label class="pg-f">הערה פרטית (רק אתם רואים)<textarea class="input" id="nText" rows="6" maxlength="500" placeholder="למשל: צריך עידוד, חזק בחשבון, יושב רחוק מהלוח…">${esc((s && s.note) || '')}</textarea></label>
+      <div class="row"><button class="btn green" id="nSave">שמירה ✓</button></div></div>`;
+    document.body.appendChild(m);
+    m.onclick = async (e) => {
+      if (e.target === m || e.target.id === 'nClose') return m.remove();
+      if (e.target.id === 'nSave') {
+        try {
+          await api(`/classes/${encodeURIComponent(curId)}/notes`, { method: 'PUT', body: JSON.stringify({ name, text: m.querySelector('#nText').value }) });
+          m.remove();
+          toast('ההערה נשמרה');
+          load();
+        } catch (err) { toast(err.message, true); }
+      }
+    };
+    setTimeout(() => m.querySelector('#nText').focus(), 50);
+  }
+
   function wire() {
     const sel = document.getElementById('clsSel');
     if (sel) sel.onchange = () => { curId = sel.value; load(); };
@@ -149,6 +204,9 @@
     if (e) e.onclick = () => editor(data.class);
     const c = document.getElementById('csv');
     if (c) c.onclick = csv;
+    const g = document.getElementById('grades');
+    if (g) g.onclick = gradebook;
+    document.querySelectorAll('[data-note]').forEach((b) => (b.onclick = () => noteEditor(b.dataset.note)));
   }
 
   load().catch((e) => (app.innerHTML = `<div class="card pg-empty"><h2>${esc(e.message)}</h2></div>`));

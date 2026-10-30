@@ -23,6 +23,7 @@ window.QView = (function () {
   function render(box, q, opts) {
     draw(box, q, opts);
     QMedia.mount(box);
+    if (window.A11y) A11y.decorate(box, q); // a 🔊 on the question, and read aloud if the student chose it
     if (q.points >= 2 && !opts.noSplash) U.multSplash(box.closest('.screen') || box, q.points, false);
   }
 

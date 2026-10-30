@@ -97,6 +97,15 @@ app.post('/api/q/quizzes', api((req) => Quizzes.create((req.body && req.body.tit
 app.get('/api/q/quizzes/:id', api((req) => Quizzes.load(req.params.id)));
 app.put('/api/q/quizzes/:id', api((req) => Quizzes.save(req.params.id, req.body)));
 app.delete('/api/q/quizzes/:id', api((req) => (Quizzes.remove(req.params.id), { ok: true })));
+app.get('/api/q/quizzes/:id/cards.csv', (req, res) => {
+  try {
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(req.params.id)}-cards.csv`);
+    res.send(Quizzes.cardsCsv(req.params.id));
+  } catch (e) {
+    res.status(404).json({ error: e.message });
+  }
+});
 app.post('/api/q/quizzes/:id/duplicate', api((req) => Quizzes.duplicate(req.params.id)));
 // pictures (incl. animated GIF / APNG / WebP) and video files for questions
 app.post('/api/q/quizzes/:id/media', express.raw({ type: ['image/*', 'video/*', 'application/pdf'], limit: '300mb' }), api((req) => {
@@ -124,6 +133,8 @@ app.get('/api/q/classes/:id', api((req) => {
 app.post('/api/q/classes', api((req) => Classes.save(req.body || {})));
 app.put('/api/q/classes/:id', api((req) => Classes.save({ ...(req.body || {}), id: req.params.id })));
 app.delete('/api/q/classes/:id', api((req) => (Classes.remove(req.params.id), { ok: true })));
+app.post('/api/q/classes/parse', express.raw({ type: () => true, limit: '5mb' }), api((req) => Classes.parseNames(Buffer.isBuffer(req.body) ? req.body : Buffer.from(''), String(req.query.name || ''))));
+app.put('/api/q/classes/:id/notes', api((req) => Classes.setNote(req.params.id, req.body && req.body.name, req.body && req.body.text)));
 app.get('/api/q/classes/:id/progress', api((req) => Classes.progress(req.params.id)));
 
 // folders

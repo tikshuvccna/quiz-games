@@ -1,0 +1,55 @@
+:root { --ink: #1b1340; --line: #cfc9ea; --accent: #5b2fd1; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: Heebo, "Segoe UI", Arial, sans-serif; color: var(--ink); background: #ecebf5; }
+.p-bar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 10px 20px; background: #fff; box-shadow: 0 2px 10px rgba(0, 0, 0, .12); }
+.p-bar b { font-size: 1.1rem; flex: 1; min-width: 160px; }
+.p-tabs { display: flex; gap: 6px; }
+.p-tabs button, .p-print { border: 0; cursor: pointer; padding: 8px 14px; border-radius: 10px; font: inherit; font-weight: 800; background: #ece9fb; color: var(--ink); }
+.p-tabs button.on, .p-print { background: var(--accent); color: #fff; }
+.p-csv { color: var(--accent); font-weight: 800; text-decoration: none; }
+.p-tip { color: #6b6597; font-weight: 700; }
+.p-empty { padding: 60px; text-align: center; font-weight: 800; }
+
+/* the guide: a sheet of paper */
+.p-guide { width: min(820px, 96vw); margin: 18px auto; padding: 36px 44px; background: #fff; box-shadow: 0 4px 20px rgba(0, 0, 0, .12); }
+.p-guide header { border-bottom: 3px solid var(--accent); margin-bottom: 18px; padding-bottom: 10px; }
+.p-guide h1 { margin: 0 0 4px; font-size: 1.9rem; }
+.p-guide header p { margin: 4px 0; color: #4a4470; }
+.p-slide { margin: 22px 0 8px; padding: 10px 14px; border-inline-start: 6px solid var(--accent); background: #f4f2fd; break-inside: avoid; }
+.p-slide h2 { margin: 0 0 4px; font-size: 1.3rem; }
+.p-slide p { margin: 4px 0; }
+.p-slide ul { margin: 6px 0 0; padding-inline-start: 22px; }
+.p-slide img, .p-q img { max-width: 60%; max-height: 220px; border-radius: 6px; margin-top: 6px; }
+.p-pdf { margin: 14px 0; text-align: center; break-inside: avoid; }
+.p-pdf canvas { max-width: 100%; border: 1px solid var(--line); border-radius: 4px; }
+.p-cap { font-size: .85rem; color: #6b6597; margin-bottom: 4px; }
+.p-q { margin: 14px 0; break-inside: avoid; }
+.p-qh { font-weight: 800; font-size: 1.05rem; }
+.p-qh small { color: #6b6597; font-weight: 600; }
+.p-opts { margin: 6px 0 0; padding-inline-start: 30px; list-style: upper-alpha; }
+.p-opts li { padding: 2px 0; }
+.p-opts li.ok { font-weight: 800; color: #0a7a4b; }
+.p-ans { margin-top: 4px; font-weight: 800; color: #0a7a4b; }
+.p-ex { margin-top: 3px; font-size: .92rem; color: #4a4470; }
+.p-src { margin-top: 3px; font-size: .88rem; color: #5b2fd1; font-weight: 700; }
+.p-src q { display: block; font-weight: 500; font-style: italic; color: #4a4470; }
+.p-line { margin: 4px 0; color: #4a4470; font-size: .92rem; }
+
+/* flashcards: 8 to an A4 page */
+.p-cards { display: flex; flex-direction: column; align-items: center; gap: 16px; margin: 18px 0; }
+.p-sheet { width: 210mm; height: 297mm; padding: 10mm; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, 1fr); gap: 0; background: #fff; box-shadow: 0 4px 20px rgba(0, 0, 0, .12); break-after: page; }
+.p-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 8mm; text-align: center; border: 1px dashed #9a93c7; font-size: 1.25rem; font-weight: 800; overflow: hidden; }
+.p-card img { max-width: 80%; max-height: 38mm; object-fit: contain; }
+.p-card.b { background: #f4f2fd; color: var(--accent); }
+.p-card.b b { font-size: 1.3rem; }
+.p-card small { font-size: .8rem; font-weight: 600; color: #4a4470; }
+
+@media print {
+  body { background: #fff; }
+  .no-print { display: none !important; }
+  .p-guide { width: auto; margin: 0; padding: 0; box-shadow: none; }
+  .p-cards { gap: 0; margin: 0; }
+  .p-sheet { box-shadow: none; margin: 0; }
+  @page { margin: 12mm; }
+}
+@media print and (min-width: 0) { .p-cards ~ * { display: none; } }

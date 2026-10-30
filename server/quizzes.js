@@ -587,6 +587,19 @@ async function importAny(buffer, title) {
   return importXlsx(await xlsx.async('nodebuffer'), t, images, pdfs);
 }
 
+// flashcards as CSV for Anki / Quizlet style import: Front, Back, Explanation (UTF-8 with a BOM so Excel reads Hebrew)
+function cardsCsv(id) {
+  const q = load(id);
+  const cell = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`;
+  const rows = [['Front', 'Back', 'Explanation']];
+  for (const x of q.questions) {
+    if (!qt.SCORED.has(x.type) || !x.text) continue;
+    const back = qt.correctText(x);
+    if (back) rows.push([x.text, back, x.explain || '']);
+  }
+  return '\ufeff' + rows.map((r) => r.map(cell).join(',')).join('\r\n') + '\r\n';
+}
+
 // a blank template (or a quiz exported) in the same layout as Kahoot's
 async function templateXlsx(id) {
   const wb = new ExcelJS.Workbook();
@@ -618,4 +631,4 @@ async function templateXlsx(id) {
   return wb.xlsx.writeBuffer();
 }
 
-module.exports = { cleanSource, SAMPLE_ID, folder, setFolder, list, load, save, create, duplicate, remove, mediaDir, saveMedia, mediaPath, questionsFor, importXlsx, importAny, templateXlsx, validId, newId, cleanFolder, fileOf, IMG_EXT, imageSize };
+module.exports = { cardsCsv, cleanSource, SAMPLE_ID, folder, setFolder, list, load, save, create, duplicate, remove, mediaDir, saveMedia, mediaPath, questionsFor, importXlsx, importAny, templateXlsx, validId, newId, cleanFolder, fileOf, IMG_EXT, imageSize };

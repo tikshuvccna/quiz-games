@@ -38,3 +38,7 @@
 .pg-edit { width: min(560px, 94vw); display: flex; flex-direction: column; gap: 12px; }
 .pg-f { display: flex; flex-direction: column; gap: 6px; font-weight: 800; }
 .pg-f textarea { resize: vertical; }
+
+.pg-note-b { border: 0; cursor: pointer; width: 34px; height: 34px; border-radius: 10px; font-size: 1rem; font-weight: 900; color: #fff; background: rgba(255, 255, 255, .12); }
+.pg-note-b.has { background: rgba(255, 210, 63, .3); }
+.pg-note-b:hover { background: rgba(255, 255, 255, .25); }

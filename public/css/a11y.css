@@ -1,0 +1,40 @@
+/* ===== accessibility (a11y-) ===== */
+.a11y-fab { position: fixed; inset: auto auto 12px 12px; z-index: 480; width: 40px; height: 40px; border-radius: 50%; border: 0; cursor: pointer; font-size: 1.2rem; color: #fff; background: rgba(15, 8, 40, .7); box-shadow: 0 0 0 1px rgba(255, 255, 255, .2); opacity: .55; }
+.a11y-fab:hover, .a11y-fab:focus-visible { opacity: 1; }
+.a11y-panel { position: fixed; inset: auto auto 60px 12px; z-index: 490; width: min(330px, 92vw); display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 18px; color: #fff; background: rgba(15, 8, 40, .97); box-shadow: 0 0 0 2px rgba(255, 255, 255, .2), 0 14px 34px rgba(0, 0, 0, .5); font-family: inherit; }
+.a11y-h { display: flex; justify-content: space-between; align-items: center; font-size: 1.1rem; }
+.a11y-h button { border: 0; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; color: #fff; background: rgba(255, 255, 255, .14); }
+.a11y-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-weight: 700; }
+.a11y-row.off { opacity: .5; }
+.a11y-row input { width: 22px; height: 22px; accent-color: #ffd23f; }
+.a11y-seg { display: flex; gap: 4px; }
+.a11y-seg button { border: 0; cursor: pointer; padding: 7px 10px; border-radius: 10px; font: inherit; font-weight: 800; color: #fff; background: rgba(255, 255, 255, .12); }
+.a11y-seg button.on { color: #3a2a00; background: #ffd23f; }
+.a11y-test { border: 0; cursor: pointer; padding: 9px; border-radius: 12px; font: inherit; font-weight: 800; color: #fff; background: rgba(255, 255, 255, .14); }
+.a11y-note { color: #cfc9f5; line-height: 1.5; }
+.a11y-say { margin-inline-start: 8px; border: 0; cursor: pointer; width: 34px; height: 34px; border-radius: 50%; font-size: 1rem; background: rgba(255, 255, 255, .18); color: #fff; }
+
+/* larger text: the question, the answers and the main reading texts */
+html.a11y-big .q-card, html.a11y-big .cl-qtext { font-size: 1.25em; }
+html.a11y-big .ans, html.a11y-big .cl-ans { font-size: 1.2em; }
+html.a11y-big .q-hint, html.a11y-big .fb-explain, html.a11y-big .fb-answer, html.a11y-big .cl-hint, html.a11y-big .std-t, html.a11y-big .qm-it, html.a11y-big .ide-opt, html.a11y-big .qo-t { font-size: 1.2em; }
+html.a11y-big .input, html.a11y-big .btn { font-size: 1.15em; }
+html.a11y-huge .q-card, html.a11y-huge .cl-qtext { font-size: 1.5em; }
+html.a11y-huge .ans, html.a11y-huge .cl-ans { font-size: 1.45em; }
+html.a11y-huge .q-hint, html.a11y-huge .fb-explain, html.a11y-huge .fb-answer, html.a11y-huge .cl-hint, html.a11y-huge .std-t, html.a11y-huge .qm-it, html.a11y-huge .ide-opt, html.a11y-huge .qo-t { font-size: 1.45em; }
+html.a11y-huge .input, html.a11y-huge .btn { font-size: 1.3em; }
+html.a11y-huge .sl-bullets li, html.a11y-big .sl-bullets li { font-size: 1.1em; }
+
+/* high contrast: solid backgrounds, strong outlines, no glow */
+html.a11y-contrast body, html.a11y-contrast .screen { background: #000 !important; }
+html.a11y-contrast { --muted: #fff; }
+html.a11y-contrast * { text-shadow: none !important; }
+html.a11y-contrast .ans, html.a11y-contrast .cl-ans, html.a11y-contrast .btn, html.a11y-contrast .ide-opt, html.a11y-contrast .qm-it, html.a11y-contrast .qs-b button, html.a11y-contrast .ls-b, html.a11y-contrast .rate-b { box-shadow: none !important; outline: 4px solid #fff; outline-offset: -4px; }
+html.a11y-contrast .q-card, html.a11y-contrast .cl-qtext, html.a11y-contrast .card { background: #fff !important; color: #000 !important; }
+html.a11y-contrast .q-card *, html.a11y-contrast .cl-qtext * { color: #000 !important; }
+html.a11y-contrast .muted, html.a11y-contrast small { color: #fff !important; }
+html.a11y-contrast .scene, html.a11y-contrast .scene-bg, html.a11y-contrast canvas.bg { display: none !important; }
+
+/* calm: nothing moves */
+html.a11y-calm *, html.a11y-calm *::before, html.a11y-calm *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0s !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+html.a11y-calm .scene, html.a11y-calm .scene-bg, html.a11y-calm canvas.bg, html.a11y-calm .confetti, html.a11y-calm .sl-fun-bg { display: none !important; }

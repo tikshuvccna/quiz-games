@@ -160,13 +160,13 @@ Requested 2026-10-30, "after all the things on the list". Split by what works wi
 
 **Can be built now (no internet, no AI inside the program)**
 - [x] (done 2026-10-30: `Source` column, shown after the answer on the big screen and phones, editor fields, instructions) **Sources and citations on questions** (NotebookLM's grounded answers): each question can carry a source (document name, page or section, a short quote). After the answer the big screen and the phone show "📖 מקור: …", so the class sees where the answer comes from. Spreadsheet column `Source`; the Claude Project instructions ask Claude to fill it from the material the teacher attached (quote + location, never invented).
-- [ ] **Study guide printout** (NotebookLM's study guide / briefing): from any quiz, a clean printable page (or PDF through the browser's print) with the questions, right answers, explanations and sources, grouped by topic. No AI needed, it is the quiz itself.
-- [ ] **Flashcards export**: a quiz as printable cards and as CSV for Anki / Quizlet style import.
-- [ ] **Paste NotebookLM / any AI output**: the free-text import already turns pasted questions into a quiz; check it against how NotebookLM writes quizzes and flashcards, and fix what it cannot read.
-- [ ] **Read aloud** (NotebookLM's audio overview, the accessibility side): a 🔊 button on questions and answers using the browser's speech synthesis (works offline if the device has a Hebrew voice; to be tested on real phones).
-- [ ] **Gradebook export** (Classroom's grades): a CSV with one row per student and one column per game, ready to paste into Sheets, Excel or Classroom's grade import; from the progress page.
-- [ ] **Roster import**: a class from a CSV / Excel file or pasted from Classroom's people list (names column), not only typed.
-- [ ] **Teacher notes per student** on the progress page (Classroom's private comments), saved with the class.
+- [x] (done 2026-10-30: print.html) **Study guide printout** (NotebookLM's study guide / briefing): from any quiz, a clean printable page (or PDF through the browser's print) with the questions, right answers, explanations and sources, grouped by topic. No AI needed, it is the quiz itself.
+- [x] (done 2026-10-30: printable cards + cards.csv) **Flashcards export**: a quiz as printable cards and as CSV for Anki / Quizlet style import.
+- [x] (done 2026-10-30 against typical AI shapes; NotebookLM's own output was not seen) **Paste NotebookLM / any AI output**: the free-text import already turns pasted questions into a quiz; check it against how NotebookLM writes quizzes and flashcards, and fix what it cannot read.
+- [x] (done 2026-10-30: a11y.js; real phones not tried) **Read aloud** (NotebookLM's audio overview, the accessibility side): a 🔊 button on questions and answers using the browser's speech synthesis (works offline if the device has a Hebrew voice; to be tested on real phones).
+- [x] (done 2026-10-30) **Gradebook export** (Classroom's grades): a CSV with one row per student and one column per game, ready to paste into Sheets, Excel or Classroom's grade import; from the progress page.
+- [x] (done 2026-10-30) **Roster import**: a class from a CSV / Excel file or pasted from Classroom's people list (names column), not only typed.
+- [x] (done 2026-10-30) **Teacher notes per student** on the progress page (Classroom's private comments), saved with the class.
 
 **Waits for the online phase (accounts, a server on the internet, or an AI service)**
 - Assignments with due dates, "turn in", teacher feedback and a stream of announcements (Classroom); homework / self-paced mode for students at home.

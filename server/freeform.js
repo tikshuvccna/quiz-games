@@ -120,8 +120,25 @@ function splitBlocks(text) {
   return { blocks, key: answerKey(keyLines) };
 }
 
+// Text written by an AI (NotebookLM, ChatGPT...) comes in a few shapes the plain parser trips on; straighten them first:
+//   "- A) option" (a bullet in front of a lettered option) · "Q: ... / A: ..." and "Front: ... / Back: ..." cards (one question
+//   per pair) · "statement (True/False)" followed by "Answer: True"
+function aiNormalize(text) {
+  let t = String(text || '').replace(/\r\n?/g, '\n');
+  // a bullet in front of a lettered option: "- A) text" -> "A) text"
+  t = t.replace(new RegExp('^[ \\t]*[-*\u2022]\\s+(?=\\(?[A-Fa-f' + HEB_LETTERS + "]['\u05f3]?\\s*[.)]\\s)", 'gm'), '');
+  // cards: a question label, then an answer label on the next line -> "question - answer" (one line = one question)
+  const QL = '(?:q|question|front|\u05e9\u05d0\u05dc\u05d4|\u05e6\u05d3 \u05e7\u05d3\u05de\u05d9|\u05de\u05d5\u05e9\u05d2)';
+  const AL = '(?:a|answer|back|\u05ea\u05e9\u05d5\u05d1\u05d4|\u05e6\u05d3 \u05d0\u05d7\u05d5\u05e8\u05d9|\u05d4\u05d2\u05d3\u05e8\u05d4)';
+  const cards = new RegExp('^[ \\t]*(?:\\d+[.)]\\s*)?\\**' + QL + '\\**\\s*\\d*\\s*[:\uff1a]\\s*\\**\\s*(.+?)\\s*\\n[ \\t]*\\**' + AL + '\\**\\s*[:\uff1a]\\s*\\**\\s*(.+)$', 'gim');
+  t = t.replace(cards, (m, q, a) => q.replace(/\*+$/, '').trim() + ' - ' + a.replace(/\*+$/, '').trim());
+  // a true/false statement with its answer on the next line
+  t = t.replace(/^(.*?\S)\s*\((?:true\s*\/\s*false|\u05e0\u05db\u05d5\u05df\s*\/\s*\u05dc\u05d0 \u05e0\u05db\u05d5\u05df)\)\s*\n[ \t]*\**(?:answer|correct answer|\u05ea\u05e9\u05d5\u05d1\u05d4(?: \u05e0\u05db\u05d5\u05e0\u05d4)?)\**\s*[:\uff1a]\s*\**\s*(true|false|\u05e0\u05db\u05d5\u05df|\u05dc\u05d0 \u05e0\u05db\u05d5\u05df)[ \t]*\**[ \t]*$/gim, (m, st, v) => st + ' (' + v + ')');
+  return t;
+}
+
 function parse(text) {
-  const { blocks, key } = splitBlocks(String(text || '').slice(0, 400000));
+  const { blocks, key } = splitBlocks(aiNormalize(text).slice(0, 400000));
   const out = [];
   // a block of one-line "term - definition" pairs is a vocabulary list: every line is a question
   const expand = [];
@@ -166,7 +183,7 @@ function parse(text) {
       } else if (!answers.length) {
         // "question? answer" on one line
         const m = qtext.match(/^(.+?[?？])\s*(.{1,80})$/);
-        if (m) q = { type: 'quiz', text: m[1].trim(), answers: [{ text: m[2].trim(), correct: true }], _single: true };
+        if (m) q = { type: 'quiz', text: m[1].trim(), answers: [{ text: m[2].replace(/^[\s\-–=:]+/, '').trim(), correct: true }], _single: true };
         else {
           const pm = qtext.match(PAIR);
           if (pm) q = { type: 'quiz', text: pm[1].trim(), answers: [{ text: pm[2].trim(), correct: true }], _single: true };
@@ -263,4 +280,4 @@ function fillIn(list) {
   }
 }
 
-module.exports = { parse, toText, numberDistractors };
+module.exports = { parse, toText, numberDistractors, aiNormalize };

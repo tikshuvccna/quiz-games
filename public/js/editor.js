@@ -543,6 +543,7 @@
         <label class="bg-sel" title="הרקע שנבחר אוטומטית כשבוחרים את החידון במסך המשחק">🎨<select id="bgSel"><option value="">רקע: לפי החדר</option></select></label>
         <span class="ed-status saved" id="status">נשמר ✓</span>
         <a class="btn ghost sm" href="/api/q/quizzes/${encodeURIComponent(quiz.id)}/export.xlsx">⬇ ייצוא לאקסל</a>
+        <a class="btn ghost sm" href="/print.html?quiz=${encodeURIComponent(quiz.id)}&mode=guide" target="_blank" title="דף לימוד להדפסה, וכרטיסיות לגזירה">🖨️ הדפסה</a>
         <a class="btn green sm" href="/host.html?present=${encodeURIComponent(quiz.id)}" target="_blank" title="פותח חדר שיעור עם השקופיות והפעילויות האלה">▶ הצגה</a>
       </header>
       <div class="ed-main">

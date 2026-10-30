@@ -194,6 +194,7 @@
         if (b.remain === null) document.querySelector('#clTimer b').textContent = '∞';
         else runTimer(document.getElementById('clTimer'), b.remain, (b.time || q.time) * 1000);
         U.sfx('go');
+        if (window.A11y) A11y.readHost(q); // read the question aloud on the big screen, if the teacher chose it
       } else if (b.stage === 'reveal') {
         const rv = b.reveal;
         box.innerHTML = `<div class="cl-q rv">
