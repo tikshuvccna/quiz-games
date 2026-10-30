@@ -23,7 +23,7 @@
 
 | Command | What it checks |
 |---|---|
-| `node scripts/smoke-test.js [game]` | Bots play a short round of every game (36) and print the state and results. |
+| `node scripts/smoke-test.js [game]` | Bots play a short round of every game (37) and print the state and results. |
 | `node scripts/chase-test.js [game]` | The co-op chase games (robot, sub, lava, zombie): bots race to the goal, all three checkpoint mini-games run, phones are parked and resumed, nobody gets stuck; the sub's diving mode; checkpoints switched off; junk packets are clamped. About 7 minutes. |
 | `node scripts/feature-test.js` | Name modes and reroll, 3 teams, reward settings, winner text, rematch with the same PIN, the report, an individual game played in teams. 14 checks. |
 | `node scripts/classic-test.js` | Classic quiz: every stage, team averages, the second-chance round for the bottom 5. |
@@ -116,11 +116,12 @@ scripts/                tests, bots, demo
 
 ## 3. What exists today
 
-### 3.1 Games (36)
+### 3.1 Games (37)
 
 | # | Game | Mode | What answering earns / the action on the phone |
 |---|---|---|---|
 | 1 | 🎯 חידון קלאסי | Individual or 2–4 teams (team score = average) | Kahoot classic: same question for everyone, speed + accuracy points, streaks, leaderboard with fun lines. Scoring styles: classic, accuracy only, confidence (boost or safe). Second-chance round for the bottom 5. |
+| 37 | 🏰 מגיני הטירה | Co-op (easy / normal / hard) | **Castle tower defense.** Monsters walk a path to the castle in 8 waves (a giant one every 4th wave); the server runs the whole battle (`server/games/td.js`, 4 ticks a second) and the big screen draws it. A reward lets a player build a tower on one of 8 spots (🏹 archer: fast, 💣 cannon: slow, splash, 🔮 mage: slows) or upgrade a tower (3 levels). Survive every wave to win; the castle has 20 lives. Monster strength grows a little with the class size. Balance simulated in-process: a class of 6 building a tower every 8 to 15 seconds wins easy / normal, 25 players win all levels, hard stays tight. |
 | 36 | 🧩 פאזל קבוצתי | 2–6 teams | **Team puzzle.** Each team builds its own picture (six drawn scenes) from 12 pieces. A reward gives a player one missing piece of their team's picture and 7 seconds to tap where it goes (the faint picture and the placed pieces are on the phone); a right tap places it for the whole team, a teammate who placed it first gives "already done". The first team to finish wins. Graded on the server. |
 | 35 | 🔮 מרוץ גולות | Individual | **Like Kahoot's Marble Race.** Each correct answer earns a marble (2 on a streak of 3). When the time is up all the marbles race on the big screen; the server draws the finishing order with a chance in proportion to the marbles (plus a little for everyone), so the leader is not sure to win. The race plays once, then the podium by the race. |
 | 34 | 🛸 ספינת חלל | Individual (free for all) | **Asteroids.** A reward is a 12-second flight in your own ship: drag on the left as a joystick (arrows and space on a computer), hold the fire button, blow up asteroids, 3 lives. The phone plays it and reports kills and lives (trusted, capped on the server). |
@@ -277,7 +278,7 @@ Next agreed step: ROADMAP item 9 (online / LAN mode), then more games from the l
 1. ✅ **Classic Asteroids** (game 34, `ship`).
 2. ✅ **Team puzzle** (game 36, `tpuzzle`).
 3. ✅ **Snake** (game 32; one snake per phone, not a shared arena).
-4. **Castle tower defense**: co-op.
+4. ✅ **Castle tower defense** (game 37, `td`).
 5. ✅ **Burger restaurant** (game 33; each student on their own, not co-op).
 6. ✅ **Basketball** (game 31, `hoops`).
 7. ✅ **Whack-a-mole** (game 30, `mole`).

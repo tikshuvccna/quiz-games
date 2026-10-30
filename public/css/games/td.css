@@ -1,0 +1,17 @@
+/* ---------- castle tower defense (td-) ---------- */
+.td-room { background: #4f9e3a; }
+.td-map { position: absolute; inset: 0; width: 100%; height: 100%; }
+.td-next { position: absolute; left: 50%; bottom: 3%; transform: translateX(-50%); padding: 8px 22px; border-radius: 999px; background: rgba(0, 0, 0, .55); font-weight: 900; font-size: 1.2rem; }
+.td-banner { position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%) scale(0); font-size: clamp(2.4rem, 8cqh, 5rem); font-weight: 900; color: #fff; -webkit-text-stroke: 5px #7a1f2a; paint-order: stroke fill; white-space: nowrap; pointer-events: none; }
+.td-banner.show { animation: td-ban 2s var(--spring) forwards; }
+.td-banner.show.big { animation: td-ban-big .6s var(--spring) forwards; }
+@keyframes td-ban { 0% { transform: translate(-50%, -50%) scale(0); } 18% { transform: translate(-50%, -50%) scale(1.15); } 80% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1.3); opacity: 0; } }
+@keyframes td-ban-big { to { transform: translate(-50%, -50%) scale(1); } }
+/* phone */
+.td-pmap { width: 100%; border-radius: 14px; box-shadow: 0 8px 0 rgba(0, 0, 0, .3); flex: none; touch-action: none; }
+.td-slot { cursor: pointer; }
+.td-slot.full { opacity: .6; cursor: default; }
+.td-types { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; flex: none; }
+.td-type { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 4px; border: 0; border-radius: 14px; background: #fff; color: #1b1340; font: inherit; cursor: pointer; box-shadow: 0 5px 0 #c9c2f0; }
+.td-type span { font-size: 1.8rem; }
+.td-type.on { background: var(--yellow); box-shadow: 0 5px 0 #b37a00; transform: translateY(2px); }
