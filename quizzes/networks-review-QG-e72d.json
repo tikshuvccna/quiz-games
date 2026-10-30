@@ -1,0 +1,669 @@
+{
+  "title": "networks-review-QG",
+  "description": "",
+  "folder": "",
+  "background": "",
+  "updated": "2026-10-29T09:45:52.360Z",
+  "questions": [
+    {
+      "type": "quiz",
+      "text": "איזה רכיב רשת מחבר את כל הכבלים לתוך מתחם התנגשות אחד?",
+      "time": 20,
+      "points": 0,
+      "explain": "ב-HUB כל הכבלים חולקים מתחם התנגשות אחד, ובמתג כל כבל הוא מתחם נפרד.",
+      "answers": [
+        {
+          "text": "מתג רשת (Switch)",
+          "correct": false
+        },
+        {
+          "text": "רכזת רשת (HUB)",
+          "correct": true
+        },
+        {
+          "text": "נתב (Router)",
+          "correct": false
+        },
+        {
+          "text": "גשר (Bridge)",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "tf",
+      "text": "במצב Full Duplex לא יכולות להיווצר התנגשויות על הכבל.",
+      "time": 10,
+      "points": 0,
+      "explain": "ב-Full Duplex שליחה וקבלה מתבצעות בנפרד, ולכן אין התנגשויות.",
+      "answers": [
+        {
+          "text": "נכון",
+          "correct": true
+        },
+        {
+          "text": "שגוי",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "text": "איזה פרוטוקול בשכבת התעבורה פועל בשיטת 'שגר ושכח'? (באנגלית)",
+      "time": 30,
+      "points": 0,
+      "explain": "UDP לא מבטיח הגעה, אבל הוא מהיר ומתאים לזמן אמת.",
+      "accept": [
+        "UDP",
+        "udp"
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "באיזו שכבה במודל OSI פועל הנתב (Router)?",
+      "time": 20,
+      "points": 0,
+      "explain": "הנתב מנתב חבילות בין רשתות לפי כתובת IP בשכבת הרשת.",
+      "answers": [
+        {
+          "text": "שכבה 2 (Data Link)",
+          "correct": false
+        },
+        {
+          "text": "שכבה 4 (Transport)",
+          "correct": false
+        },
+        {
+          "text": "שכבה 3 (Network)",
+          "correct": true
+        },
+        {
+          "text": "שכבה 1 (Physical)",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "מה קורה בכבל במצב Half Duplex כששני הצדדים שולחים במקביל?",
+      "time": 20,
+      "points": 0,
+      "explain": "ב-Half Duplex שליחה וקבלה בו-זמנית על הכבל גורמות להתנגשות.",
+      "answers": [
+        {
+          "text": "המתג מתעדף ושני המסרים מגיעים ליעד",
+          "correct": false
+        },
+        {
+          "text": "הנתב מעביר מחדש את שני המסרים בתור",
+          "correct": false
+        },
+        {
+          "text": "מתרחשת התנגשות והמידע שנשלח נהרס בכבל",
+          "correct": true
+        },
+        {
+          "text": "כל מסר מתויג ב-VLAN נפרד ועובר בנפרד בכבל",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "איזה מתג ייבחר להיות ה-Root Bridge ב-STP?",
+      "time": 20,
+      "points": 0,
+      "explain": "ה-Bridge ID מורכב מ-Priority, Extended System ID וכתובת MAC, והנמוך ביותר מנצח.",
+      "answers": [
+        {
+          "text": "המתג עם ה-Bridge ID הגבוה ביותר ברשת",
+          "correct": false
+        },
+        {
+          "text": "המתג עם ה-Bridge ID הנמוך ביותר",
+          "correct": true
+        },
+        {
+          "text": "המתג עם מספר הפורטים הרב ביותר",
+          "correct": false
+        },
+        {
+          "text": "המתג עם כתובת ה-IP הנמוכה ביותר",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "text": "איך נקרא מתג השורש בפרוטוקול STP? (באנגלית)",
+      "time": 30,
+      "points": 0,
+      "explain": "ה-Root Bridge הוא נקודת הייחוס של כל חישובי העלות בטופולוגיה.",
+      "accept": [
+        "Root Bridge",
+        "RootBridge",
+        "root bridge",
+        "Bridge Root",
+        "Root"
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "על אילו פורטים מגדירים את התכונה Portfast?",
+      "time": 20,
+      "points": 0,
+      "explain": "Portfast מעביר מיד ל-Forwarding ומונע הודעות TCN בחיבור וניתוק מחשבים.",
+      "answers": [
+        {
+          "text": "פורטים המחברים בין שני מתגי ליבה",
+          "correct": false
+        },
+        {
+          "text": "פורטי Trunk המחוברים לנתב ראשי ברשת",
+          "correct": false
+        },
+        {
+          "text": "פורטי Access המחוברים למחשבי הקצה",
+          "correct": true
+        },
+        {
+          "text": "פורטים המחוברים למתג במצב Server",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "מה חובה כדי שמתגים יעבירו זה לזה עדכוני VTP?",
+      "time": 20,
+      "points": 0,
+      "explain": "נדרשים אותו דומיין, אותה סיסמה, ופורטים במצב Trunk.",
+      "answers": [
+        {
+          "text": "אותו Domain, אותה סיסמה וחיבור Trunk בין המתגים",
+          "correct": true
+        },
+        {
+          "text": "אותו Domain, אותה סיסמה וחיבור Access בין המתגים",
+          "correct": false
+        },
+        {
+          "text": "אותו Domain, סיסמאות שונות וחיבור Trunk בין המתגים",
+          "correct": false
+        },
+        {
+          "text": "אותה סיסמה, Domain שונה וחיבור Trunk בין המתגים",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "tf",
+      "text": "מתג במצב VTP Client רשאי ליצור ולמחוק VLANs בעצמו.",
+      "time": 10,
+      "points": 0,
+      "explain": "Client לא יוצר ולא מוחק VLANs, אלא רק מקבל עדכונים, מחיל אותם ומעביר הלאה.",
+      "answers": [
+        {
+          "text": "נכון",
+          "correct": false
+        },
+        {
+          "text": "שגוי",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "type": "order",
+      "text": "איזה מצב פורט מופיע ראשון בסדר המעבר ב-STP?",
+      "time": 30,
+      "points": 0,
+      "explain": "אחרי Blocking הפורט עובר ל-Listening, אחר כך Learning ובסוף Forwarding.",
+      "items": [
+        "Listening",
+        "Learning",
+        "Forwarding"
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "מתג עם 3 מחשבים בפורטים נפרדים ופורט רביעי לרכזת עם 2 מחשבים. כמה מתחמי התנגשות?",
+      "time": 30,
+      "points": 0,
+      "explain": "כל כבל ישיר למתג הוא מתחם נפרד, והרכזת עם המחשבים שלה היא מתחם אחד.",
+      "answers": [
+        {
+          "text": "5 – אחד לכל מחשב ברשת ואחד לרכזת",
+          "correct": false
+        },
+        {
+          "text": "6 – אחד לכל פורט במתג ולכל פורט ברכזת",
+          "correct": false
+        },
+        {
+          "text": "4 – שלושה לכבלי המתג ואחד לרכזת רשת",
+          "correct": true
+        },
+        {
+          "text": "3 – רק לכבלים שמחוברים ישירות למתג",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "מה הפתרון היעיל להפחתת הצפות ברודקסט של ARP בארגון?",
+      "time": 20,
+      "points": 0,
+      "explain": "VLANs מקטינים את אזורי הברודקסט ומפחיתים עומס על מחשבי הקצה.",
+      "answers": [
+        {
+          "text": "פיצול הרשת לאזורי ברודקסט קטנים עם VLANs",
+          "correct": true
+        },
+        {
+          "text": "חיבור כל המחשבים לרכזת אחת במרכז הרשת",
+          "correct": false
+        },
+        {
+          "text": "העברת כל הפורטים למצב Half Duplex בלבד",
+          "correct": false
+        },
+        {
+          "text": "ביטול למידת כתובות MAC בכל מתגי הרשת הארגונית",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "מה עושה פרוטוקול 802.1Q בפריים שעובר בפורט Trunk?",
+      "time": 20,
+      "points": 0,
+      "explain": "המתג השולח מוסיף VLAN ID, והמתג המקבל מעביר את הפריים לפורטים של אותו VLAN.",
+      "answers": [
+        {
+          "text": "מוסיף לפריים שדה עם מספר ה-VLAN ID",
+          "correct": true
+        },
+        {
+          "text": "מחליף את כתובת ה-MAC של הפריים ב-VLAN ID",
+          "correct": false
+        },
+        {
+          "text": "מצפין את הפריים לפני העברתו בין המתגים",
+          "correct": false
+        },
+        {
+          "text": "דוחס את הפריים כדי לחסוך ברוחב פס",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "איך מועבר בטראנק פריים השייך ל-Native VLAN?",
+      "time": 20,
+      "points": 0,
+      "explain": "פריימים של Native VLAN עוברים בטראנק ללא תיוג.",
+      "answers": [
+        {
+          "text": "עם תיוג כפול כדי להבטיח מעבר מאובטח",
+          "correct": false
+        },
+        {
+          "text": "ללא תיוג, כמות שהוא (Untagged)",
+          "correct": true
+        },
+        {
+          "text": "עם תיוג מוצפן לפי סיסמת ה-VTP",
+          "correct": false
+        },
+        {
+          "text": "עם VLAN ID של פורט היעד באופן אוטומטי",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "מתג קיבל עדכון VTP. באיזה מקרה הוא יחיל אותו על עצמו?",
+      "time": 20,
+      "points": 0,
+      "explain": "ה-Configuration Revision הגבוה ביותר הוא העדכני, והמתג מחיל אותו.",
+      "answers": [
+        {
+          "text": "כשה-Revision הנכנס נמוך מזה שבמתג",
+          "correct": false
+        },
+        {
+          "text": "כשהעדכון הגיע מפורט Access ב-VLAN 1",
+          "correct": false
+        },
+        {
+          "text": "כשה-Revision הנכנס גבוה מזה שבמתג",
+          "correct": true
+        },
+        {
+          "text": "רק לאחר אישור ידני של מנהל הרשת",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "text": "איזו פקודה מציגה את גרסת VTP, ה-Revision ושם ה-Domain?",
+      "time": 30,
+      "points": 0,
+      "explain": "הפקודה show vtp status מציגה גרסה, Revision, מצב, Domain והאם Pruning פועל.",
+      "accept": [
+        "show vtp status",
+        "sh vtp status",
+        "show vtp stat"
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "מה תפקיד המנגנון VTP Pruning?",
+      "time": 20,
+      "points": 0,
+      "explain": "Pruning חוסך תעבורה מיותרת בטראנק למתגים שאין להם פורטים באותו VLAN.",
+      "answers": [
+        {
+          "text": "חוסם ב-Trunk עדכוני VTP ממתגים במצב Server שכנים",
+          "correct": false
+        },
+        {
+          "text": "חוסם ב-Trunk פריימים של VLAN ללא פורטים במתג שכן",
+          "correct": true
+        },
+        {
+          "text": "מאפס ב-Trunk את מספר ה-Revision בכל מתג שכן",
+          "correct": false
+        },
+        {
+          "text": "מאחד ב-Trunk כמה VLANs לאזור ברודקסט אחד",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "order",
+      "text": "איזו מהשכבות הבאות נמוכה ביותר במודל OSI?",
+      "time": 30,
+      "points": 0,
+      "explain": "מלמעלה למטה: Transport, Network, Data Link, Physical.",
+      "items": [
+        "Transport",
+        "Network",
+        "Data Link",
+        "Physical"
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "בצד השולח, מה קורה למידע כשהוא יורד משכבה 7 לשכבה 1?",
+      "time": 20,
+      "points": 0,
+      "explain": "כימוס הוא הוספת מעטפות בירידה, וקילוף הוא הסרתן בעלייה בצד המקבל.",
+      "answers": [
+        {
+          "text": "כל שכבה מוסיפה Header משלה (כימוס)",
+          "correct": true
+        },
+        {
+          "text": "כל שכבה מסירה את ה-Header של קודמתה",
+          "correct": false
+        },
+        {
+          "text": "כל שכבה מצפינה אותו במפתח ייחודי",
+          "correct": false
+        },
+        {
+          "text": "כל שכבה מחלקת אותו לפריימים קטנים יותר",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "slider",
+      "text": "מהי עלות ה-Cost ב-STP של קו FastEthernet במהירות 100Mbps?",
+      "time": 30,
+      "points": 0,
+      "explain": "עלות FastEthernet היא 19 ועלות GigabitEthernet היא 4.",
+      "slider": {
+        "min": 0,
+        "max": 30,
+        "step": 1,
+        "answer": 19,
+        "tol": 0
+      }
+    },
+    {
+      "type": "quiz",
+      "text": "איזה פורט נבחר ל-Root Port במתג שאינו ה-Root Bridge?",
+      "time": 20,
+      "points": 0,
+      "explain": "Root Port הוא הפורט הפעיל שהמסלול שלו לשורש הוא בעל ה-Cost הנמוך ביותר.",
+      "answers": [
+        {
+          "text": "הפורט עם העלות המצטברת הגבוהה ביותר לשורש",
+          "correct": false
+        },
+        {
+          "text": "הפורט עם מספר הפורט הגבוה ביותר במתג",
+          "correct": false
+        },
+        {
+          "text": "הפורט עם העלות המצטברת הנמוכה ביותר לשורש",
+          "correct": true
+        },
+        {
+          "text": "הפורט המחובר למספר מחשבי הקצה הרב ביותר ברשת",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "מה זמן ההתכנסות הרגיל של STP בנפילת קו?",
+      "time": 20,
+      "points": 0,
+      "explain": "Listening ו-Learning נמשכים 15 שניות כל אחד, ובנפילת קו נוסף גם טיימר של 20 שניות.",
+      "answers": [
+        {
+          "text": "כ-30 עד 50 שניות",
+          "correct": true
+        },
+        {
+          "text": "כ-2 עד 3 שניות",
+          "correct": false
+        },
+        {
+          "text": "כ-5 עד 10 שניות",
+          "correct": false
+        },
+        {
+          "text": "כ-90 עד 120 שניות",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "מה היתרון של PVST+ על פני STP בתקן המקורי (802.1D)?",
+      "time": 20,
+      "points": 0,
+      "explain": "Root שונה לכל VLAN מאפשר ניצול של כל הקווים בטופולוגיה.",
+      "answers": [
+        {
+          "text": "תהליך STP אחד לכל הרשת עם Root זהה בכל VLAN",
+          "correct": false
+        },
+        {
+          "text": "ביטול הצורך ב-BPDU וחיסכון בעומס על מעבד המתג",
+          "correct": false
+        },
+        {
+          "text": "תמיכה בפורטי Access בלבד, ללא חיבורי Trunk ברשת",
+          "correct": false
+        },
+        {
+          "text": "תהליך STP נפרד לכל VLAN עם Root שונה בכל VLAN",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "מה משנה RPVST+ בתהליך ההתכנסות לעומת PVST+?",
+      "time": 20,
+      "points": 0,
+      "explain": "המצב Discarding מקצר את ההתכנסות למספר שניות בודדות.",
+      "answers": [
+        {
+          "text": "מאחד את Blocking ו-Listening למצב Discarding",
+          "correct": true
+        },
+        {
+          "text": "מאחד את Learning ו-Forwarding למצב Discarding",
+          "correct": false
+        },
+        {
+          "text": "מעלה את טיימר Hold ל-60 שניות לטופולוגיה יציבה",
+          "correct": false
+        },
+        {
+          "text": "מבטל את בחירת ה-Root ומפעיל כל הפורטים",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "אילו שתי תופעות נגרמות מלולאות מיתוג ברשת? (בחרו שתיים)",
+      "time": 30,
+      "points": 0,
+      "explain": "בפריימי שכבה 2 אין TTL, ולכן ברודקסט מסתובב ללא סוף, וטבלאות ה-MAC מתבלבלות.",
+      "answers": [
+        {
+          "text": "מחיקת ה-Native VLAN מהטראנק",
+          "correct": false
+        },
+        {
+          "text": "סערות ברודקסט עקב היעדר TTL",
+          "correct": true
+        },
+        {
+          "text": "עלייה במספר מתחמי ההתנגשות",
+          "correct": false
+        },
+        {
+          "text": "שיבושים וכפילויות בטבלאות MAC",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "מתג ישן עם Revision 89 חובר לרשת פעילה עם Revision 10. מה יקרה?",
+      "time": 20,
+      "points": 0,
+      "explain": "Revision גבוה גובר, ולכן יש לאפס אותו (Transparent) לפני החיבור.",
+      "answers": [
+        {
+          "text": "הוא יקבל את טבלת ה-VLAN של הרשת הפעילה",
+          "correct": false
+        },
+        {
+          "text": "Pruning יחסום אותו עד לאיפוס ידני של הרשת",
+          "correct": false
+        },
+        {
+          "text": "הרשת תתעלם ממנו כי הוא עדיין במצב Client",
+          "correct": false
+        },
+        {
+          "text": "הוא ידרוס את טבלאות ה-VLAN בכל מתגי הרשת",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "מהם ה-PDU בשכבות 4, 3, 2 ו-1 (לפי הסדר)?",
+      "time": 30,
+      "points": 0,
+      "explain": "שכבה 4 – Segment, שכבה 3 – Packet, שכבה 2 – Frame, שכבה 1 – Bits.",
+      "answers": [
+        {
+          "text": "Packet, Segment, Frame, Bit",
+          "correct": false
+        },
+        {
+          "text": "Segment, Frame, Packet, Bit",
+          "correct": false
+        },
+        {
+          "text": "Datagram, Packet, Frame, Bits",
+          "correct": false
+        },
+        {
+          "text": "Segment, Packet, Frame, Bits",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "איך ממופות שכבות 7, 6 ו-5 של OSI במודל TCP/IP?",
+      "time": 20,
+      "points": 0,
+      "explain": "שלוש השכבות העליונות הופכות ל-Application, ושכבות 2 ו-1 ל-Access Network.",
+      "answers": [
+        {
+          "text": "מאוחדות לשכבה אחת – Transport",
+          "correct": false
+        },
+        {
+          "text": "מאוחדות לשכבה אחת – Application",
+          "correct": true
+        },
+        {
+          "text": "מאוחדות לשכבה אחת – Internet",
+          "correct": false
+        },
+        {
+          "text": "מאוחדות לשכבה אחת – Access Network",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "text": "איזה שיוך של פרוטוקול לשכבה במודל TCP/IP נכון?",
+      "time": 20,
+      "points": 0,
+      "explain": "DNS ו-HTTP באפליקציה, TCP ו-UDP בתעבורה, IP באינטרנט.",
+      "answers": [
+        {
+          "text": "IP – שכבת התעבורה (Transport)",
+          "correct": false
+        },
+        {
+          "text": "Ethernet – שכבת האינטרנט (Internet)",
+          "correct": false
+        },
+        {
+          "text": "HTTP – שכבת הגישה למדיה (Access)",
+          "correct": false
+        },
+        {
+          "text": "DNS – שכבת האפליקציה (Application)",
+          "correct": true
+        }
+      ]
+    }
+  ]
+}

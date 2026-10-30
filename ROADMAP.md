@@ -81,6 +81,63 @@ New question types / features:
   - Online: public URL + PIN, works from anywhere.
 - [ ] Deployment guide (hosting options, environment variables, build/start commands).
 
+## 10. Player names: bad-word filter and teacher control
+
+Requested 2026-10-26, after kids typed rude words as their nicknames.
+
+- [ ] **Bad-word filter for nicknames** (Hebrew + English, including common tricks: spacing, symbols, letter swaps, final letters). A blocked name is refused on the phone with a friendly message ("השם הזה לא מתאים, נסו אחר") before it ever reaches the big screen.
+  - A **room setting** "🛡️ סינון מילים לא יפות", **on by default**, which the teacher can turn off.
+  - The word list lives in an editable file (`server/badwords.json` or similar), so the teacher can add words.
+  - Also applies to the random-name reroll (no change needed) and any other typed text shown on the big screen (open answers / word clouds, when they exist).
+- [ ] **Teacher control during a game** (today ✕ works only in the lobby):
+  - Kick a player mid-game, from a players list on the host screen.
+  - Rename a player ("🎲 שם אקראי" or a typed name) without losing their score.
+
+## 10b. Player photo: gallery doesn't open on phones (bug)
+
+Reported 2026-10-26: on iPhone (maybe Android too) "📷 הוספת תמונה" opens only the camera, not the gallery / files.
+
+- Likely cause: the file input has `capture="user"` (public/js/play.js), which tells mobile browsers to go straight to the camera.
+- [ ] Fix: two buttons, "📷 מצלמה" (`capture="user"`) and "🖼️ מהגלריה" (no `capture`, plain `accept="image/*"`), or one input without `capture` (the phone then offers camera + gallery itself).
+- [ ] Also accept HEIC photos from iPhone (convert on the phone via canvas, which already happens when the browser can decode it).
+- [ ] Test on a real iPhone (Safari) and a real Android (Chrome).
+
+## 11. Bigger join info (zoom)
+
+Requested 2026-10-26.
+
+- [ ] **During a game:** a 🔍 button on the small "join now" box in the host header opens it big (full screen or a large panel): the game code, a large QR code and the link, so latecomers in the back of the class can scan it. Click / Esc closes it and the game continues underneath.
+- [ ] **Lobby (opening screen):** a 🔍 "full-screen join" view: a huge code, a big QR and the link, together with the big picture / YouTube video of the room (the lobby video) on screen. Toggle back to the normal lobby with one click. Good for projectors and big classrooms.
+
+## 12. Learning, no-score and presentation modes
+
+Requested 2026-10-30.
+
+- [ ] **No-score mode** ("ללא ניקוד"): a classic-quiz scoring style where the class answers, sees the right answer and the explanation, but there are no points and no leaderboard. (A *poll* is different: one opinion question without a right answer; it already exists as a question type.)
+- [ ] **Presentation mode / better slides**: slides with a layout (title, bullet points, picture side by side), shown full screen by the teacher between questions; a "presentation" option that plays the quiz as a lesson (slides + questions, no score).
+- [ ] **Learning modes** (like Kahoot's study modes), each student on their own phone at their own pace:
+  - 🃏 **Flashcards**: question on the front, answer + explanation on the back; "I knew it" / "Again".
+  - 🔁 **Practice until mastery**: wrong answers come back later until each question is answered right twice; progress bar per student, teacher sees who is stuck.
+  - 📝 **Test**: no feedback until the end, then a personal summary with the mistakes and explanations.
+- [ ] Claude Project instructions: choose "regular quiz" or a learning set (more questions, an explanation for every question, flashcard-friendly wording).
+
+## 13. Surprises and sabotage
+
+- [ ] **"Nonsense on the screen"** (שטויות על המסך): between questions, random fun events splash over the big screen (things jumping in, smearing, wobbling…), optional in the room settings. Combined with the BACKLOG "surprise events" (swap places, steal points, double points).
+- [ ] **Sabotage game** ("זורקים שטויות"): correct answers earn "pranks" to throw at other players, which make answering harder for them: reversed answers, spinning / scrambled letters, swapped colors, oil smeared over the screen, scrambled question letters, question and answers swapped, the clock ticking faster until they answer right, minus points. More correct answers = more pranks. The thrower chooses the prank and the target (or random); a shield blocks one prank.
+
+## 14. More games
+
+- [ ] **Kart racing from behind** (like Mario Kart): a real pseudo-3D race on the phone after correct answers, with power-ups; more correct answers = more racing time.
+- [ ] **Rhythm game**: music with notes to tap on the beat; accuracy = points.
+- [ ] **Impostor mode** (like Among Us): everyone answers, but one secret impostor sabotages; the class must both answer and find the impostor (votes).
+- [ ] **Color Kingdoms (כובשי הממלכה) – surround mode**: an option to capture a castle the way the original game does, by surrounding it, instead of attacking it directly.
+
+## 15. Images with Google Flow + building a quiz inside the project
+
+- [ ] Generate quiz images (question / decorative) with Google Flow, the same way the yt-tikshuv project does. This works only when the quiz is built with **Claude Code on this computer** (not in the claude.ai Project).
+- [ ] A quiz builder inside this project (a Claude Code skill): topic / material in → questions + Flow images → saved straight into the quiz library.
+
 ---
 
 ## Suggested implementation order
