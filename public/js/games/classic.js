@@ -171,7 +171,7 @@
       if (!q) return;
       if (b.stage === 'ready') {
         const mult = q.points >= 2;
-        box.innerHTML = `<div class="cl-ready ${mult ? 'after-mult' : ''}">${b.bonus ? '<div class="cl-bonus">⭐ הזדמנות שנייה · ניקוד כפול</div>' : ''}<div class="cl-qnum">שאלה ${b.index + 1} מתוך ${b.total}${mult ? ` <span class="pts-chip p${q.points}">×${q.points}</span>` : ''}</div><div class="cl-qtext big">${esc(q.text)}</div><div class="cl-readybar"><i></i></div></div>`;
+        box.innerHTML = `<div class="cl-ready ${mult ? 'after-mult' : ''}">${b.bonus ? '<div class="cl-bonus">⭐ הזדמנות שנייה · ניקוד כפול</div>' : ''}<div class="cl-qnum">שאלה ${b.index + 1} מתוך ${b.total}${mult ? ` <span class="pts-chip p${q.points}">×${q.points}</span>` : ''}</div><div class="cl-qtext big">${esc(q.text)}</div>${b.talk ? '<div class="cl-talk">💬 דברו בקבוצה לפני שעונים!</div>' : ''}<div class="cl-readybar"><i style="animation-duration:${b.readyMs || 3500}ms"></i></div></div>`;
         if (mult) U.multSplash(box, q.points, true);
         else U.sfx('tick');
       } else if (b.stage === 'slide') {
@@ -327,7 +327,7 @@
           <div class="ide-list" id="vl">${you.ideas.map((x) => `<button class="ide-opt" data-i="${x.i}">${esc(x.text)}</button>`).join('')}</div>
           <button class="btn big q-send" id="vSend" disabled>הצביעו ✓</button></div>`;
       } else if (ph === 'c_ready') {
-        html = `<div class="cl-p-ready ${you.points >= 2 ? 'after-mult' : ''}"><div class="pill">שאלה ${you.qnum} מתוך ${you.total}${you.bonus ? ' · ⭐ ניקוד כפול' : ''}${you.points >= 2 ? ` · ×${you.points}` : ''}</div><div class="cl-p-big">התכוננו!</div>${you.text ? `<div class="q-card">${esc(you.text)}</div>` : ''}<div class="cl-readybar"><i></i></div></div>`;
+        html = `<div class="cl-p-ready ${you.points >= 2 ? 'after-mult' : ''}"><div class="pill">שאלה ${you.qnum} מתוך ${you.total}${you.bonus ? ' · ⭐ ניקוד כפול' : ''}${you.points >= 2 ? ` · ×${you.points}` : ''}</div><div class="cl-p-big">${you.talk ? '💬 דברו בקבוצה!' : 'התכוננו!'}</div>${you.text ? `<div class="q-card">${esc(you.text)}</div>` : ''}<div class="cl-readybar"><i style="animation-duration:${you.readyMs || 3500}ms"></i></div></div>`;
       } else if (ph === 'c_locked') {
         html = `<div class="cl-p-wait"><div class="cl-p-icon">✔</div><h2>התשובה נשלחה!</h2><div class="muted">מחכים לשאר הכיתה<span class="dots"><i></i><i></i><i></i></span></div></div>`;
       } else if (ph === 'c_watch' || ph === 'c_watch_res') {

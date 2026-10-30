@@ -171,6 +171,32 @@
     return shareBase;
   }
 
+  // the question as a student's phone shows it: the server builds the real payload and the phone's own renderer draws it
+  async function previewQuestion() {
+    const q = quiz.questions[cur];
+    if (!q) return toast('אין שאלה להצגה', true);
+    let payload;
+    try {
+      payload = await api('/preview', { method: 'POST', body: JSON.stringify({ q, quiz: quiz.id }) });
+    } catch (e) {
+      return toast('אי אפשר להציג עדיין: ' + e.message, true);
+    }
+    document.getElementById('prevModal')?.remove();
+    const m = document.createElement('div');
+    m.className = 'modal';
+    m.id = 'prevModal';
+    m.innerHTML = `<div class="prev-phone"><div class="prev-top"><span>📱 כך זה נראה בטלפון</span><button class="btn sm ghost" id="prevX">✕</button></div><div class="prev-screen screen play"><div class="q-wrap" id="prevBox"></div></div></div>`;
+    document.body.appendChild(m);
+    const close = () => m.remove();
+    m.querySelector('#prevX').onclick = close;
+    m.onclick = (e) => { if (e.target === m) close(); };
+    try {
+      QView.render(m.querySelector('#prevBox'), payload, { meta: '<span>שאלה ' + (cur + 1) + '</span>', onAnswer: () => toast('זו רק תצוגה מקדימה: התשובה לא נשלחת') });
+    } catch (e) {
+      m.querySelector('#prevBox').textContent = 'אי אפשר להציג את סוג השאלה הזה בתצוגה מקדימה';
+    }
+  }
+
   async function library() {
     quiz = null;
     let list = [];
@@ -543,9 +569,11 @@
         <button class="btn ghost sm" id="back">→ לספרייה</button>
         <input class="input sm title-in" id="title" maxlength="80" value="${esc(quiz.title)}" placeholder="שם החידון">
         <label class="bg-sel" title="הרקע שנבחר אוטומטית כשבוחרים את החידון במסך המשחק">🎨<select id="bgSel"><option value="">רקע: לפי החדר</option></select></label>
+        <label class="bg-sel" title="ערכת הנושא של השאלות (צבעי התשובות), נבחרת אוטומטית עם החידון">🖌️<select id="thSel">${[['', 'ערכה: לפי החדר'], ['candy', 'ממתקים'], ['ocean', 'ים'], ['forest', 'יער'], ['sunset', 'שקיעה'], ['mono', 'רגוע'], ['neon', 'ניאון'], ['space', 'חלל']].map(([k, l]) => `<option value="${k}" ${quiz.theme === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
         <span class="ed-status saved" id="status">נשמר ✓</span>
         <a class="btn ghost sm" href="/api/q/quizzes/${encodeURIComponent(quiz.id)}/export.xlsx">⬇ ייצוא לאקסל</a>
         <a class="btn ghost sm" href="/print.html?quiz=${encodeURIComponent(quiz.id)}&mode=guide" target="_blank" title="דף לימוד להדפסה, וכרטיסיות לגזירה">🖨️ הדפסה</a>
+        <button class="btn ghost sm" id="prevQ" title="איך השאלה הזאת נראית בטלפון של תלמיד">📱 תצוגה</button>
         <a class="btn green sm" href="/host.html?present=${encodeURIComponent(quiz.id)}" target="_blank" title="פותח חדר שיעור עם השקופיות והפעילויות האלה">▶ הצגה</a>
       </header>
       <div class="ed-main">
@@ -554,11 +582,13 @@
         <aside class="ed-side" id="side"></aside>
       </div>`;
     document.getElementById('back').onclick = async () => { await save(); library(); };
+    document.getElementById('prevQ').onclick = () => previewQuestion();
     const bg = document.getElementById('bgSel');
     Scenes.loadFiles().then(() => {
       bg.innerHTML = `<option value="">רקע: לפי החדר</option>` + Scenes.all().map((x) => `<option value="${esc(x.id)}" ${quiz.background === x.id ? 'selected' : ''}>${esc(x.name)}${x.file ? ' (קובץ)' : x.anim ? ' ✨' : ''}</option>`).join('');
     });
     bg.onchange = () => { quiz.background = bg.value; dirty(); };
+    document.getElementById('thSel').onchange = (e) => { quiz.theme = e.target.value; dirty(); };
     const t = document.getElementById('title');
     t.oninput = () => { quiz.title = t.value; dirty(); };
     if (focusTitle) { t.focus(); t.select(); }

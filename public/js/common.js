@@ -421,6 +421,14 @@ window.U = {
     addEventListener('resize', fit);
   },
 
+  // question theme (themes.css): the colours of the answers and the question card
+  applyTheme(t) {
+    const v = t && t !== 'default' ? t : '';
+    if ((document.documentElement.dataset.qtheme || '') === v) return;
+    if (v) document.documentElement.dataset.qtheme = v;
+    else delete document.documentElement.dataset.qtheme;
+  },
+
   // lobby / page background theme
   applyScene(scene) {
     if (window.Scenes) return Scenes.apply(scene);

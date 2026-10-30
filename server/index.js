@@ -21,6 +21,7 @@ const Library = require('./library');
 const Freeform = require('./freeform');
 const Media = require('./media');
 const Auth = require('./auth');
+const qtypes = require('./qtypes');
 
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -111,6 +112,12 @@ const api = (fn) => async (req, res) => {
 };
 app.use('/api/q', local, express.json({ limit: '2mb' }));
 
+// the editor's preview: the exact payload a phone would get for this question
+app.post('/api/q/preview', api((req) => {
+  const b = req.body || {};
+  const q = qtypes.normalize(b.q || {});
+  return qtypes.present(q, `/media/${encodeURIComponent(String(b.quiz || ''))}/`).payload;
+}));
 app.get('/api/q/folder', api(() => ({ folder: Quizzes.folder() })));
 app.post('/api/q/folder', lanOnly, api((req) => ({ folder: Quizzes.setFolder(req.body && req.body.path) })));
 // folder browser: no path = drives / start points

@@ -80,6 +80,13 @@ g.cur.dbl = false;
 ok(g.points({ type: 'quiz', points: 1 }, 0, 0) === 1000, 'and normal again after it');
 ok(g.readyDelay({ points: 1 }) === (g.cur.dbl ? 1 : g.readyDelay({ points: 1 })), 'readyDelay does not crash');
 
+// team talk: the pause before the answers open only exists for team quizzes that turned it on
+const tt = (teamtalk, teams) => { const x = Object.create(Classic.prototype); x.room = { settings: { teamtalk }, teamCount: () => teams }; x.cur = null; return x; };
+ok(tt('on', 2).readyDelay({ points: 1 }) === 3500 + 8000, 'team talk adds 8 seconds in a team quiz');
+ok(tt('on', 0).readyDelay({ points: 1 }) === 3500, 'no team talk when nobody is in a team');
+ok(tt('off', 3).readyDelay({ points: 1 }) === 3500, 'no team talk when it is off');
+ok(tt('on', 2).readyDelay({ points: 2 }) === 3500 + 2200 + 8000, 'it adds to the x2 splash too');
+
 Math.random = real;
 console.log(fails ? `${fails} FAILED` : 'ALL PASSED');
 process.exit(fails ? 1 : 0);

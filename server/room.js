@@ -17,6 +17,7 @@ const NAME_MODES = ['custom', 'spin', 'auto'];
 const SCENES = ['classic', 'space', 'ocean', 'forest', 'candy', 'sunset', 'aurora', 'starfield', 'underwater', 'balloons', 'neon', 'snow', 'fireflies', 'party', 'sakura', 'rain', 'embers', 'lanterns', 'clouds', 'lavalamp', 'city', 'desert', 'beach', 'hexgrid'];
 const Media = require('./media');
 // a built-in scene, or one of the teacher's pictures / videos in the backgrounds folder
+const THEMES = ['default', 'candy', 'ocean', 'forest', 'sunset', 'mono', 'neon', 'space']; // question themes (themes.css)
 const validScene = (sc) => typeof sc === 'string' && (SCENES.includes(sc) || (sc.startsWith('file:') && Media.isBackground(sc)));
 const MAX_REROLLS = 3;
 const REPORTS_DIR = process.env.REPORTS_DIR || path.join(__dirname, '..', 'reports');
@@ -72,7 +73,7 @@ class Room {
     this.destroyed = false;
     this.createdAt = new Date();
     // room-wide options that survive game changes and rematches
-    this.setup = { nameMode: 'custom', scene: 'classic', video: '', winText: '', quiz: Quizzes.SAMPLE_ID, photos: true, filter: true, silly: false, classId: '' };
+    this.setup = { nameMode: 'custom', scene: 'classic', video: '', winText: '', quiz: Quizzes.SAMPLE_ID, photos: true, filter: true, silly: false, qtheme: 'default', classId: '' };
     this.quizData = null;
     this.quizCache = null;
     this.round = 0;
@@ -117,6 +118,7 @@ class Room {
     if (typeof s.photos === 'boolean') this.setup.photos = s.photos;
     if (typeof s.filter === 'boolean') this.setup.filter = s.filter;
     if (typeof s.silly === 'boolean') this.setup.silly = s.silly;
+    if (THEMES.includes(s.qtheme)) this.setup.qtheme = s.qtheme;
     if (typeof s.classId === 'string') this.setup.classId = Classes.get(s.classId) ? s.classId : '';
     if (typeof s.video === 'string') this.setup.video = s.video.trim().slice(0, 300);
     if (typeof s.winText === 'string') this.setup.winText = s.winText.replace(/[\u0000-\u001f]/g, ' ').slice(0, 140);
@@ -126,6 +128,7 @@ class Room {
         this.setup.quiz = s.quiz;
         // a quiz can bring its own background
         if (q.background && validScene(q.background) && !s.scene) this.setup.scene = q.background;
+        if (THEMES.includes(q.theme) && !s.qtheme) this.setup.qtheme = q.theme;
       }
     }
   }
@@ -133,7 +136,7 @@ class Room {
   // the quiz library (re-read from disk at most every few seconds)
   quizList(fresh) {
     if (fresh || !this.quizCache || Date.now() - this.quizCache.at > 4000) {
-      this.quizCache = { at: Date.now(), list: Quizzes.list().map(({ id, title, count, playable, builtin, folder, background }) => ({ id, title, count, playable, builtin: !!builtin, folder: folder || '', background: background || '' })) };
+      this.quizCache = { at: Date.now(), list: Quizzes.list().map(({ id, title, count, playable, builtin, folder, background, theme }) => ({ id, title, count, playable, builtin: !!builtin, folder: folder || '', theme: theme || '', background: background || '' })) };
     }
     return this.quizCache.list;
   }
@@ -576,6 +579,7 @@ class Room {
       emoji: this.Game.emoji,
       mode: this.Game.mode,
       scene: this.setup.scene,
+      qtheme: this.setup.qtheme,
       round: this.round,
       untimed: !!this.Game.untimed,
       photos: !!this.setup.photos,

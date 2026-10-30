@@ -6,9 +6,12 @@ let joinUrl = '';
 let replaced = false;
 let tab = 'games';
 let filter = 'all';
+let gsearch = ''; // the game search box in the lobby
 let videoLib = []; // the video library (videos folder + videos.json)
 const MODE = { teams: 'קבוצה נגד קבוצה', ffa: 'כל אחד לעצמו', coop: 'כולם ביחד' };
 const MODE_ICON = { teams: '⚔️', ffa: '🏃', coop: '🤝' };
+// question themes (themes.css): id, name, the first four answer colours
+const QTHEMES = [['default', 'רגיל', ['#e9334f', '#1f73e0', '#e6a400', '#23a14a']], ['candy', 'ממתקים', ['#ff5fa2', '#b06bff', '#ff9a3d', '#2ec4b6']], ['ocean', 'ים', ['#0aa5c9', '#1f6fd6', '#12b886', '#6a5acd']], ['forest', 'יער', ['#3f9b4a', '#a0652b', '#d9a400', '#2e7d6b']], ['sunset', 'שקיעה', ['#ff6b4a', '#ff9f1c', '#e83e8c', '#7b2cbf']], ['mono', 'רגוע', ['#2b2f4a', '#4a4f73', '#5d6490', '#767cab']], ['neon', 'ניאון', ['#ff2e93', '#00b8d4', '#76b900', '#d4b100']], ['space', 'חלל', ['#7c4dff', '#0091ea', '#e91e63', '#00b86b']]];
 const FILTERS = [['all', 'הכל'], ['teams', '⚔️ קבוצות'], ['ffa', '🏃 אישי'], ['coop', '🤝 שיתופי']];
 const NAME_MODES = [
   ['custom', '✏️ כל אחד בוחר שם', 'השחקנים מקלידים כינוי'],
@@ -99,6 +102,7 @@ function render(prev) {
   // the zoomed join view belongs to the lobby and to a running game
   if (st.phase === 'countdown' || st.phase === 'ended') closeJoinZoom();
   U.applyScene(st.setup.scene);
+  U.applyTheme(st.setup.qtheme);
   // player photos for every avatar on the big screen
   U.photos = Object.fromEntries((st.players || []).filter((p) => p.photo).map((p) => [p.name, p.photo]));
   if (st.phase !== 'countdown') U.clearCountdown();
@@ -222,6 +226,7 @@ function renderLobby() {
         <div class="lm-top">
           <div class="lm-tabs"><button data-tab="games">🎮 משחקים</button><button data-tab="room">⚙️ הגדרות חדר</button></div>
           <div class="mode-filter" id="filter">${FILTERS.map(([k, l]) => `<button data-filter="${k}">${l}</button>`).join('')}</div>
+          <input class="input sm" id="gSearch" placeholder="🔍 חיפוש משחק" autocomplete="off" style="max-width:190px;margin-inline-start:auto">
         </div>
         <div class="lm-body">
           <div class="game-cards" id="games"></div>
@@ -236,6 +241,7 @@ function renderLobby() {
               <label class="lite-tog" style="margin-top:6px">📊 <a href="progress.html" target="_blank" style="color:var(--yellow)">כיתות והתקדמות</a> · יצירת רשימות כיתה וצפייה בהתקדמות לאורך זמן</label>
               <small class="muted">עם כיתה, התלמידים בוחרים את השם שלהם מהרשימה, וההתקדמות של כל אחד נשמרת בין משחקים. כיתה זמינה רק כשהשחקנים כותבים כינוי בעצמם.</small></section>
             <section><h3>🛡️ סינון מילים לא יפות</h3><label class="lite-tog"><input type="checkbox" id="filterOn"> חוסם שמות וטקסטים לא הולמים (בשמות השחקנים ובתשובות שמוצגות על המסך)</label><small class="muted">רשימת המילים נמצאת בקובץ <b dir="ltr">server/badwords.json</b>, אפשר להוסיף בה מילים.</small></section>
+            <section><h3>🖌️ ערכת נושא לשאלות <small class="muted">(צבעי התשובות וכרטיס השאלה)</small></h3><div class="theme-picks" id="themes">${QTHEMES.map(([k, l, c]) => `<button class="theme-pick" data-qtheme="${k}" title="${l}"><span class="tp-sw">${c.map((x) => `<i style="background:${x}"></i>`).join('')}</span><span>${l}</span></button>`).join('')}</div></section>
             <section><h3>🤪 שטויות על המסך</h3><label class="lite-tog"><input type="checkbox" id="sillyOn"> בזמן המשחק קופצים על המסך הגדול דברים מצחיקים: חיות קופצות, גשם של אימוג'ים, כתמי צבע, עיניים מציצות…</label></section>
             <section><h3>📷 תמונות שחקנים</h3><label class="lite-tog"><input type="checkbox" id="photosOn"> השחקנים יכולים להוסיף תמונה (מהמצלמה או מהגלריה) שתופיע במקום האות</label><small class="muted">התמונות נשמרות רק בזיכרון, עד סוף המשחק. לחיצה על תמונה של שחקן בלובי מסירה אותה.</small></section>
             <section><h3>🏆 טקסט למנצחים</h3><input class="input sm" id="winText" maxlength="140" placeholder="למשל: כל הכבוד! פרס מחכה לכם אצל המורה 🎁"><small class="muted">יופיע בטלפון של המנצחים ובמסך התוצאות</small></section>
@@ -281,6 +287,8 @@ function renderLobby() {
     document.getElementById('videoClear').onclick = () => { vu.value = ''; socket.emit('host:setup', { video: '' }); };
     document.getElementById('jzBtn').onclick = () => openJoinZoom();
     document.getElementById('classSel').onchange = (e) => socket.emit('host:setup', { classId: e.target.value });
+    document.getElementById('themes').onclick = (e) => { const b = e.target.closest('[data-qtheme]'); if (b) socket.emit('host:setup', { qtheme: b.dataset.qtheme }); };
+    document.getElementById('gSearch').oninput = (e) => { gsearch = e.target.value.trim(); renderLobby(); };
     document.getElementById('sillyOn').onchange = (e) => socket.emit('host:setup', { silly: e.target.checked });
     document.getElementById('filterOn').onchange = (e) => socket.emit('host:setup', { filter: e.target.checked });
     const wt = document.getElementById('winText');
@@ -326,6 +334,7 @@ function renderLobby() {
   document.querySelectorAll('[data-tab]').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
   document.querySelectorAll('[data-filter]').forEach((b) => b.classList.toggle('on', b.dataset.filter === filter));
   document.getElementById('filter').classList.toggle('hidden', tab !== 'games');
+  document.getElementById('gSearch').classList.toggle('hidden', tab !== 'games');
   document.getElementById('games').classList.toggle('hidden', tab !== 'games');
   document.getElementById('roomSetup').classList.toggle('hidden', tab !== 'room');
 
@@ -334,12 +343,13 @@ function renderLobby() {
   if (box.dataset.sig !== st.games.map((g) => g.id).join()) {
     box.dataset.sig = st.games.map((g) => g.id).join();
     box.innerHTML = st.games
-      .map((g) => `<button class="gcard mode-${g.mode}" data-game="${g.id}" data-mode="${g.mode}"><span class="gc-art">${Art.cover(g.id)}</span><span class="gc-body"><span class="tt">${esc(g.title)}</span><span class="md">${MODE_ICON[g.mode]} ${MODE[g.mode]}</span></span></button>`)
+      .map((g) => `<button class="gcard mode-${g.mode}" data-game="${g.id}" data-mode="${g.mode}" data-title="${esc(g.title)}"><span class="gc-art">${Art.cover(g.id)}</span><span class="gc-body"><span class="tt">${esc(g.title)}</span><span class="md">${MODE_ICON[g.mode]} ${MODE[g.mode]}</span></span></button>`)
       .join('');
   }
   box.querySelectorAll('.gcard').forEach((c) => {
     c.classList.toggle('sel', c.dataset.game === st.gameId);
-    c.classList.toggle('hidden', filter !== 'all' && c.dataset.mode !== filter && c.dataset.game !== st.gameId);
+    const q = gsearch.toLowerCase();
+    c.classList.toggle('hidden', c.dataset.game !== st.gameId && ((filter !== 'all' && c.dataset.mode !== filter) || (q && !(c.dataset.title || '').toLowerCase().includes(q))));
   });
   document.getElementById('blurb').textContent = st.games.find((g) => g.id === st.gameId).blurb;
 
@@ -361,6 +371,7 @@ function renderLobby() {
   vlBox.querySelectorAll('[data-video-pick]').forEach((b) => b.classList.toggle('on', b.dataset.videoPick === st.setup.video || (youtubeId(b.dataset.videoPick) && youtubeId(b.dataset.videoPick) === youtubeId(st.setup.video))));
   const fo = document.getElementById('filterOn');
   if (fo) fo.checked = st.setup.filter !== false;
+  document.querySelectorAll('[data-qtheme]').forEach((b) => b.classList.toggle('on', b.dataset.qtheme === (st.setup.qtheme || 'default')));
   const so = document.getElementById('sillyOn');
   if (so) so.checked = !!st.setup.silly;
   const cs = document.getElementById('classSel');

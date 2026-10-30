@@ -215,6 +215,7 @@ function render(was) {
   if (ph !== 'countdown') U.clearCountdown();
   if (you.photo) U.photos[you.name] = you.photo;
   U.applyScene(you.scene);
+  U.applyTheme(you.qtheme);
 
   if (ph === 'lobby' || ph === 'countdown' || ph === 'spectate') {
     const key = [ph, you.gameId, you.team, you.name, you.canReroll, you.round, you.photo, you.photos].join(':');

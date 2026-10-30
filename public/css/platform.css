@@ -232,3 +232,10 @@ table.rep .nm .avatar { font-size: .8rem; }
 .jz-x { position: absolute; top: 18px; inset-inline-start: 18px; width: 48px; height: 48px; border-radius: 50%; border: 0; cursor: pointer; font-size: 1.3rem; background: rgba(255, 255, 255, .14); color: #fff; }
 .jz-hint { position: absolute; bottom: 16px; font-weight: 700; color: rgba(255, 255, 255, .55); }
 @media (max-width: 900px) { .jz-in, .jz-in.with-video { flex-direction: column; } .jz-video { max-width: 90vw; flex: none; width: 90vw; } }
+
+/* question theme picker in the room settings */
+.theme-picks { display: flex; flex-wrap: wrap; gap: 8px; }
+.theme-pick { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 10px; border: 2px solid transparent; border-radius: 14px; background: rgba(255, 255, 255, .08); color: inherit; font: inherit; font-weight: 800; cursor: pointer; }
+.theme-pick.on { border-color: #ffd23f; background: rgba(255, 210, 63, .18); }
+.tp-sw { display: flex; }
+.tp-sw i { width: 18px; height: 18px; border-radius: 50%; margin-inline-end: -4px; border: 2px solid #1b1340; }

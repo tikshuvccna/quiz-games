@@ -28,7 +28,7 @@ class ClassicGame extends QuizGame {
   static teamAvg = true; // team score = average of its members (like Kahoot)
   static blurb = 'החידון הקלאסי: כולם עונים על אותה שאלה מהמסך הגדול. תשובה נכונה ומהירה = יותר נקודות, רצפים נותנים בונוס, ובין השאלות יש לוח מובילים. אפשר גם בקבוצות.';
   static tickMs = 500;
-  static defaults = { duration: 600, count: 0, order: 'original', advance: 'manual', bonus: 'off', style: 'speed', timer: 'question', surprise: 'off', final: 'normal', lives: 'off' };
+  static defaults = { duration: 600, count: 0, order: 'original', advance: 'manual', bonus: 'off', style: 'speed', timer: 'question', surprise: 'off', final: 'normal', lives: 'off', teamtalk: 'off' };
   static options = [
     { key: 'style', label: 'סגנון ניקוד', choices: [['speed', 'קלאסי: מהירות + דיוק'], ['accuracy', 'דיוק בלבד (נקודה לכל נכונה)'], ['confidence', 'ביטחון: בוסט או בטוח'], ['learn', 'למידה: בלי ניקוד ובלי לוח מובילים']] },
     { key: 'timer', label: 'זמן לשאלה', choices: [['question', 'לפי השאלה'], ['unlimited', 'ללא הגבלה']] },
@@ -36,6 +36,7 @@ class ClassicGame extends QuizGame {
     { key: 'order', label: 'סדר השאלות', choices: [['original', 'לפי החידון'], ['shuffle', 'מעורבב']] },
     { key: 'advance', label: 'מעבר בין שלבים', choices: [['manual', 'ידני (לחיצה)'], ['auto', 'אוטומטי']] },
     { key: 'bonus', label: 'הזדמנות שנייה ל־5 האחרונים', choices: [['off', 'לא'], ['on', 'כן']] },
+    { key: 'teamtalk', label: 'דיון בקבוצה לפני התשובה', choices: [['off', 'ללא'], ['on', 'כן: 8 שניות']] },
     { key: 'final', label: 'השאלה האחרונה', choices: [['normal', 'רגילה'], ['double', 'שווה כפול']] },
     { key: 'lives', label: 'הישרדות', choices: [['off', 'ללא'], [3, '3 חיים'], [1, 'חיים אחד: טעות אחת וזהו']] },
     { key: 'surprise', label: '🎁 הפתעות בלוח המובילים', choices: [['off', 'ללא'], ['sometimes', 'לפעמים'], ['often', 'הרבה']] },
@@ -133,9 +134,14 @@ class ClassicGame extends QuizGame {
     this.schedule(() => this.open(), this.readyDelay(q));
   }
 
+  // team quizzes: the question is shown first and the teams talk it over before the answers open
+  talkMs() {
+    return this.constructor.id === 'classic' && this.room.settings.teamtalk === 'on' && this.room.teamCount() >= 2 ? 8000 : 0;
+  }
+
   // how long the question text is shown alone before the answers open (a ×2 / ×3 / ×4 question gets its splash first)
   readyDelay(q) {
-    return READY_MS + (q.points >= 2 || (this.cur && this.cur.dbl) ? MULT_MS : 0);
+    return READY_MS + (q.points >= 2 || (this.cur && this.cur.dbl) ? MULT_MS : 0) + this.talkMs();
   }
 
   // true = the step opens at once, without the "get ready" moment (a lesson's slides)
@@ -555,6 +561,7 @@ class ClassicGame extends QuizGame {
     };
     if (!cur) return out;
     out.q = cur.payload;
+    if (this.stage === 'ready') { out.readyMs = this.readyDelay(cur.q); out.talk = this.talkMs() > 0; }
     out.answered = cur.answers.size;
     if (this.stage === 'question') {
       out.remain = cur.deadline ? Math.max(0, cur.deadline - Date.now()) : null;
@@ -583,7 +590,7 @@ class ClassicGame extends QuizGame {
     const base = { score: g.score, rank: g.rank, streak: g.streak, qid: this.qid(), qnum: this.i + 1, total: this.list.length, bonus: this.inBonus, stage: this.stage, lives: this.livesOn ? g.lives : null, qtype: cur ? cur.q.type : '', style: this.style };
     const can = this.canAnswer(p);
     if (!cur) return { ...base, phase: 'c_ready' };
-    if (this.stage === 'ready') return { ...base, phase: can ? 'c_ready' : 'c_watch', text: cur.q.text, points: cur.q.points };
+    if (this.stage === 'ready') return { ...base, phase: can ? 'c_ready' : 'c_watch', text: cur.q.text, points: cur.q.points, talk: this.talkMs() > 0, readyMs: this.readyDelay(cur.q) };
     if (this.stage === 'slide') return { ...base, phase: 'c_slide', q: cur.payload };
     if (this.stage === 'vote') {
       if (!can) return { ...base, phase: 'c_watch' };

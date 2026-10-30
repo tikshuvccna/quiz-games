@@ -1,0 +1,92 @@
+/* generated: question themes. A theme is data-qtheme on <html>; it restyles the answer colours (phone .ans, big screen .cl-ans) and the question card. */
+html[data-qtheme="candy"] .ans:nth-child(1), html[data-qtheme="candy"] .answers.tf .ans:nth-child(1) { --a: #ff5fa2; --a2: #8c3459; }
+html[data-qtheme="candy"] .cl-ans:nth-child(1) { background: #ff5fa2 !important; }
+html[data-qtheme="candy"] .ans:nth-child(2), html[data-qtheme="candy"] .answers.tf .ans:nth-child(2) { --a: #b06bff; --a2: #603a8c; }
+html[data-qtheme="candy"] .cl-ans:nth-child(2) { background: #b06bff !important; }
+html[data-qtheme="candy"] .ans:nth-child(3), html[data-qtheme="candy"] .answers.tf .ans:nth-child(3) { --a: #ff9a3d; --a2: #8c5421; }
+html[data-qtheme="candy"] .cl-ans:nth-child(3) { background: #ff9a3d !important; }
+html[data-qtheme="candy"] .ans:nth-child(4), html[data-qtheme="candy"] .answers.tf .ans:nth-child(4) { --a: #2ec4b6; --a2: #196b64; }
+html[data-qtheme="candy"] .cl-ans:nth-child(4) { background: #2ec4b6 !important; }
+html[data-qtheme="candy"] .ans:nth-child(5), html[data-qtheme="candy"] .answers.tf .ans:nth-child(5) { --a: #ff6b6b; --a2: #8c3a3a; }
+html[data-qtheme="candy"] .cl-ans:nth-child(5) { background: #ff6b6b !important; }
+html[data-qtheme="candy"] .ans:nth-child(6), html[data-qtheme="candy"] .answers.tf .ans:nth-child(6) { --a: #5ab8ff; --a2: #31658c; }
+html[data-qtheme="candy"] .cl-ans:nth-child(6) { background: #5ab8ff !important; }
+html[data-qtheme="candy"] .q-card { background: #fff0f8; color: #7a1f5a; box-shadow: 0 7px 0 #f3b6d6, var(--drop); }
+html[data-qtheme="ocean"] .ans:nth-child(1), html[data-qtheme="ocean"] .answers.tf .ans:nth-child(1) { --a: #0aa5c9; --a2: #055a6e; }
+html[data-qtheme="ocean"] .cl-ans:nth-child(1) { background: #0aa5c9 !important; }
+html[data-qtheme="ocean"] .ans:nth-child(2), html[data-qtheme="ocean"] .answers.tf .ans:nth-child(2) { --a: #1f6fd6; --a2: #113d75; }
+html[data-qtheme="ocean"] .cl-ans:nth-child(2) { background: #1f6fd6 !important; }
+html[data-qtheme="ocean"] .ans:nth-child(3), html[data-qtheme="ocean"] .answers.tf .ans:nth-child(3) { --a: #12b886; --a2: #096549; }
+html[data-qtheme="ocean"] .cl-ans:nth-child(3) { background: #12b886 !important; }
+html[data-qtheme="ocean"] .ans:nth-child(4), html[data-qtheme="ocean"] .answers.tf .ans:nth-child(4) { --a: #6a5acd; --a2: #3a3170; }
+html[data-qtheme="ocean"] .cl-ans:nth-child(4) { background: #6a5acd !important; }
+html[data-qtheme="ocean"] .ans:nth-child(5), html[data-qtheme="ocean"] .answers.tf .ans:nth-child(5) { --a: #0f8aa8; --a2: #084b5c; }
+html[data-qtheme="ocean"] .cl-ans:nth-child(5) { background: #0f8aa8 !important; }
+html[data-qtheme="ocean"] .ans:nth-child(6), html[data-qtheme="ocean"] .answers.tf .ans:nth-child(6) { --a: #3dbfe8; --a2: #21697f; }
+html[data-qtheme="ocean"] .cl-ans:nth-child(6) { background: #3dbfe8 !important; }
+html[data-qtheme="ocean"] .q-card { background: #e6fbff; color: #06405a; box-shadow: 0 7px 0 #9ad7e8, var(--drop); }
+html[data-qtheme="forest"] .ans:nth-child(1), html[data-qtheme="forest"] .answers.tf .ans:nth-child(1) { --a: #3f9b4a; --a2: #225528; }
+html[data-qtheme="forest"] .cl-ans:nth-child(1) { background: #3f9b4a !important; }
+html[data-qtheme="forest"] .ans:nth-child(2), html[data-qtheme="forest"] .answers.tf .ans:nth-child(2) { --a: #a0652b; --a2: #583717; }
+html[data-qtheme="forest"] .cl-ans:nth-child(2) { background: #a0652b !important; }
+html[data-qtheme="forest"] .ans:nth-child(3), html[data-qtheme="forest"] .answers.tf .ans:nth-child(3) { --a: #d9a400; --a2: #775a00; }
+html[data-qtheme="forest"] .cl-ans:nth-child(3) { background: #d9a400 !important; }
+html[data-qtheme="forest"] .ans:nth-child(4), html[data-qtheme="forest"] .answers.tf .ans:nth-child(4) { --a: #2e7d6b; --a2: #19443a; }
+html[data-qtheme="forest"] .cl-ans:nth-child(4) { background: #2e7d6b !important; }
+html[data-qtheme="forest"] .ans:nth-child(5), html[data-qtheme="forest"] .answers.tf .ans:nth-child(5) { --a: #8a4a2a; --a2: #4b2817; }
+html[data-qtheme="forest"] .cl-ans:nth-child(5) { background: #8a4a2a !important; }
+html[data-qtheme="forest"] .ans:nth-child(6), html[data-qtheme="forest"] .answers.tf .ans:nth-child(6) { --a: #6b8e23; --a2: #3a4e13; }
+html[data-qtheme="forest"] .cl-ans:nth-child(6) { background: #6b8e23 !important; }
+html[data-qtheme="forest"] .q-card { background: #f2ffe9; color: #1d4a1d; box-shadow: 0 7px 0 #b5dba0, var(--drop); }
+html[data-qtheme="sunset"] .ans:nth-child(1), html[data-qtheme="sunset"] .answers.tf .ans:nth-child(1) { --a: #ff6b4a; --a2: #8c3a28; }
+html[data-qtheme="sunset"] .cl-ans:nth-child(1) { background: #ff6b4a !important; }
+html[data-qtheme="sunset"] .ans:nth-child(2), html[data-qtheme="sunset"] .answers.tf .ans:nth-child(2) { --a: #ff9f1c; --a2: #8c570f; }
+html[data-qtheme="sunset"] .cl-ans:nth-child(2) { background: #ff9f1c !important; }
+html[data-qtheme="sunset"] .ans:nth-child(3), html[data-qtheme="sunset"] .answers.tf .ans:nth-child(3) { --a: #e83e8c; --a2: #7f224d; }
+html[data-qtheme="sunset"] .cl-ans:nth-child(3) { background: #e83e8c !important; }
+html[data-qtheme="sunset"] .ans:nth-child(4), html[data-qtheme="sunset"] .answers.tf .ans:nth-child(4) { --a: #7b2cbf; --a2: #431869; }
+html[data-qtheme="sunset"] .cl-ans:nth-child(4) { background: #7b2cbf !important; }
+html[data-qtheme="sunset"] .ans:nth-child(5), html[data-qtheme="sunset"] .answers.tf .ans:nth-child(5) { --a: #e6a100; --a2: #7e5800; }
+html[data-qtheme="sunset"] .cl-ans:nth-child(5) { background: #e6a100 !important; }
+html[data-qtheme="sunset"] .ans:nth-child(6), html[data-qtheme="sunset"] .answers.tf .ans:nth-child(6) { --a: #fb5607; --a2: #8a2f03; }
+html[data-qtheme="sunset"] .cl-ans:nth-child(6) { background: #fb5607 !important; }
+html[data-qtheme="sunset"] .q-card { background: #fff3e0; color: #5a2a00; box-shadow: 0 7px 0 #f2c48a, var(--drop); }
+html[data-qtheme="mono"] .ans:nth-child(1), html[data-qtheme="mono"] .answers.tf .ans:nth-child(1) { --a: #2b2f4a; --a2: #171928; }
+html[data-qtheme="mono"] .cl-ans:nth-child(1) { background: #2b2f4a !important; }
+html[data-qtheme="mono"] .ans:nth-child(2), html[data-qtheme="mono"] .answers.tf .ans:nth-child(2) { --a: #4a4f73; --a2: #282b3f; }
+html[data-qtheme="mono"] .cl-ans:nth-child(2) { background: #4a4f73 !important; }
+html[data-qtheme="mono"] .ans:nth-child(3), html[data-qtheme="mono"] .answers.tf .ans:nth-child(3) { --a: #5d6490; --a2: #33374f; }
+html[data-qtheme="mono"] .cl-ans:nth-child(3) { background: #5d6490 !important; }
+html[data-qtheme="mono"] .ans:nth-child(4), html[data-qtheme="mono"] .answers.tf .ans:nth-child(4) { --a: #767cab; --a2: #40445e; }
+html[data-qtheme="mono"] .cl-ans:nth-child(4) { background: #767cab !important; }
+html[data-qtheme="mono"] .ans:nth-child(5), html[data-qtheme="mono"] .answers.tf .ans:nth-child(5) { --a: #343a5e; --a2: #1c1f33; }
+html[data-qtheme="mono"] .cl-ans:nth-child(5) { background: #343a5e !important; }
+html[data-qtheme="mono"] .ans:nth-child(6), html[data-qtheme="mono"] .answers.tf .ans:nth-child(6) { --a: #4f5580; --a2: #2b2e46; }
+html[data-qtheme="mono"] .cl-ans:nth-child(6) { background: #4f5580 !important; }
+html[data-qtheme="mono"] .q-card { background: #f4f4ff; color: #1b1340; box-shadow: 0 7px 0 #c9c2f0, var(--drop); }
+html[data-qtheme="neon"] .ans:nth-child(1), html[data-qtheme="neon"] .answers.tf .ans:nth-child(1) { --a: #ff2e93; --a2: #8c1950; }
+html[data-qtheme="neon"] .cl-ans:nth-child(1) { background: #ff2e93 !important; }
+html[data-qtheme="neon"] .ans:nth-child(2), html[data-qtheme="neon"] .answers.tf .ans:nth-child(2) { --a: #00b8d4; --a2: #006574; }
+html[data-qtheme="neon"] .cl-ans:nth-child(2) { background: #00b8d4 !important; }
+html[data-qtheme="neon"] .ans:nth-child(3), html[data-qtheme="neon"] .answers.tf .ans:nth-child(3) { --a: #76b900; --a2: #406500; }
+html[data-qtheme="neon"] .cl-ans:nth-child(3) { background: #76b900 !important; }
+html[data-qtheme="neon"] .ans:nth-child(4), html[data-qtheme="neon"] .answers.tf .ans:nth-child(4) { --a: #d4b100; --a2: #746100; }
+html[data-qtheme="neon"] .cl-ans:nth-child(4) { background: #d4b100 !important; }
+html[data-qtheme="neon"] .ans:nth-child(5), html[data-qtheme="neon"] .answers.tf .ans:nth-child(5) { --a: #a855f7; --a2: #5c2e87; }
+html[data-qtheme="neon"] .cl-ans:nth-child(5) { background: #a855f7 !important; }
+html[data-qtheme="neon"] .ans:nth-child(6), html[data-qtheme="neon"] .answers.tf .ans:nth-child(6) { --a: #ff7a00; --a2: #8c4300; }
+html[data-qtheme="neon"] .cl-ans:nth-child(6) { background: #ff7a00 !important; }
+html[data-qtheme="neon"] .q-card { background: #12123a; color: #ffffff; box-shadow: 0 7px 0 #00e5ff, var(--drop); }
+html[data-qtheme="space"] .ans:nth-child(1), html[data-qtheme="space"] .answers.tf .ans:nth-child(1) { --a: #7c4dff; --a2: #442a8c; }
+html[data-qtheme="space"] .cl-ans:nth-child(1) { background: #7c4dff !important; }
+html[data-qtheme="space"] .ans:nth-child(2), html[data-qtheme="space"] .answers.tf .ans:nth-child(2) { --a: #0091ea; --a2: #004f80; }
+html[data-qtheme="space"] .cl-ans:nth-child(2) { background: #0091ea !important; }
+html[data-qtheme="space"] .ans:nth-child(3), html[data-qtheme="space"] .answers.tf .ans:nth-child(3) { --a: #e91e63; --a2: #801036; }
+html[data-qtheme="space"] .cl-ans:nth-child(3) { background: #e91e63 !important; }
+html[data-qtheme="space"] .ans:nth-child(4), html[data-qtheme="space"] .answers.tf .ans:nth-child(4) { --a: #00b86b; --a2: #00653a; }
+html[data-qtheme="space"] .cl-ans:nth-child(4) { background: #00b86b !important; }
+html[data-qtheme="space"] .ans:nth-child(5), html[data-qtheme="space"] .answers.tf .ans:nth-child(5) { --a: #e69500; --a2: #7e5100; }
+html[data-qtheme="space"] .cl-ans:nth-child(5) { background: #e69500 !important; }
+html[data-qtheme="space"] .ans:nth-child(6), html[data-qtheme="space"] .answers.tf .ans:nth-child(6) { --a: #00b8c4; --a2: #00656b; }
+html[data-qtheme="space"] .cl-ans:nth-child(6) { background: #00b8c4 !important; }
+html[data-qtheme="space"] .q-card { background: #1a1a4a; color: #ffffff; box-shadow: 0 7px 0 #6a5acd, var(--drop); }

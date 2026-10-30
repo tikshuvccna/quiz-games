@@ -13,8 +13,8 @@ This file collects the requested changes in one place so they can be implemented
 - Every game must be adapted to fit this platform (same question/answer data model, lobby, scoring, music, backgrounds).
 - Start with 50 games; the architecture should make adding more simple (one module/config per game).
 - Deliverables:
-  - [ ] Research list of ~50+ candidate games with source/popularity notes and age range.
-  - [ ] Per-game spec: rules, scoring, min/max players, how it maps to quiz questions.
+  - [x] (done 2026-10-30, `docs/GAMES_RESEARCH.md`; written from memory, no web research, ratings and popularity numbers were not looked up) Research list of ~50+ candidate games with source/popularity notes and age range.
+  - [x] (done 2026-10-30: one row per game in PROJECT_SUMMARY.md 3.1, plus the list in `docs/GAMES_RESEARCH.md`) Per-game spec: rules, scoring, min/max players, how it maps to quiz questions.
   - [x] (2026-10-30) Batches 3 to 6: sabotage, impostor, rhythm, kart, five and then ten more round games on a shared base (`ffa.js`), marble race, team puzzle, castle tower defense, snake, basketball, burger, ship…: 50 games in total. See PROJECT_SUMMARY.md 3.1.
   - [x] Game registry so a new game = one folder/file (server file + client file + optional CSS, cover via `Art.covers`).
   - [x] Batch 1 (2026-10-23): Robot Run, Chill Art (paint by numbers), Wheel of fortune, Memory pairs, Battleship. 20 games in total. See PROJECT_SUMMARY.md 3.1.
