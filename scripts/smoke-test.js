@@ -56,6 +56,8 @@ function run(game) {
             setTimeout(() => s.emit('player:action', { type: 'throw', data: { angle: 40, power: 0.8 } }), 60);
           } else if (y.phase === 'reel') {
             setTimeout(() => s.emit('player:action', { type: 'reel', data: { ok: true } }), 60);
+          } else if (y.phase === 'pz') {
+            setTimeout(() => s.emit('player:action', { type: 'place', data: { slot: y.piece } }), 60);
           } else if (y.phase === 'ffa') {
             setTimeout(() => s.emit('player:action', { type: 'play', data: require('./ffa-answers')(y.round, false) }), 60);
           } else if (y.phase === 'drive') {
@@ -116,6 +118,6 @@ function run(game) {
 }
 
 (async () => {
-  for (const g of process.argv[2] ? [process.argv[2]] : ['classic', 'study', 'lesson', 'pyramid', 'territory', 'tug', 'penalty', 'snowball', 'gems', 'race', 'closer', 'tower', 'fishing', 'bomb', 'prank', 'impostor', 'rhythm', 'kart', 'mole', 'hoops', 'snake', 'burger', 'ship', 'marble', 'asteroids', 'dragon', 'rocket', 'robot', 'paint', 'wheel', 'pairs', 'fleet', 'sub', 'lava', 'zombie']) await run(g);
+  for (const g of process.argv[2] ? [process.argv[2]] : ['classic', 'study', 'lesson', 'pyramid', 'territory', 'tug', 'penalty', 'snowball', 'gems', 'race', 'closer', 'tower', 'fishing', 'bomb', 'prank', 'impostor', 'rhythm', 'kart', 'mole', 'hoops', 'snake', 'burger', 'ship', 'marble', 'tpuzzle', 'asteroids', 'dragon', 'rocket', 'robot', 'paint', 'wheel', 'pairs', 'fleet', 'sub', 'lava', 'zombie']) await run(g);
   process.exit(0);
 })();

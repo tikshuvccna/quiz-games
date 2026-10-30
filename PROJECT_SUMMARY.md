@@ -23,7 +23,7 @@
 
 | Command | What it checks |
 |---|---|
-| `node scripts/smoke-test.js [game]` | Bots play a short round of every game (35) and print the state and results. |
+| `node scripts/smoke-test.js [game]` | Bots play a short round of every game (36) and print the state and results. |
 | `node scripts/chase-test.js [game]` | The co-op chase games (robot, sub, lava, zombie): bots race to the goal, all three checkpoint mini-games run, phones are parked and resumed, nobody gets stuck; the sub's diving mode; checkpoints switched off; junk packets are clamped. About 7 minutes. |
 | `node scripts/feature-test.js` | Name modes and reroll, 3 teams, reward settings, winner text, rematch with the same PIN, the report, an individual game played in teams. 14 checks. |
 | `node scripts/classic-test.js` | Classic quiz: every stage, team averages, the second-chance round for the bottom 5. |
@@ -115,11 +115,12 @@ scripts/                tests, bots, demo
 
 ## 3. What exists today
 
-### 3.1 Games (35)
+### 3.1 Games (36)
 
 | # | Game | Mode | What answering earns / the action on the phone |
 |---|---|---|---|
 | 1 | 🎯 חידון קלאסי | Individual or 2–4 teams (team score = average) | Kahoot classic: same question for everyone, speed + accuracy points, streaks, leaderboard with fun lines. Scoring styles: classic, accuracy only, confidence (boost or safe). Second-chance round for the bottom 5. |
+| 36 | 🧩 פאזל קבוצתי | 2–6 teams | **Team puzzle.** Each team builds its own picture (six drawn scenes) from 12 pieces. A reward gives a player one missing piece of their team's picture and 7 seconds to tap where it goes (the faint picture and the placed pieces are on the phone); a right tap places it for the whole team, a teammate who placed it first gives "already done". The first team to finish wins. Graded on the server. |
 | 35 | 🔮 מרוץ גולות | Individual | **Like Kahoot's Marble Race.** Each correct answer earns a marble (2 on a streak of 3). When the time is up all the marbles race on the big screen; the server draws the finishing order with a chance in proportion to the marbles (plus a little for everyone), so the leader is not sure to win. The race plays once, then the podium by the race. |
 | 34 | 🛸 ספינת חלל | Individual (free for all) | **Asteroids.** A reward is a 12-second flight in your own ship: drag on the left as a joystick (arrows and space on a computer), hold the fire button, blow up asteroids, 3 lives. The phone plays it and reports kills and lives (trusted, capped on the server). |
 | 33 | 🍔 המבורגריה | Individual | **Burger orders.** A reward is an order: the layers are shown for a few seconds, then stack them in the same order (bottom bun first, top bun last); points per correct layer, a bonus for a perfect burger. Graded on the server. |
@@ -272,7 +273,7 @@ Next agreed step: ROADMAP item 9 (online / LAN mode), then more games from the l
 
 **Still to build: from the user's request**
 1. ✅ **Classic Asteroids** (game 34, `ship`).
-2. **Team puzzle**: each team builds a picture; a correct answer gives a player 5 seconds to place pieces; first team to finish wins. 2–6 teams.
+2. ✅ **Team puzzle** (game 36, `tpuzzle`).
 3. ✅ **Snake** (game 32; one snake per phone, not a shared arena).
 4. **Castle tower defense**: co-op.
 5. ✅ **Burger restaurant** (game 33; each student on their own, not co-op).

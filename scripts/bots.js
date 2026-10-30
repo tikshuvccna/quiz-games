@@ -65,6 +65,8 @@ NAMES.slice(0, count).forEach((name, i) => {
       send('reel', { ok: Math.random() < 0.65 }, 4000);
     } else if (y.phase === 'pass' && y.targets.length) {
       send('pass', { to: y.targets[Math.floor(Math.random() * y.targets.length)].id }, 1000);
+    } else if (y.phase === 'pz') {
+      send('place', { slot: Math.random() < 0.8 ? y.piece : (y.piece + 1) % 12 }, 1500);
     } else if (y.phase === 'ffa' && y.round) {
       send('play', require('./ffa-answers')(y.round, true), 1500);
     } else if (y.phase === 'drive' && y.drive) {
