@@ -15,11 +15,12 @@ class TerritoryGame extends QuizGame {
   static reward = ['דגל', 'דגלים'];
   static stacks = true;
   static tickMs = 1000;
-  static defaults = { duration: 300 };
-  static options = [];
+  static defaults = { duration: 300, capture: 'attack' };
+  static options = [{ key: 'capture', label: 'כיבוש אריחי האויב', choices: [['attack', 'תקיפה ישירה'], ['surround', 'הקפה (כמו בגו)']] }];
 
   start() {
     this.teams = this.room.teams();
+    this.surround = this.room.settings.capture === 'surround';
     const T = this.teams.length;
     const n = Math.max(this.room.players.size, 2) + (T - 2) * 3;
     const total = Math.min(150, Math.max(40, n * 5));
@@ -107,6 +108,7 @@ class TerritoryGame extends QuizGame {
     if (!Number.isInteger(t) || t < 0 || t >= this.cells.length) return null;
     const owner = this.cells[t];
     if (owner === team) return this.lvl[t] < MAX_LEVEL ? 'f' : null;
+    if (owner >= 0 && this.surround) return null; // in surround mode an enemy tile is only won by encircling it
     if (this.tiles[team] > 0 && !this.neighbors(t).some((n) => this.cells[n] === team)) return null;
     return owner < 0 ? 'c' : 'a';
   }
@@ -141,12 +143,42 @@ class TerritoryGame extends QuizGame {
     }
     g.flags--;
     g.placed++;
+    if (captured && this.surround) this.sweep(p, t);
     this.recount();
     if (g.flags <= 0 || !this.hasMove(p.team)) this.nextQuestion(p);
     this.room.pushPlayer(p);
     this.room.scheduleHostPush();
     // everyone else who is choosing a tile gets fresh valid moves
     for (const o of this.players()) if (o !== p && o.g && o.g.phase === 'place') this.room.pushPlayer(o);
+  }
+
+  // surround mode: after a tile is placed, every enemy group touching it that has no free (neutral) tile left
+  // next to it is encircled and changes hands (like capturing stones in Go). A castle in it is a bonus flag.
+  sweep(p, t) {
+    const seen = new Set();
+    for (const n of this.neighbors(t)) {
+      const owner = this.cells[n];
+      if (owner < 0 || owner === p.team || seen.has(n)) continue;
+      const group = [n];
+      seen.add(n);
+      let free = false;
+      for (let i = 0; i < group.length && !free; i++) {
+        for (const m of this.neighbors(group[i])) {
+          if (this.cells[m] < 0) { free = true; break; }
+          if (this.cells[m] === owner && !seen.has(m)) { seen.add(m); group.push(m); }
+        }
+      }
+      if (free) continue;
+      let castles = 0;
+      for (const k of group) {
+        this.cells[k] = p.team;
+        this.lvl[k] = 1;
+        if (this.castleSet.has(k)) castles++;
+      }
+      p.g.captured += group.length;
+      p.g.flags += castles;
+      this.addFeed(`🔒 ${p.name} הקיף/ה ${group.length} אריחים${castles ? ' כולל טירה 🏰' : ''}!`, p.team);
+    }
   }
 
   publicState() {

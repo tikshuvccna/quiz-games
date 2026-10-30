@@ -1,0 +1,66 @@
+/* =====================================================================
+   More animated scenes (scenes.js, round 2): sakura, rain, embers, lanterns, clouds, lavalamp, city, desert, beach, hexgrid.
+   Class prefix bgl- . Only transform / opacity move; lite mode stops everything (see scenes.css).
+   ===================================================================== */
+@keyframes bgl-fall { from { transform: translate3d(0, -12vh, 0) rotate(0); } to { transform: translate3d(var(--dx, 0), 112vh, 0) rotate(var(--rot, 360deg)); } }
+@keyframes bgl-rise { from { transform: translate3d(0, 8vh, 0); opacity: 0; } 10% { opacity: 1; } to { transform: translate3d(var(--dx, 0), -115vh, 0); opacity: 0; } }
+@keyframes bgl-drift { from { transform: translateX(-30vw); } to { transform: translateX(130vw); } }
+
+/* ---- sakura ---- */
+.sc-sakura, body[data-scene="sakura"] { background: linear-gradient(180deg, #ffd6e8, #f7a8c8 55%, #c77dba); }
+.bg-sakura .bgl-petal { top: 0; left: var(--x); width: var(--s); height: calc(var(--s) * .7); border-radius: 80% 0 80% 0; background: radial-gradient(circle at 30% 30%, #fff, #ffb3d1 60%, #ff8fb8); opacity: .9; animation: bgl-fall var(--d) linear infinite; animation-delay: var(--delay); }
+.bg-sakura .bgl-branch { top: -4vh; right: -4vw; width: 46vw; height: 30vh; background: radial-gradient(ellipse at 80% 20%, rgba(255, 255, 255, .85) 0 6%, transparent 7%), radial-gradient(circle at 60% 40%, #ff9ec4 0 10%, transparent 11%), radial-gradient(circle at 35% 25%, #ff9ec4 0 8%, transparent 9%), radial-gradient(circle at 80% 55%, #ffb3d1 0 9%, transparent 10%); filter: blur(1px); }
+
+/* ---- rain ---- */
+.sc-rain, body[data-scene="rain"] { background: linear-gradient(180deg, #2b3a55, #1a2540 60%, #0f182b); }
+.bg-rain .bgl-drop { top: 0; left: var(--x); width: 2px; height: var(--h); border-radius: 2px; background: linear-gradient(transparent, rgba(190, 220, 255, .75)); animation: bgl-fall var(--d) linear infinite; animation-delay: var(--delay); --rot: 0deg; }
+.bg-rain .bgl-flash { inset: 0; background: #cfe0ff; opacity: 0; animation: bgl-flash 11s ease-in-out infinite; }
+@keyframes bgl-flash { 0%, 92%, 100% { opacity: 0; } 93% { opacity: .35; } 94% { opacity: 0; } 95% { opacity: .22; } 97% { opacity: 0; } }
+.bg-rain .bgl-cloud { top: -6vh; left: -10vw; right: -10vw; height: 26vh; background: radial-gradient(60% 100% at 30% 0, #3a4a6b, transparent 70%), radial-gradient(60% 100% at 75% 0, #34445f, transparent 70%); }
+
+/* ---- embers ---- */
+.sc-embers, body[data-scene="embers"] { background: radial-gradient(80vmax 50vmax at 50% 120%, #8a2b0e, transparent 65%), linear-gradient(180deg, #1a0a0a, #2a0f0a); }
+.bg-embers .bgl-ember { bottom: 0; left: var(--x); width: var(--s); height: var(--s); border-radius: 50%; background: radial-gradient(circle, #fff3b0, #ff9a1a 55%, transparent 70%); box-shadow: 0 0 10px #ff7a1a; animation: bgl-rise var(--d) ease-out infinite; animation-delay: var(--delay); }
+
+/* ---- lanterns ---- */
+.sc-lanterns, body[data-scene="lanterns"] { background: linear-gradient(180deg, #0b1030, #1d1a4d 60%, #3a2a5e); }
+.bg-lanterns .bgl-lantern { bottom: 0; left: var(--x); width: var(--s); height: calc(var(--s) * 1.25); border-radius: 30% 30% 38% 38%; background: linear-gradient(180deg, #ffd27a, #ff9d3a); box-shadow: 0 0 30px 8px rgba(255, 170, 70, .55), inset 0 -8px 14px rgba(200, 80, 0, .5); animation: bgl-rise var(--d) ease-in infinite; animation-delay: var(--delay); }
+
+/* ---- clouds ---- */
+.sc-clouds, body[data-scene="clouds"] { background: linear-gradient(180deg, #4aa8ff, #9fd6ff 70%, #dff3ff); }
+.bg-clouds .bgl-sun { top: 8vh; right: 12vw; width: 14vmin; height: 14vmin; border-radius: 50%; background: radial-gradient(circle, #fffbe0, #ffe27a 60%, transparent 72%); box-shadow: 0 0 80px 20px rgba(255, 240, 160, .6); }
+.bg-clouds .bgl-cloud2 { top: var(--y); left: 0; width: var(--w); height: calc(var(--w) * .32); border-radius: 50%; background: radial-gradient(ellipse at 30% 60%, #fff 0 38%, transparent 40%), radial-gradient(ellipse at 60% 45%, #fff 0 40%, transparent 42%), radial-gradient(ellipse at 80% 65%, #fff 0 32%, transparent 34%); filter: blur(1px); opacity: .92; animation: bgl-drift var(--d) linear infinite; animation-delay: var(--delay); }
+
+/* ---- lavalamp ---- */
+.sc-lavalamp, body[data-scene="lavalamp"] { background: linear-gradient(135deg, #3a0a5e, #7a1f7a 50%, #c2336f); }
+.bg-lavalamp .bgl-blob { left: var(--x); bottom: -20vmin; width: var(--s); height: var(--s); border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ffb35c, #ff5a8a 65%, #c2336f); filter: blur(6px); opacity: .85; animation: bgl-blob var(--d) ease-in-out infinite alternate; animation-delay: var(--delay); }
+@keyframes bgl-blob { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(var(--dx), -55vh) scale(1.2, .9); } 100% { transform: translate(calc(var(--dx) * -1), -105vh) scale(.9, 1.15); } }
+
+/* ---- city ---- */
+.sc-city, body[data-scene="city"] { background: linear-gradient(180deg, #0a0e2a, #2a1f5e 60%, #7a3a7a); }
+.bg-city .bgl-moon { top: 10vh; left: 14vw; width: 11vmin; height: 11vmin; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fffbe8, #e9e2b8); box-shadow: 0 0 60px rgba(255, 250, 200, .5); }
+.bg-city .bgl-bld { bottom: 0; left: var(--x); width: var(--w); height: var(--h); background: linear-gradient(180deg, #151636, #0b0c22); border-top: 3px solid #23245a; }
+.bg-city .bgl-win { width: 5px; height: 7px; background: #ffd870; box-shadow: 0 0 6px #ffd870; opacity: 0; animation: bgl-win var(--d) steps(1) infinite; animation-delay: var(--delay); }
+@keyframes bgl-win { 0%, 100% { opacity: 0; } 25%, 75% { opacity: .95; } }
+
+/* ---- desert ---- */
+.sc-desert, body[data-scene="desert"] { background: linear-gradient(180deg, #ffb35c, #ffd99b 55%, #f2b36a); }
+.bg-desert .bgl-sun2 { top: 12vh; left: 50%; margin-left: -9vmin; width: 18vmin; height: 18vmin; border-radius: 50%; background: radial-gradient(circle, #fff7d6, #ffd36b 60%, transparent 72%); box-shadow: 0 0 100px 30px rgba(255, 220, 140, .5); animation: bgl-sun 8s ease-in-out infinite alternate; }
+@keyframes bgl-sun { to { transform: scale(1.08); } }
+.bg-desert .bgl-dune { left: -10vw; right: -10vw; bottom: calc(var(--b) * 1vh); height: 38vh; border-radius: 50% 50% 0 0 / 100% 100% 0 0; background: var(--c); animation: bgl-sway var(--d) ease-in-out infinite alternate; }
+@keyframes bgl-sway { to { transform: translateX(4vw); } }
+.bg-desert .bgl-dust { left: 0; top: var(--y); width: var(--s); height: 2px; border-radius: 2px; background: rgba(255, 255, 255, .6); animation: bgl-drift var(--d) linear infinite; animation-delay: var(--delay); }
+
+/* ---- beach ---- */
+.sc-beach, body[data-scene="beach"] { background: linear-gradient(180deg, #5cc8ff, #bfeaff 45%, #2ab3c8 46%, #1479a8); }
+.bg-beach .bgl-sun3 { top: 8vh; right: 14vw; width: 12vmin; height: 12vmin; border-radius: 50%; background: radial-gradient(circle, #fffbe0, #ffe27a 62%, transparent 74%); box-shadow: 0 0 70px 16px rgba(255, 240, 160, .6); }
+.bg-beach .bgl-wave { left: -10vw; right: -10vw; bottom: calc(var(--b) * 1vh); height: 16vh; border-radius: 50% 50% 0 0 / 100% 100% 0 0; background: var(--c); animation: bgl-sway var(--d) ease-in-out infinite alternate; }
+.bg-beach .bgl-sand { left: 0; right: 0; bottom: 0; height: 14vh; background: linear-gradient(180deg, #f6d58f, #e8b96a); border-radius: 60% 60% 0 0 / 40% 40% 0 0; }
+
+/* ---- hexgrid ---- */
+.sc-hexgrid, body[data-scene="hexgrid"] { background: linear-gradient(135deg, #04121f, #0a2a40); }
+.bg-hexgrid .bgl-grid { inset: -10%; background: linear-gradient(60deg, rgba(60, 220, 255, .16) 1px, transparent 1px) 0 0 / 56px 97px, linear-gradient(120deg, rgba(60, 220, 255, .16) 1px, transparent 1px) 0 0 / 56px 97px, linear-gradient(0deg, rgba(60, 220, 255, .16) 1px, transparent 1px) 0 0 / 56px 97px; animation: bgl-grid 24s linear infinite; }
+@keyframes bgl-grid { to { transform: translate(56px, 97px); } }
+.bg-hexgrid .bgl-scan { left: 0; right: 0; top: 0; height: 22vh; background: linear-gradient(180deg, transparent, rgba(60, 220, 255, .16), transparent); animation: bgl-scan 7s linear infinite; }
+@keyframes bgl-scan { from { transform: translateY(-30vh); } to { transform: translateY(110vh); } }
+.bg-hexgrid .bgl-node { left: var(--x); top: var(--y); width: 8px; height: 8px; border-radius: 50%; background: #5cf0ff; box-shadow: 0 0 14px #5cf0ff; animation: twinkle var(--d) ease-in-out infinite alternate; --o: 1; }

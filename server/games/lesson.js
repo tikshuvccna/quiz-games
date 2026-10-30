@@ -135,6 +135,28 @@ class LessonGame extends ClassicGame {
     });
   }
 
+  // what the teacher's second screen shows (the notes are never sent to the class)
+  presenterState() {
+    const label = (x) => (x ? x.text || (x.bullets && x.bullets[0]) || (x.pdf ? `עמוד ${x.pdf.page}` : '') || 'שקופית' : '');
+    const q = this.cur && this.cur.q;
+    const nx = this.list[this.i + 1];
+    return {
+      lesson: true,
+      stage: this.stage,
+      i: this.i,
+      total: this.list.length,
+      type: q ? q.type : '',
+      label: q ? label(q) : '',
+      notes: (q && q.notes) || '',
+      next: nx ? { type: nx.type, label: label(nx), notes: nx.notes || '' } : null,
+      reacts: this.stage === 'slide' ? this.reactCounts() : null,
+      answered: this.cur && this.cur.answers ? this.cur.answers.size : 0,
+      students: this.players().filter((p) => p.connected).length,
+      outline: this.outline(),
+      last: this.isLast(),
+    };
+  }
+
   publicState() {
     const out = super.publicState();
     out.lesson = { outline: this.outline(), reacts: this.stage === 'slide' ? this.reactCounts() : null, students: this.players().filter((p) => p.connected).length };

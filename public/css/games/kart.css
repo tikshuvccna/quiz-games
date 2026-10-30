@@ -1,0 +1,23 @@
+/* ---------- kart ("קארט מאחור") ---------- */
+.ktroom { background: linear-gradient(#4aa8ff 0 38%, #3fa34d 38% 100%); }
+.kt-sky { position: absolute; inset: 0 0 62% 0; background: radial-gradient(circle at 80% 30%, #fff8c4 0 6%, transparent 7%), linear-gradient(#4aa8ff, #bfe8ff); }
+.kt-list { position: absolute; inset: 6% 5% 4%; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+.kt-row { display: flex; align-items: center; gap: 12px; padding: 8px 14px; border-radius: 999px; background: rgba(20, 20, 50, .72); }
+.kt-row.drop-in { animation: dropin .5s var(--spring); }
+.kt-row.driving { box-shadow: 0 0 0 2px #ffd23f; }
+.kt-rank { width: 1.6em; text-align: center; font-weight: 900; opacity: .75; }
+.kt-row b { width: 8em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kt-road { position: relative; flex: 1; height: 30px; border-radius: 999px; background: repeating-linear-gradient(90deg, #555a6e 0 28px, #4a4f66 28px 56px); overflow: hidden; }
+.kt-car { position: absolute; top: 0; font-size: 26px; line-height: 30px; transform: scaleX(-1); transition: right .8s var(--spring); }
+.kt-d { width: 3.5em; text-align: center; font-weight: 900; color: var(--yellow); }
+/* phone */
+.kt-play { flex: 1; min-height: 0; position: relative; border-radius: var(--r); overflow: hidden; touch-action: none; user-select: none; background: #4aa8ff; }
+.kt-canvas { display: block; }
+.kt-hud { position: absolute; top: 8px; left: 10px; right: 10px; display: flex; align-items: center; gap: 10px; pointer-events: none; }
+.kt-time { flex: 1; height: 10px; border-radius: 999px; background: rgba(0, 0, 0, .3); overflow: hidden; }
+.kt-time i { display: block; height: 100%; background: #ffd23f; animation: kt-time linear forwards; }
+@keyframes kt-time { from { width: 100%; } to { width: 0; } }
+.kt-speed { font-weight: 900; color: #fff; text-shadow: 0 2px 0 rgba(0, 0, 0, .5); }
+.kt-zone { position: absolute; top: 0; bottom: 0; width: 50%; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px; color: rgba(255, 255, 255, .55); font-size: 2rem; }
+.kt-zone.l { left: 0; }
+.kt-zone.r { right: 0; }

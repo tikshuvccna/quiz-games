@@ -1,0 +1,32 @@
+/* ---------- rhythm ("קצב") ---------- */
+.rhroom { background: radial-gradient(ellipse at 50% 100%, #5a1f8a, #25104a 60%, #0f0626); }
+.rh-glow { position: absolute; left: 50%; top: 50%; width: 70cqh; height: 70cqh; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(circle, rgba(255, 79, 163, .22), transparent 65%); animation: sunpulse 1.9s ease-in-out infinite; }
+.rh-list { position: absolute; inset: 4% 6% 4%; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+.rh-row { display: flex; align-items: center; gap: 12px; padding: 8px 14px; border-radius: 999px; background: var(--glass); transition: order .4s; }
+.rh-row.drop-in { animation: dropin .5s var(--spring); }
+.rh-row.playing { background: rgba(255, 79, 163, .28); box-shadow: 0 0 0 2px #ff4fa3; }
+.rh-rank { width: 1.6em; font-weight: 900; opacity: .7; text-align: center; }
+.rh-row .avatar { font-size: 1.3rem; }
+.rh-row b { width: 8em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rh-track { flex: 1; height: 14px; border-radius: 999px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+.rh-track i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #ff4fa3, #ffd23f); transition: width .6s var(--spring); }
+.rh-pts { width: 3em; text-align: center; font-weight: 900; color: var(--yellow); }
+.rh-meta { width: 11em; font-size: .85rem; opacity: .85; }
+/* phone */
+.rh-play { flex: 1; min-height: 0; display: flex; flex-direction: column; position: relative; gap: 8px; touch-action: none; user-select: none; }
+.rh-judge { position: absolute; left: 0; right: 0; top: 34%; z-index: 3; text-align: center; font-size: 2rem; font-weight: 900; pointer-events: none; opacity: 0; text-shadow: 0 3px 0 rgba(0, 0, 0, .5); }
+.rh-judge.pop { animation: rh-judge .5s ease-out; }
+@keyframes rh-judge { 0% { opacity: 1; transform: scale(.6); } 30% { opacity: 1; transform: scale(1.15); } 100% { opacity: 0; transform: translateY(-20px); } }
+.rh-combo { position: absolute; top: 4px; left: 0; right: 0; z-index: 3; text-align: center; font-weight: 900; font-size: 1.3rem; color: #ffd23f; pointer-events: none; }
+.rh-lanes { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; position: relative; overflow: hidden; border-radius: var(--r); background: rgba(0, 0, 0, .28); }
+.rh-lane { position: relative; background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--c) 16%, transparent)); border-inline: 1px solid rgba(255, 255, 255, .08); }
+.rh-note { position: absolute; left: 50%; top: 0; width: min(60px, 80%); aspect-ratio: 1; margin-left: calc(min(60px, 80%) / -2); border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, var(--c) 45%); border: 3px solid #fff; box-shadow: 0 0 14px var(--c); opacity: 0; will-change: transform; }
+.rh-note.gone { visibility: hidden; }
+/* the lane is as tall as the phone's free space: notes cross 85% of it in the fall time and the hit line sits there */
+@keyframes rh-fall { from { opacity: 1; transform: translateY(-70px); } to { opacity: 1; transform: translateY(calc(100cqh * .85 - 30px)); } }
+.rh-lanes { container-type: size; }
+@keyframes rh-out { to { opacity: 0; } }
+.rh-line { position: absolute; left: 0; right: 0; top: 85%; height: 4px; background: #fff; opacity: .85; box-shadow: 0 0 12px #fff; pointer-events: none; }
+.rh-pads { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.rh-pad { height: 90px; border: 0; border-radius: var(--r); background: var(--c); box-shadow: 0 6px 0 rgba(0, 0, 0, .35); cursor: pointer; touch-action: none; }
+.rh-pad.hit, .rh-pad:active { transform: translateY(5px); box-shadow: 0 1px 0 rgba(0, 0, 0, .35); filter: brightness(1.3); }

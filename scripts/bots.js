@@ -65,6 +65,18 @@ NAMES.slice(0, count).forEach((name, i) => {
       send('reel', { ok: Math.random() < 0.65 }, 4000);
     } else if (y.phase === 'pass' && y.targets.length) {
       send('pass', { to: y.targets[Math.floor(Math.random() * y.targets.length)].id }, 1000);
+    } else if (y.phase === 'drive' && y.drive) {
+      send('drive', { dist: y.drive.secs * (400 + Math.random() * 300), top: 700 }, 1500);
+    } else if (y.phase === 'beat' && y.song) {
+      send('taps', { taps: y.song.notes.filter(() => Math.random() < 0.8).map((n) => [n.lane, n.t + Math.round((Math.random() - 0.5) * 160)]) }, 1500);
+    } else if (y.phase === 'vote' && y.candidates) {
+      const c = y.candidates;
+      send('vote', { to: c.length && Math.random() < 0.6 ? c[Math.floor(Math.random() * c.length)].id : 'skip' }, 2000);
+    } else if (y.phase === 'sabotage' && y.targets) {
+      send('sabotage', y.targets.length && Math.random() < 0.5 ? { k: 'jam', to: y.targets[0].id } : { k: 'drain' }, 1500);
+    } else if (y.phase === 'prank' && y.targets.length) {
+      const ks = Object.keys(y.pranks);
+      send('prank', { k: ks[Math.floor(Math.random() * ks.length)], to: y.targets[Math.floor(Math.random() * y.targets.length)].id }, 1000);
     } else if (y.phase === 'memory') {
       send('memory', { seq: Math.random() < 0.6 ? y.seq : y.seq.slice(0, 1) }, 2600);
     } else if (y.phase === 'shoot') {

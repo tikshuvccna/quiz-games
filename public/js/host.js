@@ -32,7 +32,7 @@ async function computeJoinUrl(pin) {
       addrs = info.addresses || [];
       const want = pickedIp.get();
       const a = addrs.find((x) => x.ip === want) || addrs[0];
-      if (a) base = `http://${a.ip}:${info.port}`;
+      if (a) base = a.url || `http://${a.ip}:${info.port}`;
     } catch {}
   }
   joinUrl = `${base}/?pin=${pin}`;
@@ -48,6 +48,7 @@ function create() {
   const present = new URLSearchParams(location.search).get('present');
   socket.emit('host:create', { game: present ? 'lesson' : 'territory' }, (r) => {
     creating = false;
+    if (r && r.error === 'auth') return void (location.href = '/login.html?next=' + encodeURIComponent(location.pathname));
     if (present) socket.emit('host:setup', { quiz: present });
     store.set({ pin: r.pin, hostToken: r.hostToken });
     ready(r.pin);
@@ -104,6 +105,7 @@ function render(prev) {
   // classic quiz: the "thinking" song while answering, the scoreboard song between questions
   const cs = st.phase === 'playing' && st.board && st.board.kind === 'classic' ? st.board.stage : null;
   Music.play(st.phase === 'lobby' ? 'lobby' : st.phase === 'ended' ? 'victory' : cs && cs !== 'question' && cs !== 'ready' ? 'between' : 'game');
+  Silly.update(st);
   if (st.phase === 'lobby') renderLobby();
   else if (st.phase === 'countdown') renderCountdown(prev);
   else if (st.phase === 'playing') {
@@ -234,6 +236,7 @@ function renderLobby() {
               <label class="lite-tog" style="margin-top:6px">📊 <a href="progress.html" target="_blank" style="color:var(--yellow)">כיתות והתקדמות</a> · יצירת רשימות כיתה וצפייה בהתקדמות לאורך זמן</label>
               <small class="muted">עם כיתה, התלמידים בוחרים את השם שלהם מהרשימה, וההתקדמות של כל אחד נשמרת בין משחקים. כיתה זמינה רק כשהשחקנים כותבים כינוי בעצמם.</small></section>
             <section><h3>🛡️ סינון מילים לא יפות</h3><label class="lite-tog"><input type="checkbox" id="filterOn"> חוסם שמות וטקסטים לא הולמים (בשמות השחקנים ובתשובות שמוצגות על המסך)</label><small class="muted">רשימת המילים נמצאת בקובץ <b dir="ltr">server/badwords.json</b>, אפשר להוסיף בה מילים.</small></section>
+            <section><h3>🤪 שטויות על המסך</h3><label class="lite-tog"><input type="checkbox" id="sillyOn"> בזמן המשחק קופצים על המסך הגדול דברים מצחיקים: חיות קופצות, גשם של אימוג'ים, כתמי צבע, עיניים מציצות…</label></section>
             <section><h3>📷 תמונות שחקנים</h3><label class="lite-tog"><input type="checkbox" id="photosOn"> השחקנים יכולים להוסיף תמונה (מהמצלמה או מהגלריה) שתופיע במקום האות</label><small class="muted">התמונות נשמרות רק בזיכרון, עד סוף המשחק. לחיצה על תמונה של שחקן בלובי מסירה אותה.</small></section>
             <section><h3>🏆 טקסט למנצחים</h3><input class="input sm" id="winText" maxlength="140" placeholder="למשל: כל הכבוד! פרס מחכה לכם אצל המורה 🎁"><small class="muted">יופיע בטלפון של המנצחים ובמסך התוצאות</small></section>
           </div>
@@ -278,6 +281,7 @@ function renderLobby() {
     document.getElementById('videoClear').onclick = () => { vu.value = ''; socket.emit('host:setup', { video: '' }); };
     document.getElementById('jzBtn').onclick = () => openJoinZoom();
     document.getElementById('classSel').onchange = (e) => socket.emit('host:setup', { classId: e.target.value });
+    document.getElementById('sillyOn').onchange = (e) => socket.emit('host:setup', { silly: e.target.checked });
     document.getElementById('filterOn').onchange = (e) => socket.emit('host:setup', { filter: e.target.checked });
     const wt = document.getElementById('winText');
     wt.onchange = () => socket.emit('host:setup', { winText: wt.value });
@@ -357,6 +361,8 @@ function renderLobby() {
   vlBox.querySelectorAll('[data-video-pick]').forEach((b) => b.classList.toggle('on', b.dataset.videoPick === st.setup.video || (youtubeId(b.dataset.videoPick) && youtubeId(b.dataset.videoPick) === youtubeId(st.setup.video))));
   const fo = document.getElementById('filterOn');
   if (fo) fo.checked = st.setup.filter !== false;
+  const so = document.getElementById('sillyOn');
+  if (so) so.checked = !!st.setup.silly;
   const cs = document.getElementById('classSel');
   if (cs && st.classes) {
     const sig = st.classes.map((c) => c.id + c.name + c.count).join('|');
@@ -402,7 +408,7 @@ function renderNet() {
     return;
   }
   if (!cur) return void (row.innerHTML = '');
-  row.innerHTML = `<span class="net-chip">${cur.kind === 'wifi' ? '📶' : cur.kind === 'hotspot' ? '📡' : '🔌'} ${esc(cur.label)}${cur.kind === 'wifi' || cur.kind === 'ethernet' ? '' : ` · ${esc(cur.name)}`}</span>${addrs.length > 1 ? `<select id="netSel" title="כתובת אחרת">${addrs.map((a) => `<option value="${esc(a.ip)}" ${a.ip === host ? 'selected' : ''}>${esc(a.label)} · ${esc(a.ip)}</option>`).join('')}</select>` : ''}`;
+  row.innerHTML = `<span class="net-chip">${cur.kind === 'online' ? '🌐' : cur.kind === 'wifi' ? '📶' : cur.kind === 'hotspot' ? '📡' : '🔌'} ${esc(cur.label)}${cur.kind === 'wifi' || cur.kind === 'ethernet' || cur.kind === 'online' ? '' : ` · ${esc(cur.name)}`}</span>${addrs.length > 1 ? `<select id="netSel" title="כתובת אחרת">${addrs.map((a) => `<option value="${esc(a.ip)}" ${a.ip === host ? 'selected' : ''}>${esc(a.label)} · ${esc(a.ip)}</option>`).join('')}</select>` : ''}`;
   const sel = document.getElementById('netSel');
   if (sel) sel.onchange = () => { pickedIp.set(sel.value); ready(st.pin); };
 }

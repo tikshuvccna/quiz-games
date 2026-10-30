@@ -1,0 +1,25 @@
+/* ---------- "שטויות על המסך": decoration over the big screen ---------- */
+#sillyLayer { position: fixed; inset: 0; z-index: 90; pointer-events: none; overflow: hidden; }
+.sil { position: absolute; pointer-events: none; }
+.sil-hop { left: -15%; animation: sil-hop 4s linear forwards; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, .35)); }
+@keyframes sil-hop { 0% { transform: translate(0, 0); } 12% { transform: translate(15vw, -22vh) rotate(-20deg); } 25% { transform: translate(30vw, 0); } 37% { transform: translate(45vw, -22vh) rotate(20deg); } 50% { transform: translate(60vw, 0); } 62% { transform: translate(75vw, -22vh) rotate(-20deg); } 75% { transform: translate(90vw, 0); } 100% { transform: translate(125vw, 0); } }
+.sil-rain { top: -12%; animation: sil-rain 3s ease-in both; }
+@keyframes sil-rain { to { transform: translateY(120vh) rotate(360deg); } }
+.sil-word { left: 50%; top: 42%; font-size: clamp(60px, 14vw, 200px); font-weight: 900; -webkit-text-stroke: 6px #fff; paint-order: stroke fill; text-shadow: 0 10px 0 rgba(0, 0, 0, .3); white-space: nowrap; animation: sil-word 1.9s var(--spring) forwards; }
+@keyframes sil-word { 0% { transform: translate(-50%, -50%) scale(0); } 25% { transform: translate(-50%, -50%) scale(1.15); } 80% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1.4); opacity: 0; } }
+.sil-splat { border-radius: 46% 54% 52% 48% / 55% 45% 55% 45%; opacity: 0; animation: sil-splat 3.4s ease-out both; }
+@keyframes sil-splat { 0% { transform: scale(0); opacity: .9; } 15% { transform: scale(1); opacity: .9; } 70% { opacity: .8; } 100% { transform: translateY(40px) scale(1.05); opacity: 0; } }
+.sil-eyes { display: flex; gap: 10px; }
+.sil-eyes.l { animation: sil-eyes-l 3.4s ease-in-out forwards; }
+.sil-eyes.r { animation: sil-eyes-r 3.4s ease-in-out forwards; }
+.sil-eyes i { width: 70px; height: 70px; border-radius: 50%; background: #fff; border: 4px solid #1b1340; position: relative; }
+.sil-eyes i::after { content: ''; position: absolute; width: 28px; height: 28px; border-radius: 50%; background: #1b1340; left: 20px; top: 20px; animation: sil-look 1.2s ease-in-out infinite alternate; }
+@keyframes sil-look { from { transform: translateX(-12px); } to { transform: translateX(12px); } }
+@keyframes sil-eyes-l { 0%, 100% { transform: translateX(-130%); } 15%, 85% { transform: translateX(0); } }
+@keyframes sil-eyes-r { 0%, 100% { transform: translateX(130%); } 15%, 85% { transform: translateX(0); } }
+.sil-fly { left: -12%; animation: sil-fly 3s ease-in forwards; }
+@keyframes sil-fly { from { transform: rotate(45deg); } to { transform: translateX(130vw) rotate(45deg); } }
+#app.sil-wob { animation: sil-wob .35s ease-in-out 4; }
+@keyframes sil-wob { 25% { transform: rotate(-1.6deg) scale(1.01); } 75% { transform: rotate(1.6deg) scale(.99); } }
+#app.sil-spin { animation: sil-spin 1.6s ease-in-out; }
+@keyframes sil-spin { to { transform: rotate(360deg); } }

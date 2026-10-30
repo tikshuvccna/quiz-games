@@ -1,4 +1,12 @@
 const path = require('path');
+// DATA_DIR keeps everything that must survive a redeploy in one folder (mount a disk or volume there)
+if (process.env.DATA_DIR) {
+  const d = path.resolve(process.env.DATA_DIR);
+  process.env.QUIZ_DIR = process.env.QUIZ_DIR || path.join(d, 'quizzes');
+  process.env.REPORTS_DIR = process.env.REPORTS_DIR || path.join(d, 'reports');
+  process.env.BACKGROUNDS_DIR = process.env.BACKGROUNDS_DIR || path.join(d, 'backgrounds');
+  process.env.VIDEOS_DIR = process.env.VIDEOS_DIR || path.join(d, 'videos');
+}
 const os = require('os');
 const http = require('http');
 const express = require('express');
@@ -12,9 +20,18 @@ const Classes = require('./classes');
 const Library = require('./library');
 const Freeform = require('./freeform');
 const Media = require('./media');
+const Auth = require('./auth');
 
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0';
+const authProblem = Auth.check();
+if (authProblem) {
+  console.error(authProblem);
+  process.exit(1);
+}
 const app = express();
+// behind a reverse proxy (nginx, Caddy, a hosting platform) the real address is in X-Forwarded-For
+if (process.env.TRUST_PROXY) app.set('trust proxy', process.env.TRUST_PROXY === 'true' ? 1 : process.env.TRUST_PROXY);
 const server = http.createServer(app);
 const io = new Server(server, { maxHttpBufferSize: 64 * 1024 });
 
@@ -32,13 +49,39 @@ const bundle = (dir, ext, first = []) => {
 app.get('/js/games-all.js', (req, res) => res.type('application/javascript').set('Cache-Control', 'no-cache').send(bundle('js/games', '.js', ['classic.js', 'chase.js'])));
 app.get('/css/games-all.css', (req, res) => res.type('text/css').set('Cache-Control', 'no-cache').send(bundle('css/games', '.css')));
 
+// online mode: the teacher pages need a sign-in (the students' pages stay open)
+const TEACHER_PAGES = new Set(['/host.html', '/editor.html', '/progress.html', '/print.html', '/presenter.html']);
+app.use((req, res, next) => {
+  if (Auth.online() && TEACHER_PAGES.has(req.path) && !Auth.isTeacher(req)) return res.redirect('/login.html?next=' + encodeURIComponent(req.path));
+  next();
+});
+app.post('/api/login', express.json({ limit: '2kb' }), (req, res) => {
+  const r = Auth.login(req.ip, req.body && req.body.password);
+  if (!r.ok) return res.status(401).json({ ok: false, error: r.error });
+  if (r.token) res.setHeader('Set-Cookie', Auth.cookieHeader(r.token, req.secure));
+  res.json({ ok: true });
+});
+app.post('/api/logout', (req, res) => {
+  res.setHeader('Set-Cookie', Auth.clearHeader);
+  res.json({ ok: true });
+});
+
 // no-cache = the browser revalidates (cheap ETag check), so updated files always show up
 app.use(express.static(path.join(__dirname, '..', 'public'), { setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache') }));
 
 // join addresses for the QR code: Wi-Fi first, then wired LAN, then the PC's hotspot (virtual adapters left out)
 app.get('/api/info', (req, res) => {
   const list = Net.addresses();
-  res.json({ port: PORT, ips: list.map((a) => a.ip), addresses: list });
+  // an online address (PUBLIC_URL) is offered next to the network ones, so the teacher chooses how students join
+  if (Auth.PUBLIC_URL) {
+    try {
+      const u = new URL(Auth.PUBLIC_URL);
+      const o = { ip: u.host, name: '', kind: 'online', label: 'אונליין', url: Auth.PUBLIC_URL };
+      if (Auth.online()) list.unshift(o);
+      else list.push(o);
+    } catch {}
+  }
+  res.json({ port: PORT, mode: Auth.MODE, publicUrl: Auth.PUBLIC_URL, ips: list.map((a) => a.ip), addresses: list });
 });
 
 app.get('/qr', async (req, res) => {
@@ -54,8 +97,10 @@ app.get('/qr', async (req, res) => {
 // ---------- quiz library API (editor) ----------
 // Everything that reveals answers, edits files or browses folders only answers the host computer itself,
 // so a student on the same Wi-Fi can't open the editor and read the answers.
-const isLocal = (req) => ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress);
-const local = (req, res, next) => (isLocal(req) ? next() : res.status(403).json({ error: 'העורך זמין רק במחשב המארח' }));
+// (online mode: a teacher is whoever has the sign-in cookie, see auth.js)
+const local = (req, res, next) => (Auth.isTeacher(req) ? next() : res.status(Auth.online() ? 401 : 403).json({ error: Auth.online() ? 'צריך להתחבר כמורה' : 'העורך זמין רק במחשב המארח', login: Auth.online() }));
+// browsing the server's folders is for the host computer only
+const lanOnly = (req, res, next) => (Auth.online() ? res.status(403).json({ error: 'לא זמין במצב אונליין' }) : next());
 const api = (fn) => async (req, res) => {
   try {
     const out = await fn(req, res);
@@ -67,9 +112,9 @@ const api = (fn) => async (req, res) => {
 app.use('/api/q', local, express.json({ limit: '2mb' }));
 
 app.get('/api/q/folder', api(() => ({ folder: Quizzes.folder() })));
-app.post('/api/q/folder', api((req) => ({ folder: Quizzes.setFolder(req.body && req.body.path) })));
+app.post('/api/q/folder', lanOnly, api((req) => ({ folder: Quizzes.setFolder(req.body && req.body.path) })));
 // folder browser: no path = drives / start points
-app.get('/api/q/fs', api((req) => {
+app.get('/api/q/fs', lanOnly, api((req) => {
   const p = String(req.query.path || '');
   if (!p) {
     const roots = [];
@@ -85,7 +130,7 @@ app.get('/api/q/fs', api((req) => {
   const parent = path.dirname(abs) === abs ? '' : path.dirname(abs);
   return { path: abs, parent, dirs, quizzes };
 }));
-app.post('/api/q/fs/mkdir', api((req) => {
+app.post('/api/q/fs/mkdir', lanOnly, api((req) => {
   const name = String((req.body && req.body.name) || '').replace(/[<>:"/\\|?*]/g, '').trim();
   if (!name) throw new Error('שם לא תקין');
   const dir = path.join(path.resolve(String(req.body.path || '')), name);
@@ -195,7 +240,7 @@ app.get('/api/music', (req, res) => {
   try {
     files = fs.readdirSync(MUSIC_DIR).filter((f) => /\.(mp3|m4a|ogg|wav)$/i.test(f)).sort();
   } catch {}
-  res.json(files.map((f) => ({ file: f, url: '/music/' + encodeURIComponent(f), title: f.replace(/^M\d+-\d+\s*/, '').replace(/\.\w+$/, '') })));
+  res.json(files.map((f) => ({ file: f, url: '/music/' + encodeURIComponent(f), title: f.replace(/^M\d+(-\d+)+\s*/, '').replace(/\.\w+$/, '') })));
 });
 
 // the teacher's own backgrounds: every picture / video in the backgrounds folder becomes a scene
@@ -244,6 +289,7 @@ io.on('connection', (socket) => {
 
   // ---- host ----
   on('host:create', (data, ack) => {
+    if (!Auth.isTeacherSocket(socket)) return ack({ ok: false, error: 'auth' });
     const room = new Room(io, obj(data).game, socket.id);
     socket.data.room = room;
     socket.data.isHost = true;
@@ -251,10 +297,26 @@ io.on('connection', (socket) => {
     room.pushHost();
   });
 
+  // the presenter screen: the same teacher on a second device (needs the room's host token)
+  on('presenter:join', (data, ack) => {
+    const { pin, hostToken } = obj(data);
+    const room = Room.get(str(pin));
+    if (!Auth.isTeacherSocket(socket) || !room || room.hostToken !== hostToken) return ack({ ok: false });
+    room.presenters.add(socket.id);
+    socket.data.presenterRoom = room;
+    ack({ ok: true, state: room.presenterState() });
+  });
+
+  on('presenter:cmd', (d) => {
+    const room = socket.data.presenterRoom;
+    const o = obj(d);
+    if (room && room.presenters.has(socket.id) && room.phase === 'playing' && room.game && room.game.hostCommand && ['next', 'prev', 'goto'].includes(o.cmd)) room.game.hostCommand(o.cmd, o.arg);
+  });
+
   on('host:rejoin', (data, ack) => {
     const { pin, hostToken } = obj(data);
     const room = Room.get(str(pin));
-    if (!room || room.hostToken !== hostToken) return ack({ ok: false });
+    if (!Auth.isTeacherSocket(socket) || !room || room.hostToken !== hostToken) return ack({ ok: false });
     room.attachHost(socket.id);
     socket.data.room = room;
     socket.data.isHost = true;
@@ -442,6 +504,7 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     try {
+      if (socket.data.presenterRoom) socket.data.presenterRoom.presenters.delete(socket.id);
       const room = socket.data.room;
       if (!room) return;
       if (socket.data.isHost) return room.detachHost(socket.id);
@@ -472,7 +535,12 @@ server.on('error', (e) => {
   process.exit(1);
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, HOST, () => {
+  if (Auth.online()) {
+    console.log(`Quiz games running ONLINE on port ${PORT}${Auth.PUBLIC_URL ? ` (${Auth.PUBLIC_URL})` : ''}. Teachers sign in at /login.html`);
+    if (!Auth.PUBLIC_URL) console.log('  Tip: set PUBLIC_URL to the address students open, so the join link and QR code are right.');
+    return;
+  }
   console.log(`Quiz games running. Host screen: http://localhost:${PORT}/host.html`);
   const list = Net.addresses();
   if (!list.length) console.log('  This computer is not connected to a network: phones cannot join yet.');

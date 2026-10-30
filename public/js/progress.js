@@ -11,6 +11,7 @@
     const json = typeof opts.body === 'string';
     const res = await fetch('/api/q' + path, { ...opts, headers: json ? { 'Content-Type': 'application/json' } : undefined });
     const d = await res.json().catch(() => ({}));
+    if (res.status === 401 && d.login) location.href = '/login.html?next=' + encodeURIComponent(location.pathname);
     if (!res.ok) throw new Error(d.error || 'שגיאה');
     return d;
   }

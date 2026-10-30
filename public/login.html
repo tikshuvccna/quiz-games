@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>כניסת מורים</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .lg { max-width: 380px; margin: 14vh auto 0; padding: 28px 24px; border-radius: var(--r); background: var(--glass); display: flex; flex-direction: column; gap: 14px; text-align: center; }
+    .lg h1 { margin: 0; font-size: 1.8rem; }
+    .lg .err { color: #ffb3c1; min-height: 1.4em; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <form class="lg" id="f">
+    <h1>🔐 כניסת מורים</h1>
+    <div class="muted">הסיסמה של המורים בשרת הזה</div>
+    <input class="input" id="pw" type="password" autocomplete="current-password" placeholder="סיסמה" autofocus required>
+    <div class="err" id="err"></div>
+    <button class="btn big" type="submit">כניסה</button>
+  </form>
+  <script>
+    const next = new URLSearchParams(location.search).get('next') || '/host.html';
+    document.getElementById('f').onsubmit = async (e) => {
+      e.preventDefault();
+      const err = document.getElementById('err');
+      err.textContent = '';
+      try {
+        const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: document.getElementById('pw').value }) });
+        const d = await r.json();
+        if (d.ok) location.href = /^\/[a-z]+\.html/.test(next) ? next : '/host.html';
+        else err.textContent = d.error || 'שגיאה';
+      } catch { err.textContent = 'אין חיבור לשרת'; }
+    };
+  </script>
+</body>
+</html>

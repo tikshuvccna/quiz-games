@@ -134,19 +134,33 @@ socket.on('connect', () => {
 });
 
 // a player photo: cut to a centered square, 160 px, small JPEG (kept in memory on the server only)
+// centre-crop to a small square JPEG and send it. `src` is anything drawImage takes, `w` and `h` its size
+function sendSquare(src, w, h) {
+  const S = 160;
+  const c = document.createElement('canvas');
+  c.width = c.height = S;
+  const s = Math.min(w, h);
+  c.getContext('2d').drawImage(src, (w - s) / 2, (h - s) / 2, s, s, 0, 0, S, S);
+  socket.emit('player:photo', { photo: c.toDataURL('image/jpeg', 0.72) });
+  U.sfx('pop');
+}
+
 function sendPhoto(file) {
+  const heic = /heic|heif/i.test(file.type) || /\.(heic|heif)$/i.test(file.name || '');
+  const fail = () => alert(heic
+    ? 'המכשיר הזה לא יודע לפתוח תמונות HEIC. בצלמו תמונה חדשה (📷 מצלמה), או שנו בהגדרות המצלמה ל"תואם ביותר" (JPG).'
+    : 'לא הצלחנו לקרוא את התמונה. נסו תמונה אחרת (JPG או PNG)');
   const img = new Image();
   img.onload = () => {
-    const S = 160;
-    const c = document.createElement('canvas');
-    c.width = c.height = S;
-    const s = Math.min(img.naturalWidth, img.naturalHeight);
-    c.getContext('2d').drawImage(img, (img.naturalWidth - s) / 2, (img.naturalHeight - s) / 2, s, s, 0, 0, S, S);
     URL.revokeObjectURL(img.src);
-    socket.emit('player:photo', { photo: c.toDataURL('image/jpeg', 0.72) });
-    U.sfx('pop');
+    sendSquare(img, img.naturalWidth, img.naturalHeight);
   };
-  img.onerror = () => alert('לא הצלחנו לקרוא את התמונה. נסו תמונה אחרת (JPG או PNG)');
+  // some browsers cannot show the file in an <img> but can still decode it (HEIC on newer Safari, odd formats)
+  img.onerror = () => {
+    URL.revokeObjectURL(img.src);
+    if (!window.createImageBitmap) return fail();
+    createImageBitmap(file).then((bm) => { sendSquare(bm, bm.width, bm.height); bm.close(); }).catch(fail);
+  };
   img.src = URL.createObjectURL(file);
 }
 

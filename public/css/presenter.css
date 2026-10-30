@@ -1,0 +1,24 @@
+body { margin: 0; min-height: 100dvh; background: #140c33; color: #fff; font-family: 'Heebo', system-ui, sans-serif; }
+.pr { display: flex; flex-direction: column; gap: 12px; min-height: 100dvh; max-width: 760px; margin: 0 auto; padding: 14px 16px calc(14px + env(safe-area-inset-bottom)); box-sizing: border-box; }
+.pr-msg { margin: auto; text-align: center; font-size: 1.3rem; opacity: .85; padding: 24px; }
+.pr-top { display: flex; justify-content: space-between; font-weight: 800; opacity: .9; }
+.pr-bar { height: 8px; border-radius: 999px; background: rgba(255, 255, 255, .14); overflow: hidden; }
+.pr-bar i { display: block; height: 100%; background: linear-gradient(90deg, #8b5cf6, #ffd23f); transition: width .4s; }
+.pr-cur { padding: 16px; border-radius: 18px; background: rgba(255, 255, 255, .09); box-shadow: 0 6px 0 rgba(0, 0, 0, .25); }
+.pr-cur small { opacity: .75; font-weight: 700; }
+.pr-cur h1 { margin: 6px 0 12px; font-size: 1.5rem; line-height: 1.25; }
+.pr-notes { padding: 12px 14px; border-radius: 12px; background: #fff8d6; color: #3a2d00; font-size: 1.15rem; line-height: 1.5; font-weight: 600; }
+.pr-notes.none { background: rgba(255, 255, 255, .07); color: rgba(255, 255, 255, .6); font-weight: 400; }
+.pr-meter { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; padding: 10px 16px; border-radius: 999px; background: rgba(255, 255, 255, .1); font-weight: 800; font-size: 1.1rem; }
+.pr-meter.warn { background: rgba(255, 120, 60, .35); }
+.pr-meter b { color: #ffd23f; }
+.pr-next { padding: 12px 14px; border-radius: 14px; background: rgba(255, 255, 255, .06); }
+.pr-next small { display: block; opacity: .65; font-weight: 700; }
+.pr-next b { display: block; margin-top: 2px; }
+.pr-next p { margin: 6px 0 0; font-size: .92rem; opacity: .8; }
+#prJump { padding: 10px; border-radius: 12px; border: 0; background: #2a1f5e; color: #fff; font: inherit; max-width: 100%; }
+.pr-btns { margin-top: auto; display: grid; grid-template-columns: 1fr 2fr; gap: 10px; position: sticky; bottom: 0; padding-top: 8px; }
+.pr-btns button { padding: 20px 10px; border: 0; border-radius: 18px; font: inherit; font-size: 1.3rem; font-weight: 900; cursor: pointer; background: #fff; color: #1b1340; box-shadow: 0 6px 0 #c9c2f0; }
+.pr-btns button.go { background: #ffd23f; box-shadow: 0 6px 0 #b37a00; }
+.pr-btns button:active { transform: translateY(5px); box-shadow: 0 1px 0 rgba(0, 0, 0, .3); }
+.pr-btns button:disabled { opacity: .35; }

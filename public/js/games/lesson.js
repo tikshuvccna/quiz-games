@@ -39,6 +39,28 @@
     if (cur) cur.scrollIntoView({ block: 'center' });
   }
 
+  // a QR code and a link for the teacher's own phone: notes, what is next, the class's reactions, next / back
+  function presenterLink(st) {
+    document.getElementById('lsPresBox')?.remove();
+    let tok = '';
+    try { tok = (JSON.parse(sessionStorage.getItem('host') || '{}') || {}).hostToken || ''; } catch {}
+    const base = typeof joinUrl === 'string' && joinUrl ? joinUrl.replace(/\/\?pin=.*$/, '') : location.origin;
+    const url = `${base}/presenter.html?pin=${encodeURIComponent(st.pin)}&t=${encodeURIComponent(tok)}`;
+    const m = document.createElement('div');
+    m.className = 'modal';
+    m.id = 'lsPresBox';
+    m.innerHTML = `<div class="modal-card" style="max-width:420px;text-align:center"><h3>📱 מסך מציג</h3>
+      <p>סרקו בטלפון שלכם: תראו את ההערות, מה הבא, איך הכיתה מגיבה, וכפתורי הבא / קודם. התלמידים לא רואים את זה.</p>
+      <div id="lsPresQr" style="width:220px;margin:0 auto;background:#fff;border-radius:12px;padding:8px"></div>
+      <input class="input sm" readonly dir="ltr" value="${U.esc(url)}" style="margin-top:10px;width:100%" onclick="this.select()">
+      <p class="muted" style="font-size:.85rem">הקישור שולט בשיעור: אל תשתפו אותו עם התלמידים.</p>
+      <button class="btn" id="lsPresX">סגירה</button></div>`;
+    document.body.appendChild(m);
+    m.querySelector('#lsPresX').onclick = () => m.remove();
+    m.onclick = (e) => { if (e.target === m) m.remove(); };
+    fetch('/qr?text=' + encodeURIComponent(url)).then((r) => r.text()).then((svg) => { const q = m.querySelector('#lsPresQr'); if (q) q.innerHTML = svg; }).catch(() => {});
+  }
+
   // the presenter's controls: back, outline, and the live meter while a slide is on
   function chrome(app, st) {
     const b = st.board;
@@ -48,9 +70,10 @@
       bar = document.createElement('div');
       bar.id = 'lsBar';
       bar.className = 'ls-bar';
-      bar.innerHTML = '<button id="lsPrev" title="שלב קודם (←)">◀ קודם</button><button id="lsOut" title="מבנה השיעור (O)">📑 מבנה</button><div class="ls-meter" id="lsMeter"></div><span class="ls-keys">רווח / → הבא · ← קודם</span>';
+      bar.innerHTML = '<button id="lsPrev" title="שלב קודם (←)">◀ קודם</button><button id="lsOut" title="מבנה השיעור (O)">📑 מבנה</button><button id="lsPres" title="מסך מציג בטלפון או במחשב נייד, עם ההערות שלכם">📱 מסך מציג</button><div class="ls-meter" id="lsMeter"></div><span class="ls-keys">רווח / → הבא · ← קודם</span>';
       app.appendChild(bar);
       bar.querySelector('#lsPrev').onclick = () => go('prev');
+      bar.querySelector('#lsPres').onclick = () => presenterLink(st0);
       bar.querySelector('#lsOut').onclick = () => { outlineOpen = !outlineOpen; drawOutline(st0.board); };
     }
     bar.querySelector('#lsPrev').disabled = b.index <= 0;

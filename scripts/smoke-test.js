@@ -56,6 +56,16 @@ function run(game) {
             setTimeout(() => s.emit('player:action', { type: 'throw', data: { angle: 40, power: 0.8 } }), 60);
           } else if (y.phase === 'reel') {
             setTimeout(() => s.emit('player:action', { type: 'reel', data: { ok: true } }), 60);
+          } else if (y.phase === 'drive') {
+            setTimeout(() => s.emit('player:action', { type: 'drive', data: { dist: y.drive.secs * 500, top: 700 } }), 60);
+          } else if (y.phase === 'beat') {
+            setTimeout(() => s.emit('player:action', { type: 'taps', data: { taps: y.song.notes.map((n) => [n.lane, n.t]) } }), 60);
+          } else if (y.phase === 'vote') {
+            setTimeout(() => s.emit('player:action', { type: 'vote', data: { to: 'skip' } }), 60);
+          } else if (y.phase === 'sabotage') {
+            setTimeout(() => s.emit('player:action', { type: 'sabotage', data: { k: 'drain' } }), 60);
+          } else if (y.phase === 'prank') {
+            setTimeout(() => s.emit('player:action', { type: 'prank', data: { k: Object.keys(y.pranks)[0], to: y.targets[0].id } }), 60);
           } else if (y.phase === 'pass') {
             setTimeout(() => s.emit('player:action', { type: 'pass', data: { to: y.targets[0].id } }), 60);
           } else if (y.phase === 'memory') {
@@ -104,6 +114,6 @@ function run(game) {
 }
 
 (async () => {
-  for (const g of process.argv[2] ? [process.argv[2]] : ['classic', 'study', 'lesson', 'pyramid', 'territory', 'tug', 'penalty', 'snowball', 'gems', 'race', 'closer', 'tower', 'fishing', 'bomb', 'asteroids', 'dragon', 'rocket', 'robot', 'paint', 'wheel', 'pairs', 'fleet', 'sub', 'lava', 'zombie']) await run(g);
+  for (const g of process.argv[2] ? [process.argv[2]] : ['classic', 'study', 'lesson', 'pyramid', 'territory', 'tug', 'penalty', 'snowball', 'gems', 'race', 'closer', 'tower', 'fishing', 'bomb', 'prank', 'impostor', 'rhythm', 'kart', 'asteroids', 'dragon', 'rocket', 'robot', 'paint', 'wheel', 'pairs', 'fleet', 'sub', 'lava', 'zombie']) await run(g);
   process.exit(0);
 })();

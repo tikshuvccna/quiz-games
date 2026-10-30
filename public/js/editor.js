@@ -42,6 +42,8 @@
     const json = typeof opts.body === 'string';
     const res = await fetch('/api/q' + path, { ...rest, headers: json ? { 'Content-Type': 'application/json' } : headers });
     const data = await res.json().catch(() => ({}));
+    // online mode: the sign-in ran out
+    if (res.status === 401 && data.login) location.href = '/login.html?next=' + encodeURIComponent(location.pathname);
     // a 404 without our JSON error = the page is newer than the running server
     if (res.status === 404 && !data.error) throw new Error('השרת פועל עם גרסה ישנה: סגרו את חלון השרת והפעילו שוב את start.bat');
     if (!res.ok) throw Object.assign(new Error(data.error || 'שגיאה'), { issues: data.issues });

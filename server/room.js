@@ -14,7 +14,7 @@ const DURATIONS = [120, 180, 300, 480, 600];
 const COUNTDOWN_MS = 3800; // 3 · 2 · 1 · GO
 const LOBBY_GRACE_MS = 20000; // a phone that drops in the lobby keeps its seat this long
 const NAME_MODES = ['custom', 'spin', 'auto'];
-const SCENES = ['classic', 'space', 'ocean', 'forest', 'candy', 'sunset', 'aurora', 'starfield', 'underwater', 'balloons', 'neon', 'snow', 'fireflies', 'party'];
+const SCENES = ['classic', 'space', 'ocean', 'forest', 'candy', 'sunset', 'aurora', 'starfield', 'underwater', 'balloons', 'neon', 'snow', 'fireflies', 'party', 'sakura', 'rain', 'embers', 'lanterns', 'clouds', 'lavalamp', 'city', 'desert', 'beach', 'hexgrid'];
 const Media = require('./media');
 // a built-in scene, or one of the teacher's pictures / videos in the backgrounds folder
 const validScene = (sc) => typeof sc === 'string' && (SCENES.includes(sc) || (sc.startsWith('file:') && Media.isBackground(sc)));
@@ -61,6 +61,7 @@ class Room {
     this.players = new Map();
     this.phase = 'lobby';
     this.game = null;
+    this.presenters = new Set();
     this.results = null;
     this.endAt = 0;
     this.startAt = 0;
@@ -71,7 +72,7 @@ class Room {
     this.destroyed = false;
     this.createdAt = new Date();
     // room-wide options that survive game changes and rematches
-    this.setup = { nameMode: 'custom', scene: 'classic', video: '', winText: '', quiz: Quizzes.SAMPLE_ID, photos: true, filter: true, classId: '' };
+    this.setup = { nameMode: 'custom', scene: 'classic', video: '', winText: '', quiz: Quizzes.SAMPLE_ID, photos: true, filter: true, silly: false, classId: '' };
     this.quizData = null;
     this.quizCache = null;
     this.round = 0;
@@ -115,6 +116,7 @@ class Room {
     if (validScene(s.scene)) this.setup.scene = s.scene;
     if (typeof s.photos === 'boolean') this.setup.photos = s.photos;
     if (typeof s.filter === 'boolean') this.setup.filter = s.filter;
+    if (typeof s.silly === 'boolean') this.setup.silly = s.silly;
     if (typeof s.classId === 'string') this.setup.classId = Classes.get(s.classId) ? s.classId : '';
     if (typeof s.video === 'string') this.setup.video = s.video.trim().slice(0, 300);
     if (typeof s.winText === 'string') this.setup.winText = s.winText.replace(/[\u0000-\u001f]/g, ' ').slice(0, 140);
@@ -537,6 +539,20 @@ class Room {
 
   pushHost() {
     if (this.hostSocketId) this.io.to(this.hostSocketId).emit('host:state', this.hostState());
+    this.pushPresenters();
+  }
+
+  // the teacher's own phone or laptop (presenter.html): notes, what is next, the class's reactions, and the next / back buttons
+  presenterState() {
+    const base = { pin: this.pin, phase: this.phase, gameId: this.Game.id, title: this.quizData ? this.quizData.title : '' };
+    if (this.phase !== 'playing' || !this.game || !this.game.presenterState) return base;
+    return { ...base, ...this.game.presenterState() };
+  }
+
+  pushPresenters() {
+    if (!this.presenters || !this.presenters.size) return;
+    const st = this.presenterState();
+    for (const id of this.presenters) this.io.to(id).emit('presenter:state', st);
   }
 
   pushBoard() {
