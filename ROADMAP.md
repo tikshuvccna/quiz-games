@@ -6,7 +6,7 @@ This file collects the requested changes in one place so they can be implemented
 
 ---
 
-## 1. More games (target: 50 to start)
+## 1. More games (target: 50 to start: reached 2026-10-30, 50 games)
 
 - Add many more games, including the Kahoot game modes and other well-known ones.
 - Research games that proved successful: popularity, ratings/stars, and long-term success, for **all ages** (kids, teens, adults, families).
@@ -15,6 +15,7 @@ This file collects the requested changes in one place so they can be implemented
 - Deliverables:
   - [ ] Research list of ~50+ candidate games with source/popularity notes and age range.
   - [ ] Per-game spec: rules, scoring, min/max players, how it maps to quiz questions.
+  - [x] (2026-10-30) Batches 3 to 6: sabotage, impostor, rhythm, kart, five and then ten more round games on a shared base (`ffa.js`), marble race, team puzzle, castle tower defense, snake, basketball, burger, ship…: 50 games in total. See PROJECT_SUMMARY.md 3.1.
   - [x] Game registry so a new game = one folder/file (server file + client file + optional CSS, cover via `Art.covers`).
   - [x] Batch 1 (2026-10-23): Robot Run, Chill Art (paint by numbers), Wheel of fortune, Memory pairs, Battleship. 20 games in total. See PROJECT_SUMMARY.md 3.1.
   - [x] Batch 2 (2026-10-23): the co-op chase family on one shared engine (`server/games/chase.js`): checkpoint mini-games for Robot Run, Submarine Squad, Floor is Lava, Zombie Run. 23 games in total.

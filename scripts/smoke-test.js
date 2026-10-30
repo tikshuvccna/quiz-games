@@ -120,6 +120,6 @@ function run(game) {
 }
 
 (async () => {
-  for (const g of process.argv[2] ? [process.argv[2]] : ['classic', 'study', 'lesson', 'pyramid', 'territory', 'tug', 'penalty', 'snowball', 'gems', 'race', 'closer', 'tower', 'fishing', 'bomb', 'prank', 'impostor', 'rhythm', 'kart', 'mole', 'hoops', 'snake', 'burger', 'ship', 'marble', 'tpuzzle', 'td', 'asteroids', 'dragon', 'rocket', 'robot', 'paint', 'wheel', 'pairs', 'fleet', 'sub', 'lava', 'zombie']) await run(g);
+  for (const g of process.argv[2] ? [process.argv[2]] : ['classic', 'study', 'lesson', 'pyramid', 'territory', 'tug', 'penalty', 'snowball', 'gems', 'race', 'closer', 'tower', 'fishing', 'bomb', 'prank', 'impostor', 'rhythm', 'kart', 'mole', 'hoops', 'snake', 'burger', 'ship', 'marble', 'tpuzzle', 'td', 'stroop', 'balloon', 'flappy', 'runner', 'reaction', 'slide', 'archery', 'memgrid', 'catch', 'typing', 'darts', 'lights', 'mathrush', 'asteroids', 'dragon', 'rocket', 'robot', 'paint', 'wheel', 'pairs', 'fleet', 'sub', 'lava', 'zombie']) await run(g);
   process.exit(0);
 })();

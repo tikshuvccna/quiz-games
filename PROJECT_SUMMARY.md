@@ -23,7 +23,7 @@
 
 | Command | What it checks |
 |---|---|
-| `node scripts/smoke-test.js [game]` | Bots play a short round of every game (37) and print the state and results. |
+| `node scripts/smoke-test.js [game]` | Bots play a short round of every game (50) and print the state and results. |
 | `node scripts/chase-test.js [game]` | The co-op chase games (robot, sub, lava, zombie): bots race to the goal, all three checkpoint mini-games run, phones are parked and resumed, nobody gets stuck; the sub's diving mode; checkpoints switched off; junk packets are clamped. About 7 minutes. |
 | `node scripts/feature-test.js` | Name modes and reroll, 3 teams, reward settings, winner text, rematch with the same PIN, the report, an individual game played in teams. 14 checks. |
 | `node scripts/classic-test.js` | Classic quiz: every stage, team averages, the second-chance round for the bottom 5. |
@@ -116,11 +116,24 @@ scripts/                tests, bots, demo
 
 ## 3. What exists today
 
-### 3.1 Games (37)
+### 3.1 Games (50)
 
 | # | Game | Mode | What answering earns / the action on the phone |
 |---|---|---|---|
 | 1 | 🎯 חידון קלאסי | Individual or 2–4 teams (team score = average) | Kahoot classic: same question for everyone, speed + accuracy points, streaks, leaderboard with fun lines. Scoring styles: classic, accuracy only, confidence (boost or safe). Second-chance round for the bottom 5. |
+| 50 | ➗ חשבון זריז (`mathrush`) | Individual | **Round game** (`FfaAction`). Eight small sums (+, -, ×; the numbers grow with the streak), three answers each; the server made them and checks them. |
+| 49 | 💡 כבו את האור (`lights`) | Individual | **Round game** (`FfaAction`). Lights out on 3x3: a tap flips a square and its neighbours; the server replays the taps, so a solved board cannot be faked. |
+| 48 | 🎯 חצים (`darts`) | Individual | **Round game** (`FfaAction`). Three darts: a marker sweeps across, then up and down; tap to stop each. Scored by the distance from the centre (bull 12). |
+| 47 | ⌨️ מקלידים מהר (`typing`) | Individual | **Round game** (`FfaAction`). Six Hebrew words, type each; the server checks every word. |
+| 46 | 🧠 זיכרון ריבועים (`memgrid`) | Individual | **Round game** (`FfaAction`). Squares light up for a moment, then tap the ones you remember (3x3, 4x4 after a streak); wrong squares cost points. |
+| 45 | 🎯 קשתות (`archery`) | Individual | **Round game** (`FfaAction`). Six targets slide across the phone; tap as one passes. The server knows each target's lane and timing and judges where and when the tap landed. |
+| 44 | 🔢 פאזל הזזה (`slide`) | Individual | **Round game** (`FfaAction`). The 3x3 sliding number puzzle, a few moves from solved; the server replays the moves. |
+| 43 | ⚡ תגובה מהירה (`reaction`) | Individual | **Round game** (`FfaAction`). Five reaction tests: the delays are chosen by the server; a tap too early or faster than a person can react scores nothing. |
+| 42 | 🏃 ריצת מכשולים (`runner`) | Individual | **Round game** (`FfaAction`). A 10-second auto-runner (tap to jump); reported by the phone and capped. |
+| 41 | 🐦 ציפור מעופפת (`flappy`) | Individual | **Round game** (`FfaAction`). A 10-second flappy-bird round; reported by the phone and capped. |
+| 40 | 🧺 תפוס את הפירות (`catch`) | Individual | **Round game** (`FfaAction`). A 10-second round: slide a basket under falling fruit, rotten ones cost points; reported and capped. |
+| 39 | 🎈 פוצצו בלונים (`balloon`) | Individual | **Round game** (`FfaAction`). Numbered balloons float on the phone: pop them in order, 1, 2, 3… The server counts the correct run. |
+| 38 | 🎨 צבעים מבלבלים (`stroop`) | Individual | **Round game** (`FfaAction`). A colour word written in another ink: tap the colour of the ink (10 words, 9 seconds). Graded on the server. |
 | 37 | 🏰 מגיני הטירה | Co-op (easy / normal / hard) | **Castle tower defense.** Monsters walk a path to the castle in 8 waves (a giant one every 4th wave); the server runs the whole battle (`server/games/td.js`, 4 ticks a second) and the big screen draws it. A reward lets a player build a tower on one of 8 spots (🏹 archer: fast, 💣 cannon: slow, splash, 🔮 mage: slows) or upgrade a tower (3 levels). Survive every wave to win; the castle has 20 lives. Monster strength grows a little with the class size. Balance simulated in-process: a class of 6 building a tower every 8 to 15 seconds wins easy / normal, 25 players win all levels, hard stays tight. |
 | 36 | 🧩 פאזל קבוצתי | 2–6 teams | **Team puzzle.** Each team builds its own picture (six drawn scenes) from 12 pieces. A reward gives a player one missing piece of their team's picture and 7 seconds to tap where it goes (the faint picture and the placed pieces are on the phone); a right tap places it for the whole team, a teammate who placed it first gives "already done". The first team to finish wins. Graded on the server. |
 | 35 | 🔮 מרוץ גולות | Individual | **Like Kahoot's Marble Race.** Each correct answer earns a marble (2 on a streak of 3). When the time is up all the marbles race on the big screen; the server draws the finishing order with a chance in proportion to the marbles (plus a little for everyone), so the leader is not sure to win. The race plays once, then the podium by the race. |
@@ -158,7 +171,7 @@ scripts/                tests, bots, demo
 | 22 | 🌋 הרצפה היא לבה | Co-op (easy / normal / hard) | Climb out of a volcano before the lava. Five rows of stones: tap a cool one on each row before the lava reaches your feet; a hot stone crumbles and ends the climb. Graded on the server. |
 | 23 | 🧟 בורחים מהזומבים | Co-op (easy / normal / hard) | Run to the safe house ahead of silly zombies. Five obstacles: swipe up (jump), down (slide) or left / right (dodge); arrow keys on a computer. Graded on the server. |
 
-**Round games (28, 30–34)** share `server/games/ffa.js` (`FfaAction`: a reward opens a round, the subclass makes it with `makeRound` and grades the phone's report with `grade`) and `public/js/games/ffa.js` (`FfaBoard.make`: the host ranking, the phone's round and result screens). A new round game is a ~40-line server file plus a client `play(app, you, ctx, done)`; teach `scripts/ffa-answers.js` its bot answer. Rhythm (28) and kart (29) predate it.
+**Round games (28, 30–34, 38–50)** share `server/games/ffa.js` (`FfaAction`: a reward opens a round, the subclass makes it with `makeRound` and grades the phone's report with `grade`) and `public/js/games/ffa.js` (`FfaBoard.make`: the host ranking, the phone's round and result screens). A new round game is a ~40-line server file plus a client `play(app, you, ctx, done)`; teach `scripts/ffa-answers.js` its bot answer. Rhythm (28) and kart (29) predate it.
 
 **Chase games (16, 21–23)** share `server/games/chase.js`. At 25%, 50% and 75% of the way the whole class stops for a checkpoint mini-game (rotating): ⚡ mash (tap as fast as you can), 🔐 door code (type the code shown only on the big screen), ✨ pop (tap the sparks). The class average sets the bonus (up to 3 stars, a jump forward and the chaser pushed back). Phones are parked during it and resume exactly where they were. Each game themes the three (robot: jam the robot, sub: turbo propeller, lava: cool the lava, zombie: build a barricade). The room option "מיני-משחק בנקודות הציון" turns them off. None start in the last 30 seconds.
 
