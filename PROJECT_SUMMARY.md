@@ -23,7 +23,7 @@
 
 | Command | What it checks |
 |---|---|
-| `node scripts/smoke-test.js [game]` | Bots play a short round of every game (29) and print the state and results. |
+| `node scripts/smoke-test.js [game]` | Bots play a short round of every game (34) and print the state and results. |
 | `node scripts/chase-test.js [game]` | The co-op chase games (robot, sub, lava, zombie): bots race to the goal, all three checkpoint mini-games run, phones are parked and resumed, nobody gets stuck; the sub's diving mode; checkpoints switched off; junk packets are clamped. About 7 minutes. |
 | `node scripts/feature-test.js` | Name modes and reroll, 3 teams, reward settings, winner text, rematch with the same PIN, the report, an individual game played in teams. 14 checks. |
 | `node scripts/classic-test.js` | Classic quiz: every stage, team averages, the second-chance round for the bottom 5. |
@@ -115,11 +115,16 @@ scripts/                tests, bots, demo
 
 ## 3. What exists today
 
-### 3.1 Games (29)
+### 3.1 Games (34)
 
 | # | Game | Mode | What answering earns / the action on the phone |
 |---|---|---|---|
 | 1 | 🎯 חידון קלאסי | Individual or 2–4 teams (team score = average) | Kahoot classic: same question for everyone, speed + accuracy points, streaks, leaderboard with fun lines. Scoring styles: classic, accuracy only, confidence (boost or safe). Second-chance round for the bottom 5. |
+| 34 | 🛸 ספינת חלל | Individual (free for all) | **Asteroids.** A reward is a 12-second flight in your own ship: drag on the left as a joystick (arrows and space on a computer), hold the fire button, blow up asteroids, 3 lives. The phone plays it and reports kills and lives (trusted, capped on the server). |
+| 33 | 🍔 המבורגריה | Individual | **Burger orders.** A reward is an order: the layers are shown for a few seconds, then stack them in the same order (bottom bun first, top bun last); points per correct layer, a bonus for a perfect burger. Graded on the server. |
+| 32 | 🐍 נחש | Individual | **Snake.** A reward is 10 seconds of snake on the phone (swipe or the arrows): apples are points, a crash ends the round. Reported by the phone and capped. |
+| 31 | 🏀 סל | Individual | **Basketball.** A reward is 3 shots: stop the swinging aim over the hoop, then stop the power meter in the green zone. The hoop and the ideal power are chosen by the server for each shot and graded there (swish, basket, rim). |
+| 30 | 🔨 חפרפרות | Individual | **Whack-a-mole.** A reward is an 8-second round: moles pop out of 9 holes at times the server chose, bombs among them; taps with their times are graded on the server. |
 | 29 | 🏁 קארט מאחור | Individual (free for all) | **Pseudo-3D kart race.** Each reward is driving time (6 seconds per reward, plus up to 6 for a streak). The phone draws a road seen from behind the kart on a canvas (bends, cones, boost pads; hold the left or right half of the screen, or the arrow keys, to steer; leaving the road slows you). Everyone drives the same endless track (the room's seed). The phone reports the distance and the server caps it by top speed times the seconds. The big screen is a race board by distance. No other karts on the road. |
 | 28 | 🥁 קצב | Individual (free for all) | **Rhythm.** A correct answer opens a short song (10 to 16 notes at 92-120 BPM): notes fall down 4 lanes on the phone and the student taps each on the beat (keys D F J K on a computer). The phone sends its taps with times; the server grades each note (perfect ±80 ms = 3, good ±140 = 2, ok ±200 = 1, a clean song +5) and keeps accuracy and best combo. Timing is reported by the phone (trusted, like the tower game). |
 | 27 | 🕵️ מי המתחזה? | Co-op with a secret traitor (easy / normal / hard) | Among Us style. Everyone answers questions; the crew's right answers fill a shared task bar. 1 impostor (2 from 9 players) answers too, and each right answer lets them sabotage: drain the bar, or jam a crew member's phone for 7 seconds (the victim gets a hint: the first letter of a name, the impostor's two times out of three). At 1/3 and 2/3 of the bar the class holds a 40-second meeting and votes (or skips); a clear majority ejects a player and the role is revealed. The crew wins by filling the bar or ejecting every impostor; impostors win when they equal the crew or time runs out. Ejected players watch as ghosts. |
@@ -148,6 +153,8 @@ scripts/                tests, bots, demo
 | 21 | 🐟 צוללת ההצלה | Co-op (easy / normal / hard) | Like Kahoot's Submarine Squad. A 6-second steering run: drag the sub up and down past mines and grab pearls. Every metre charges the sonar; a full sonar = 15 seconds of diving mode (everything ×2, the anglerfish falls behind). |
 | 22 | 🌋 הרצפה היא לבה | Co-op (easy / normal / hard) | Climb out of a volcano before the lava. Five rows of stones: tap a cool one on each row before the lava reaches your feet; a hot stone crumbles and ends the climb. Graded on the server. |
 | 23 | 🧟 בורחים מהזומבים | Co-op (easy / normal / hard) | Run to the safe house ahead of silly zombies. Five obstacles: swipe up (jump), down (slide) or left / right (dodge); arrow keys on a computer. Graded on the server. |
+
+**Round games (28, 30–34)** share `server/games/ffa.js` (`FfaAction`: a reward opens a round, the subclass makes it with `makeRound` and grades the phone's report with `grade`) and `public/js/games/ffa.js` (`FfaBoard.make`: the host ranking, the phone's round and result screens). A new round game is a ~40-line server file plus a client `play(app, you, ctx, done)`; teach `scripts/ffa-answers.js` its bot answer. Rhythm (28) and kart (29) predate it.
 
 **Chase games (16, 21–23)** share `server/games/chase.js`. At 25%, 50% and 75% of the way the whole class stops for a checkpoint mini-game (rotating): ⚡ mash (tap as fast as you can), 🔐 door code (type the code shown only on the big screen), ✨ pop (tap the sparks). The class average sets the bonus (up to 3 stars, a jump forward and the chaser pushed back). Phones are parked during it and resume exactly where they were. Each game themes the three (robot: jam the robot, sub: turbo propeller, lava: cool the lava, zombie: build a barricade). The room option "מיני-משחק בנקודות הציון" turns them off. None start in the last 30 seconds.
 
@@ -263,13 +270,13 @@ Built in batches of 5. **Batch 1 (done 2026-10-23)**: Robot Run, Chill Art, Whee
 Next agreed step: ROADMAP item 9 (online / LAN mode), then more games from the list below.
 
 **Still to build: from the user's request**
-1. **Classic Asteroids**: fly your own ship for a few seconds after a correct answer, with a phone joystick and fire button. Real-time.
+1. ✅ **Classic Asteroids** (game 34, `ship`).
 2. **Team puzzle**: each team builds a picture; a correct answer gives a player 5 seconds to place pieces; first team to finish wins. 2–6 teams.
-3. **Snake arena**: real-time, steer for a few seconds per reward.
+3. ✅ **Snake** (game 32; one snake per phone, not a shared arena).
 4. **Castle tower defense**: co-op.
-5. **Burger restaurant**: co-op, build orders in the right sequence.
-6. **Basketball**: aim and timing.
-7. **Whack-a-mole**.
+5. ✅ **Burger restaurant** (game 33; each student on their own, not co-op).
+6. ✅ **Basketball** (game 31, `hoops`).
+7. ✅ **Whack-a-mole** (game 30, `mole`).
 
 **Also from Kahoot's list**: Marble Race (classic flow + a race finale), Cosmic Quest, Tallest Tower team-floors, Unplugged, shared-device teams.
 
