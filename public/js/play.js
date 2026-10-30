@@ -146,7 +146,7 @@ function sendPhoto(file) {
     socket.emit('player:photo', { photo: c.toDataURL('image/jpeg', 0.72) });
     U.sfx('pop');
   };
-  img.onerror = () => alert('לא הצלחנו לקרוא את התמונה');
+  img.onerror = () => alert('לא הצלחנו לקרוא את התמונה. נסו תמונה אחרת (JPG או PNG)');
   img.src = URL.createObjectURL(file);
 }
 
@@ -220,10 +220,13 @@ function render(was) {
       ${team}
       <h2>${ph === 'lobby' ? 'את/ה בפנים!' : ph === 'spectate' ? 'המשחק כבר רץ' : 'מתחילים!'}</h2>
       <div class="muted">${ph === 'lobby' ? 'מחכים שהמארח/ת יתחיל<span class="dots"><i></i><i></i><i></i></span>' : ''}</div>
-      ${ph === 'lobby' && you.photos ? `<label class="btn ghost photo-btn">📷 ${you.photo ? 'החלפת תמונה' : 'הוספת תמונה (לא חובה)'}<input type="file" id="photoIn" accept="image/*" capture="user" hidden></label>${you.photo ? '<button class="btn ghost photo-btn" id="photoX">הסרת התמונה</button>' : ''}` : ''}
+      ${ph === 'lobby' && you.photos ? `<div class="photo-row"><div class="photo-t">${you.photo ? 'החלפת תמונה' : 'תמונה במקום האות (לא חובה)'}</div>
+        <label class="btn ghost photo-btn">📷 מצלמה<input type="file" class="photoIn" accept="image/*" capture="user" hidden></label>
+        <label class="btn ghost photo-btn">🖼️ מהגלריה<input type="file" class="photoIn" accept="image/*" hidden></label>
+        ${you.photo ? '<button class="btn ghost photo-btn" id="photoX">הסרה</button>' : ''}</div>` : ''}
       ${ph === 'lobby' ? U.soundBtn() : ''}`;
-    const pi = document.getElementById('photoIn');
-    if (pi) pi.onchange = (e) => e.target.files[0] && sendPhoto(e.target.files[0]);
+    // two inputs: "capture" opens the camera straight away, the other lets the phone offer the gallery / files
+    document.querySelectorAll('.photoIn').forEach((pi) => (pi.onchange = (e) => { if (e.target.files[0]) sendPhoto(e.target.files[0]); e.target.value = ''; }));
     const px = document.getElementById('photoX');
     if (px) px.onclick = () => socket.emit('player:photo', { photo: '' });
     const rr = document.getElementById('reroll');

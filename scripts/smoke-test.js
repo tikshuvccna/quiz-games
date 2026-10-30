@@ -25,6 +25,14 @@ function run(game) {
             const q = Q.find((x) => x.text === y.question.text);
             const c = y.question.options.indexOf(q.options[q.answer]);
             setTimeout(() => s.emit('player:action', { type: 'answer', data: { choice: c } }), 40);
+          } else if (y.phase === 'st_question') {
+            const q = Q.find((x) => x.text === y.question.text);
+            const c = q ? y.question.options.indexOf(q.options[q.answer]) : 0;
+            setTimeout(() => s.emit('player:action', { type: 'answer', data: { choice: c, qid: y.qid } }), 40);
+          } else if (y.phase === 'st_card') {
+            setTimeout(() => s.emit('player:action', { type: 'card', data: { known: true, qid: y.qid } }), 40);
+          } else if (y.phase === 'st_feedback') {
+            setTimeout(() => s.emit('player:action', { type: 'next', data: { qid: y.qid } }), 40);
           } else if (y.phase === 'place' && y.valid.length) {
             setTimeout(() => s.emit('player:action', { type: 'place', data: { tile: y.valid[0][0] } }), 40);
           } else if (y.phase === 'catch') {
@@ -96,6 +104,6 @@ function run(game) {
 }
 
 (async () => {
-  for (const g of process.argv[2] ? [process.argv[2]] : ['classic', 'pyramid', 'territory', 'tug', 'penalty', 'snowball', 'gems', 'race', 'closer', 'tower', 'fishing', 'bomb', 'asteroids', 'dragon', 'rocket', 'robot', 'paint', 'wheel', 'pairs', 'fleet', 'sub', 'lava', 'zombie']) await run(g);
+  for (const g of process.argv[2] ? [process.argv[2]] : ['classic', 'study', 'lesson', 'pyramid', 'territory', 'tug', 'penalty', 'snowball', 'gems', 'race', 'closer', 'tower', 'fishing', 'bomb', 'asteroids', 'dragon', 'rocket', 'robot', 'paint', 'wheel', 'pairs', 'fleet', 'sub', 'lava', 'zombie']) await run(g);
   process.exit(0);
 })();

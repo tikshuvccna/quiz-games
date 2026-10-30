@@ -14,6 +14,9 @@
 //     limit?:   1-5                        cloud / open / brain / qna: how many words, ideas or questions each player can send
 //     pairs?:   [{ a, b }]                 match: 2-6 pairs, the player connects each a to its b
 //     buckets?: [{ name, items: [string] }] sort: 2-3 categories, the player puts every item in its category (8 items at most)
+//     layout?, bullets?, body?, timer?, notes?   slide / pdf: how a slide looks (see LAYOUTS), its bullet points, a countdown in seconds
+//     pdf?:     { file, page }             a page of an uploaded PDF: the slide itself (type 'pdf') or the picture behind any activity
+//     source?:  { doc, loc, quote }        where the answer comes from (shown after the answer)
 //     scale?:   { max, low, high }         rate: stars or a scale 1..max (5, 7 or 10) with labels for the two ends
 //     items?:   [string]                   order: in the correct order · rank: the things to rank (no right order)
 //     body?:    string                     slide: the text under the title
@@ -21,11 +24,14 @@
 //   }
 const { shuffle } = require('./shuffle');
 
-const TYPES = ['quiz', 'tf', 'type', 'slider', 'order', 'match', 'sort', 'pin', 'puzzle', 'poll', 'cloud', 'open', 'brain', 'qna', 'drop', 'rate', 'rank', 'slide'];
+const TYPES = ['quiz', 'tf', 'type', 'slider', 'order', 'match', 'sort', 'pin', 'puzzle', 'poll', 'cloud', 'open', 'brain', 'qna', 'drop', 'rate', 'rank', 'tap', 'slide', 'pdf'];
 // types that have a right answer (the only ones the games use)
 const SCORED = new Set(['quiz', 'tf', 'type', 'slider', 'order', 'match', 'sort', 'pin', 'puzzle']);
 // everyone answers, nothing is graded (the classic quiz only): poll, word cloud, free text, brainstorm, drop a pin
-const LIVE = new Set(['poll', 'cloud', 'open', 'brain', 'qna', 'drop', 'rate', 'rank']);
+const LIVE = new Set(['poll', 'cloud', 'open', 'brain', 'qna', 'drop', 'rate', 'rank', 'tap']);
+const LAYOUTS = ['title', 'bullets', 'image-right', 'image-left', 'full-image', 'quote', 'fun'];
+const PDF_FILE = /^[\w.-]+\.pdf$/i;
+const MAX_TAPS_PER_SEC = 14; // a finger cannot do more; anything above is a cheat
 const LIMIT_DEFAULT = { cloud: 3, open: 1, brain: 3, qna: 2 };
 const WORD_MAX = { cloud: 30, open: 200, brain: 120, qna: 150 };
 const SCALES = [5, 7, 10];
@@ -96,6 +102,15 @@ function normalize(raw) {
   }
   const ex = str(raw.explain, 200).trim();
   if (ex) q.explain = ex;
+  // a page of an uploaded PDF: the slide itself, or the picture shown with an activity
+  const pf = raw.pdf;
+  if (pf && typeof pf === 'object' && PDF_FILE.test(String(pf.file || ''))) q.pdf = { file: String(pf.file), page: clamp(Math.round(num(pf.page, 1)), 1, 999) };
+  // where the answer comes from (a citation shown after the answer)
+  const sr = raw.source;
+  if (sr && typeof sr === 'object') {
+    const src = { doc: str(sr.doc, 80).trim(), loc: str(sr.loc, 60).trim(), quote: str(sr.quote, 240).trim() };
+    if (src.doc || src.loc || src.quote) q.source = src;
+  }
   // a picture for after the answer (to explain), and/or the question picture held back until the answer
   if (raw.explainImage) q.explainImage = str(raw.explainImage, 200);
   if (raw.imageWhen === 'after' && q.image) q.imageWhen = 'after';
@@ -142,9 +157,17 @@ function normalize(raw) {
     if (ar >= 0.1 && ar <= 10) q.pin.ar = Math.round(ar * 1000) / 1000;
   } else if (type === 'cloud' || type === 'open' || type === 'brain' || type === 'qna') {
     q.limit = clamp(Math.round(num(raw.limit, LIMIT_DEFAULT[type])), 1, 5);
-  } else if (type === 'slide') {
+  } else if (type === 'slide' || type === 'pdf') {
     const b = str(raw.body, 600).trim();
     if (b) q.body = b;
+    const bl = (Array.isArray(raw.bullets) ? raw.bullets : []).map((x) => str(x, 140).trim()).filter(Boolean).slice(0, 8);
+    if (bl.length) q.bullets = bl;
+    if (LAYOUTS.includes(raw.layout)) q.layout = raw.layout;
+    const tm = Math.round(num(raw.timer, 0));
+    if (tm > 0) q.timer = clamp(tm, 5, 3600);
+    const nt = str(raw.notes, 800).trim();
+    if (nt) q.notes = nt;
+    q.points = 0;
   } else if (type === 'puzzle') {
     const p = raw.puzzle || {};
     q.puzzle = { rows: clamp(Math.round(num(p.rows, 3)), 2, 5), cols: clamp(Math.round(num(p.cols, 3)), 2, 5) };
@@ -174,7 +197,9 @@ function shown(q) {
   if (q.type === 'cloud' || q.type === 'open' || q.type === 'brain' || q.type === 'qna' || q.type === 'rate') return !!q.text;
   if (q.type === 'rank') return !!q.text && q.items.length >= 2;
   if (q.type === 'drop') return !!q.text && !!q.image;
-  if (q.type === 'slide') return !!(q.text || q.image || q.video);
+  if (q.type === 'slide') return !!(q.text || q.image || q.video || (q.bullets && q.bullets.length) || q.body);
+  if (q.type === 'pdf') return !!q.pdf;
+  if (q.type === 'tap') return !!q.text;
   return false;
 }
 
@@ -188,6 +213,7 @@ function present(q, mediaBase) {
     out.revealSec = Math.min(q.revealSec || q.time, q.time);
   }
   if (q.video) out.video = q.video.id ? { ...q.video } : { url: mediaBase + encodeURIComponent(q.video.file), start: q.video.start, end: q.video.end };
+  if (q.pdf) out.pdf = { url: mediaBase + encodeURIComponent(q.pdf.file), page: q.pdf.page };
   const state = {};
   if (q.type === 'quiz' || q.type === 'tf' || q.type === 'poll') {
     const idx = q.answers.map((a, i) => i).filter((i) => q.answers[i].text || q.answers[i].image);
@@ -199,8 +225,13 @@ function present(q, mediaBase) {
     out.limit = q.limit;
   } else if (q.type === 'rate') {
     out.scale = q.scale;
-  } else if (q.type === 'slide') {
+  } else if (q.type === 'slide' || q.type === 'pdf') {
     if (q.body) out.body = q.body;
+    if (q.bullets) out.bullets = q.bullets;
+    if (q.layout) out.layout = q.layout;
+    if (q.timer) out.timer = q.timer;
+  } else if (q.type === 'tap') {
+    out.maxTaps = Math.round(q.time * MAX_TAPS_PER_SEC);
   } else if (q.type === 'slider') {
     const { min, max, step } = q.slider;
     out.slider = { min, max, step };
@@ -286,6 +317,12 @@ function check(q, state, data) {
     const ok = chosen.length === correct.size && chosen.every((i) => correct.has(i));
     return { valid: true, ok, chosen: text };
   }
+  if (q.type === 'tap') {
+    const n = Math.round(Number(data.taps));
+    if (!Number.isFinite(n) || n < 0) return { valid: false };
+    const cap = Math.round(q.time * MAX_TAPS_PER_SEC);
+    return { valid: true, ok: null, taps: Math.min(n, cap), chosen: String(Math.min(n, cap)) };
+  }
   if (q.type === 'rate') {
     const v = Number(data.value);
     if (!Number.isInteger(v) || v < 1 || v > q.scale.max) return { valid: false };
@@ -365,4 +402,4 @@ function check(q, state, data) {
   return { valid: false };
 }
 
-module.exports = { TYPES, SCORED, LIVE, WORD_MAX, shown, zone, TIMES, POINTS, REVEALS, REVEAL_SECS, VIDEO_FILE, normalize, playable, present, check, correctText, norm, inPin, afterImage };
+module.exports = { TYPES, SCORED, LIVE, LAYOUTS, PDF_FILE, WORD_MAX, shown, zone, TIMES, POINTS, REVEALS, REVEAL_SECS, VIDEO_FILE, normalize, playable, present, check, correctText, norm, inPin, afterImage };

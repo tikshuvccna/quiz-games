@@ -6,7 +6,7 @@
   const TF = ['#1f73e0', '#e9334f'];
   const color = (q, i) => (q.type === 'tf' ? TF[i] : COLORS[i]);
   const shape = (q, i) => Art.shape(q.type === 'tf' ? i * 3 : i);
-  const LIVE = ['poll', 'cloud', 'open', 'brain', 'qna', 'drop', 'rate', 'rank']; // everyone answers, nothing is graded
+  const LIVE = ['poll', 'cloud', 'open', 'brain', 'qna', 'drop', 'rate', 'rank', 'tap']; // everyone answers, nothing is graded
   const NOTE_COLORS = ['#ffe27a', '#9be7ff', '#ffb3c7', '#b9f6ca', '#d7b8ff', '#ffc999'];
   const CLOUD_COLORS = ['#ff6b81', '#ffd23f', '#4dd4ff', '#7ef0a8', '#c79bff', '#ff9f5a', '#ffffff'];
   // the same wobble for the same word every time it is drawn
@@ -43,7 +43,25 @@
       .join('')}</div>`;
   }
 
+  // a question about a PDF page: the page on one side, the question and its answers on the other
+  function splitPdf(box, q) {
+    if (!q.pdf || q.image || q.type === 'pin' || q.type === 'puzzle' || q.type === 'drop') return;
+    const root = box.querySelector('.cl-q');
+    const pb = root && root.querySelector('.cl-pdfbox');
+    if (!pb) return;
+    root.classList.add('withpdf');
+    const col = document.createElement('div');
+    col.className = 'cl-qcol';
+    while (root.firstChild) col.appendChild(root.firstChild);
+    const pc = document.createElement('div');
+    pc.className = 'cl-pdfcol';
+    pc.appendChild(pb);
+    root.append(pc, col);
+  }
+
   function media(q, rv) {
+    // a page of a PDF shown with the activity ("a question about this page")
+    if (q.pdf && !q.image && q.type !== 'pin' && q.type !== 'puzzle' && q.type !== 'drop') return window.Slides ? Slides.pdfBox(q.pdf, 'cl-pdfbox') : '';
     if (q.type === 'pin' || q.type === 'drop') {
       const pins = rv ? rv.pins.map(([x, y, ok]) => `<i class="cl-pin ${ok ? 'ok' : ''}" style="left:${x}%;top:${y}%"></i>`).join('') + (rv.target ? QMedia.pinZone(rv.target, 'cl-target') : '') : '';
       return `<div class="cl-pinbox"><div class="cl-pinframe" id="pinFrame"><img src="${esc(q.image)}" alt="">${pins}</div></div>`;
@@ -67,6 +85,11 @@
     if (q.type === 'open') {
       if (!rv) return '<div class="cl-hint big">✍️ כתבו בטלפון את התשובה שלכם</div>';
       return `<div class="opn-wall">${rv.texts.map((t, i) => `<div class="opn-note" data-hide style="--c:${NOTE_COLORS[i % NOTE_COLORS.length]};--rot:${wob(i, t.text.length) / 2}deg;--i:${i}">${esc(t.text)}${t.by ? `<small>${esc(t.by)}</small>` : ''}</div>`).join('') || '<span class="cl-hint">אף אחד לא ענה</span>'}</div><div class="cl-hint">לחיצה על פתק מסתירה אותו מהמסך</div>`;
+    }
+    if (q.type === 'tap') {
+      if (!rv) return `<div class="cl-hint big">👆 הקישו בטלפון כמה שיותר מהר! (${q.time} שניות)</div>`;
+      const top = Math.max(1, ...rv.taps.map((x) => x.taps));
+      return `<div class="ide-rank">${rv.taps.map((x, i) => `<div class="ide-row ${i === 0 ? 'first' : ''}" style="--i:${i};--w:${(x.taps / top) * 100}%"><i class="bar"></i><span class="rk">${i + 1}</span><span class="t">${esc(x.name)}</span><b class="n">${x.taps}</b></div>`).join('')}</div><div class="cl-hint">👆 ${rv.totalTaps} הקשות בסך הכל</div>`;
     }
     if (q.type === 'rate') {
       if (!rv) return '<div class="cl-hint big">⭐ דרגו בטלפון</div>';
@@ -152,7 +175,7 @@
         if (mult) U.multSplash(box, q.points, true);
         else U.sfx('tick');
       } else if (b.stage === 'slide') {
-        box.innerHTML = `<div class="cl-slide">${q.text ? `<div class="cl-qtext big">${esc(q.text)}</div>` : ''}${q.body ? `<div class="cl-slide-body">${esc(q.body)}</div>` : ''}${media(q)}</div>`;
+        box.innerHTML = `<div class="cl-slide">${window.Slides ? Slides.html(q) : `${q.text ? `<div class="cl-qtext big">${esc(q.text)}</div>` : ''}${q.body ? `<div class="cl-slide-body">${esc(q.body)}</div>` : ''}${media(q)}`}</div>`;
       } else if (b.stage === 'vote') {
         box.innerHTML = `<div class="cl-q"><div class="cl-qtext">${esc(q.text)}</div>
           <div class="cl-mid"><div class="cl-timer" id="clTimer"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" class="trk"/><circle cx="50" cy="50" r="44" class="ring"/></svg><b></b></div>
@@ -179,6 +202,7 @@
           ${body(q, rv)}
           ${rv.explain ? `<div class="cl-explain">💡 ${esc(rv.explain)}</div>` : ''}
           ${rv.hidden ? `<div class="cl-hint">🛡️ ${rv.hidden} הוסתרו בסינון מילים</div>` : ''}
+          ${rv.source ? `<div class="cl-source">📖 <b>${esc(rv.source.doc)}</b>${rv.source.loc ? ` · ${esc(rv.source.loc)}` : ''}${rv.source.quote ? `<q>${esc(rv.source.quote)}</q>` : ''}</div>` : ''}
           ${rv.boostPct !== undefined ? `<div class="cl-hint">🚀 ${rv.boostPct}% בחרו בוסט</div>` : ''}
           ${b.lines && b.lines.length ? `<div class="cl-lines">${b.lines.map((l, i) => `<span style="--i:${i}">${esc(l)}</span>`).join('')}</div>` : ''}</div>`;
         U.sfx(LIVE.includes(q.type) ? 'pop' : 'good');
@@ -194,7 +218,9 @@
           <div class="cl-lines">${(b.lines || []).map((l, i) => `<span style="--i:${i}">${esc(l)}</span>`).join('')}</div></div>`;
         box.querySelectorAll('.cl-row .sc').forEach((el, i) => setTimeout(() => U.countTo(el, b.board[i].score, 900), 250 + i * 120));
       }
+      if (b.stage === 'question' || b.stage === 'reveal') splitPdf(box, q);
       QMedia.mount(box);
+      if (window.Slides) Slides.mount(box);
       // the teacher can hide a note, word or idea from the big screen with a click
       box.querySelectorAll('[data-hide]').forEach((el) => (el.onclick = () => el.classList.add('cl-gone')));
       const zb = box.querySelector('[data-zoom]');
@@ -298,7 +324,7 @@
         const cls = poll ? 'poll' : r.ok ? 'good' : 'bad';
         const title = poll ? (you.qtype === 'poll' ? 'תודה על ההצבעה!' : 'התשובה נשלחה, תודה!') : !r.answered ? '⏰ לא הספקתם' : r.ok ? 'נכון!' : 'לא נכון';
         html = `<div class="fb-screen ${cls}">
-          ${poll ? `<div class="cl-p-icon">${{ cloud: '☁️', open: '✍️', brain: '💡', qna: '❓', drop: '📍', rate: '⭐', rank: '🏅' }[you.qtype] || '📊'}</div>` : `<div class="fb-icon">${r.ok ? Art.check() : Art.cross()}</div>`}
+          ${poll ? `<div class="cl-p-icon">${{ cloud: '☁️', open: '✍️', brain: '💡', qna: '❓', drop: '📍', rate: '⭐', rank: '🏅', tap: '👆' }[you.qtype] || '📊'}</div>` : `<div class="fb-icon">${r.ok ? Art.check() : Art.cross()}</div>`}
           <div class="fb-title">${title}</div>
           ${r.pts && you.style !== 'learn' ? `<div class="cl-p-pts ${r.pts < 0 ? 'neg' : ''}">${r.pts > 0 ? '+' : ''}${r.pts}${this.ptsUnit ? ` <small>${this.ptsUnit}</small>` : ''}</div>` : ''}
           ${r.conf === 1 && you.stage !== undefined && !this.pyramidMode ? `<div class="pill">🚀 ${r.ok ? 'הבוסט הצליח!' : 'הבוסט נכשל'}</div>` : ''}
@@ -306,6 +332,7 @@
           ${!r.ok && !poll && you.correctText ? `<div class="fb-answer">התשובה הנכונה<b>${esc(you.correctText)}</b></div>` : ''}
           ${you.afterImage ? `<img class="fb-pic" src="${esc(you.afterImage)}" alt="">` : ''}
           ${you.explain ? `<div class="fb-explain">${esc(you.explain)}</div>` : ''}
+          ${you.source ? `<div class="fb-source">📖 ${esc(you.source.doc)}${you.source.loc ? ' · ' + esc(you.source.loc) : ''}${you.source.quote ? `<q>${esc(you.source.quote)}</q>` : ''}</div>` : ''}
           ${you.style === 'learn' ? '' : `<div class="fb-note">מקום ${you.rank}${you.above ? (you.above.gap > 0 ? ` · עוד ${you.above.gap} ${this.ptsUnit || 'נק׳'} כדי לעקוף את ${esc(you.above.name)}` : ` · צמוד ל־${esc(you.above.name)}!`) : you.rank === 1 ? ' · אתם בראש! 👑' : ''}</div>`}</div>`;
         if (!poll) {
           U.sfx(r.ok ? 'good' : 'bad');

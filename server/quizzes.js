@@ -12,6 +12,7 @@ const CONFIG = path.join(ROOT, 'config.json');
 const DEFAULT_FOLDER = path.join(ROOT, 'quizzes');
 const SAMPLE_ID = '__sample';
 const IMAGE_TYPES = { 'image/png': '.png', 'image/apng': '.png', 'image/jpeg': '.jpg', 'image/gif': '.gif', 'image/webp': '.webp', 'image/svg+xml': '.svg' };
+const PDF_TYPES = { 'application/pdf': '.pdf' };
 const VIDEO_TYPES = { 'video/mp4': '.mp4', 'video/webm': '.webm', 'video/quicktime': '.mov', 'video/x-m4v': '.m4v', 'video/ogg': '.ogv' };
 
 function readConfig() {
@@ -84,7 +85,7 @@ function clean(data) {
     background: String((data && data.background) || '').replace(/[^\p{L}\p{N}:._ -]/gu, '').slice(0, 120),
     ...cleanSource(data && data.source),
     updated: new Date().toISOString(),
-    questions: (Array.isArray(data && data.questions) ? data.questions : []).slice(0, 200).map(qt.normalize).filter(Boolean),
+    questions: (Array.isArray(data && data.questions) ? data.questions : []).slice(0, 400).map(qt.normalize).filter(Boolean),
   };
 }
 
@@ -169,8 +170,8 @@ function mediaDir(id, create = true) {
 }
 
 function saveMedia(id, buffer, mime) {
-  const ext = IMAGE_TYPES[mime] || VIDEO_TYPES[mime];
-  if (!ext) throw new Error('סוג קובץ לא נתמך (תמונות: PNG, JPG, GIF, WEBP, SVG · סרטונים: MP4, WEBM, MOV)');
+  const ext = IMAGE_TYPES[mime] || VIDEO_TYPES[mime] || PDF_TYPES[mime];
+  if (!ext) throw new Error('סוג קובץ לא נתמך (תמונות: PNG, JPG, GIF, WEBP, SVG · סרטונים: MP4, WEBM, MOV · מסמכים: PDF)');
   if (!buffer || !buffer.length) throw new Error('קובץ ריק');
   const name = `${Date.now().toString(36)}${crypto.randomBytes(3).toString('hex')}${ext}`;
   fs.writeFileSync(path.join(mediaDir(id), name), buffer);
@@ -179,7 +180,7 @@ function saveMedia(id, buffer, mime) {
 
 function mediaPath(id, file) {
   const name = path.basename(String(file || ''));
-  if (!validId(id) || !/^[\w.-]+\.(png|jpe?g|gif|webp|svg|mp4|webm|m4v|mov|ogv)$/i.test(name)) return null;
+  if (!validId(id) || !/^[\w.-]+\.(png|jpe?g|gif|webp|svg|mp4|webm|m4v|mov|ogv|pdf)$/i.test(name)) return null;
   const p = path.join(folder(), 'media', id, name);
   return fs.existsSync(p) ? p : null;
 }
@@ -215,8 +216,9 @@ const cellText = (c) => {
 };
 
 // Extra columns after Kahoot's own (all optional; Kahoot ignores them):
-//   Type, Points, Image, Video, Reveal, Accept, Slider, Items, Pin, Puzzle, Explanation, AfterImage, AnsImages, Limit, Body, Scale
-const EXTRA_COLS = /^(afterimage|ansimages|type|points|image|video|reveal|accept|slider|items|pin|puzzle|explanation|limit|body|scale)\b/i;
+//   Type, Points, Image, Video, Reveal, Accept, Slider, Items, Pin, Puzzle, Explanation, AfterImage, AnsImages, Limit, Body, Scale,
+//   and for lessons: Layout, Bullets, Pdf, Timer, Notes, Source
+const EXTRA_COLS = /^(afterimage|ansimages|type|points|image|video|reveal|accept|slider|items|pin|puzzle|explanation|limit|body|scale|layout|bullets|pdf|timer|notes|source)\b/i;
 const IMG_EXT = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
 const parts = (s) => String(s || '').split('|').map((x) => x.trim()).filter(Boolean);
 
@@ -259,7 +261,7 @@ const colLetter = (n) => {
   for (n = Number(n) || 0; n > 0; n = Math.floor((n - 1) / 26)) s = String.fromCharCode(65 + ((n - 1) % 26)) + s;
   return s;
 };
-const TYPE_NAMES = { match: 'match', sort: 'sort', 'התאמה': 'match', 'מיון': 'sort', quiz: 'quiz', tf: 'tf', type: 'type', slider: 'slider', order: 'order', pin: 'pin', puzzle: 'puzzle', poll: 'poll', multipoll: 'multipoll', cloud: 'cloud', open: 'open', brain: 'brain', qna: 'qna', rate: 'rate', rank: 'rank', drop: 'drop', slide: 'slide', 'נכון/לא נכון': 'tf', 'הקלדה': 'type', 'סרגל': 'slider', 'סידור': 'order', 'סימון': 'pin', 'פאזל': 'puzzle', 'סקר': 'poll', 'סקר מרובה': 'multipoll', 'ענן מילים': 'cloud', 'תשובה פתוחה': 'open', 'סיעור מוחות': 'brain', 'שאלות מהכיתה': 'qna', 'דירוג': 'rate', 'דירוג פריטים': 'rank', 'סיכה חופשית': 'drop', 'שקופית': 'slide', 'חידון': 'quiz' };
+const TYPE_NAMES = { pdf: 'pdf', tap: 'tap', check: 'check', understood: 'check', 'עמוד pdf': 'pdf', 'מרוץ הקשות': 'tap', 'הבנתם': 'check', 'בדיקת הבנה': 'check', match: 'match', sort: 'sort', 'התאמה': 'match', 'מיון': 'sort', quiz: 'quiz', tf: 'tf', type: 'type', slider: 'slider', order: 'order', pin: 'pin', puzzle: 'puzzle', poll: 'poll', multipoll: 'multipoll', cloud: 'cloud', open: 'open', brain: 'brain', qna: 'qna', rate: 'rate', rank: 'rank', drop: 'drop', slide: 'slide', 'נכון/לא נכון': 'tf', 'הקלדה': 'type', 'סרגל': 'slider', 'סידור': 'order', 'סימון': 'pin', 'פאזל': 'puzzle', 'סקר': 'poll', 'סקר מרובה': 'multipoll', 'ענן מילים': 'cloud', 'תשובה פתוחה': 'open', 'סיעור מוחות': 'brain', 'שאלות מהכיתה': 'qna', 'דירוג': 'rate', 'דירוג פריטים': 'rank', 'סיכה חופשית': 'drop', 'שקופית': 'slide', 'חידון': 'quiz' };
 
 // one pin zone from a spreadsheet cell, in percent of the picture:
 //   x|y|radius = circle · x|y|width|height = rectangle · ellipse:x|y|width|height · poly:x,y;x,y;x,y = polygon
@@ -277,9 +279,31 @@ function parseZone(text, ar) {
   return n.length >= 4 ? { shape: 'rect', x: n[0], y: n[1], w: n[2], h: n[3] } : { shape: 'circle', x: n[0], y: n[1], r: n[2] || 10, ar };
 }
 
+// the Pdf cell: "deck.pdf" (every page), "deck.pdf:3" (one page) or "deck.pdf:3-7" (a range); → { alias, from, to } or null
+function parsePdfRef(cell, ctx, note, col) {
+  const m = String(cell).trim().match(/^(.*?)(?::\s*(\d+)(?:\s*-\s*(\d+))?)?$/);
+  const name = path.basename(m[1].trim().replace(/\\/g, '/')).toLowerCase();
+  const pdf = ctx.pdfs.get(name);
+  if (!pdf) {
+    note(col, ctx.pdfs.size ? `קובץ ה־PDF "${m[1].trim()}" לא נמצא ב־zip` : `קובץ ה־PDF "${m[1].trim()}" לא צורף (העלו zip עם התיקייה pdf)`, 'warn');
+    return null;
+  }
+  const total = ctx.pdfPages.get(pdf.alias) || 0;
+  let from = m[2] ? Number(m[2]) : 1;
+  let to = m[3] ? Number(m[3]) : m[2] ? from : total || from;
+  if (total && from > total) {
+    note(col, `עמוד ${from} לא קיים ב־PDF (יש ${total} עמודים), נקבע העמוד האחרון`, 'info');
+    from = total;
+  }
+  if (total) to = Math.min(to, total);
+  if (to < from) to = from;
+  if (to - from > 199) to = from + 199;
+  return { alias: pdf.alias, from, to };
+}
+
 // one spreadsheet row → raw question (the Kahoot columns are always a valid multiple-choice version)
 // note(col, reason, level): collects what the teacher should know about this row
-function rowToRaw(cells, head, images, note) {
+function rowToRaw(cells, head, images, note, ctx = { pdfs: new Map(), pdfPages: new Map() }) {
   const get = (k) => (head[k] ? cells[head[k]] || '' : '');
   const text = cells[head.q];
   const answers = [1, 2, 3, 4, 5, 6].filter((k) => head['a' + k]).map((k) => cells[head['a' + k]] || '');
@@ -298,6 +322,14 @@ function rowToRaw(cells, head, images, note) {
   }
   const ex = get('x_explanation');
   if (ex) base.explain = ex;
+  // where the answer comes from: document | location | quote
+  const srcRaw = get('x_source');
+  if (srcRaw) {
+    const sp = srcRaw.split('|').map((x) => x.trim());
+    base.source = { doc: sp[0] || '', loc: sp[1] || '', quote: sp.slice(2).join(' | ') };
+  }
+  const pdfCell = get('x_pdf');
+  const pdfRef = pdfCell ? parsePdfRef(pdfCell, ctx, note, head.x_pdf) : null;
 
   const imgRaw = get('x_image');
   if (imgRaw) {
@@ -329,6 +361,7 @@ function rowToRaw(cells, head, images, note) {
   const typeRaw = get('x_type').trim();
   const type = TYPE_NAMES[typeRaw.toLowerCase()] || (typeRaw ? null : 'quiz');
   if (type === null) note(head.x_type, `סוג שאלה "${typeRaw}" לא מוכר, יובא כרב-ברירה`, 'warn');
+  if (pdfRef && type !== 'pdf') base.pdf = { file: pdfRef.alias, page: pdfRef.from }; // the page shown with the activity
   let special = null;
   const down = (col, why) => note(col, `${why}: יובא כרב-ברירה`, 'warn');
   // pictures for the answers, in the order of the answers (empty = no picture): a.png|b.png||d.png
@@ -376,7 +409,18 @@ function rowToRaw(cells, head, images, note) {
     if (!base.image) down(head.x_image || head.x_type, 'סיכה חופשית צריכה תמונה');
     else special = { ...base, type: 'drop', points: 0, answers: undefined };
   } else if (type === 'slide') {
-    special = { ...base, type: 'slide', points: 0, body: get('x_body') || undefined };
+    const layout = get('x_layout').toLowerCase();
+    if (layout && !qt.LAYOUTS.includes(layout)) note(head.x_layout, `עיצוב שקופית "${layout}" לא מוכר (${qt.LAYOUTS.join(' / ')}), נקבע אוטומטית`, 'info');
+    special = { ...base, type: 'slide', points: 0, body: get('x_body') || undefined, bullets: parts(get('x_bullets')), layout: qt.LAYOUTS.includes(layout) ? layout : undefined, timer: Number(get('x_timer')) || undefined, notes: get('x_notes') || undefined };
+  } else if (type === 'pdf') {
+    // one step per page, so activities can sit between the pages
+    if (!pdfRef) note(head.x_pdf || head.x_type, 'שורת pdf בלי קובץ PDF תקין: השורה דולגה', 'skip');
+    else special = Array.from({ length: pdfRef.to - pdfRef.from + 1 }, (_, k) => ({ type: 'pdf', text: k === 0 ? text || '' : '', time: base.time, points: 0, pdf: { file: pdfRef.alias, page: pdfRef.from + k }, notes: k === 0 ? get('x_notes') || undefined : undefined, timer: k === 0 ? Number(get('x_timer')) || undefined : undefined, source: base.source }));
+  } else if (type === 'tap') {
+    special = { ...base, type: 'tap', points: 0, answers: undefined };
+  } else if (type === 'check') {
+    // "did you understand?": a poll with three fixed answers
+    special = { ...base, type: 'poll', points: 0, text: text || 'הבנתם?', answers: [{ text: 'הבנתי ✔' }, { text: 'בערך' }, { text: 'לא הבנתי' }] };
   } else if (type === 'type') {
     const accept = parts(get('x_accept'));
     if (!accept.length) base.answers.filter((x) => x.correct && x.text).forEach((x) => accept.push(x.text));
@@ -412,12 +456,16 @@ function rowToRaw(cells, head, images, note) {
 // (Question / Answer 1-4 / Time limit / Correct answer(s)) and reads the rows under it.
 // images: Map(lowercase file name → { buffer, mime }) from a zip, for the Image column.
 // The result lists every problem by row and column, so the teacher can fix the file.
-async function importXlsx(buffer, title, images = new Map()) {
+async function importXlsx(buffer, title, images = new Map(), pdfs = new Map()) {
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.load(buffer);
   const questions = [];
   const issues = [];
   const stats = { skipped: 0, downgraded: 0, missingImages: 0, special: 0 };
+  // PDF page counts first (reading rows is synchronous)
+  const pdfPages = new Map();
+  for (const p of pdfs.values()) pdfPages.set(p.alias, await require('./pdfinfo').pageCount(p.buffer));
+  const ctx = { pdfs, pdfPages };
   for (const ws of wb.worksheets) {
     let head = null;
     ws.eachRow((row, rn) => {
@@ -439,27 +487,38 @@ async function importXlsx(buffer, title, images = new Map()) {
         return;
       }
       const text = cells[head.q];
-      if (!text) {
+      // a row can be a slide or a PDF page with no question text at all
+      const typeCell = head.x_type ? String(cells[head.x_type] || '').trim().toLowerCase() : '';
+      const hasContent = text || ['x_pdf', 'x_image', 'x_bullets', 'x_body'].some((k) => head[k] && cells[head[k]]) || /^(check|understood|הבנתם|בדיקת הבנה)$/.test(typeCell);
+      if (!hasContent) {
         if (cells.some(Boolean)) issues.push({ row: rn, col: colLetter(head.q), reason: 'שורה בלי טקסט שאלה: דולגה', level: 'skip' });
         return;
       }
       const rowIssues = [];
       const note = (col, reason, level) => rowIssues.push({ row: rn, col: colLetter(col), reason, level });
-      const q = qt.normalize(rowToRaw(cells, head, images, note));
-      if (q.text.length > 120) note(head.q, `שאלה ארוכה (${q.text.length} תווים): קשה לקרוא בטלפון. Kahoot מגביל ל-120`, 'info');
-      const ok = qt.shown(q);
-      if (!ok) {
-        const filled = q.answers ? q.answers.filter((x) => x.text).length : 0;
-        const why = q.type === 'quiz' && filled < 2 ? 'צריך לפחות 2 תשובות' : q.type === 'quiz' ? 'לא סומנה תשובה נכונה (עמודת Correct answer)' : 'השאלה לא שלמה';
-        issues.push(...rowIssues, { row: rn, col: colLetter(q.type === 'quiz' && filled >= 2 ? head.correct : head.a1), reason: `${why}: השורה דולגה`, level: 'skip' });
+      const raws = [].concat(rowToRaw(cells, head, images, note, ctx));
+      let rowOk = false;
+      for (const raw of raws) {
+        const q = qt.normalize(raw);
+        if (q.text.length > 120 && q.type !== 'slide' && q.type !== 'pdf') note(head.q, `שאלה ארוכה (${q.text.length} תווים): קשה לקרוא בטלפון. Kahoot מגביל ל-120`, 'info');
+        if (!qt.shown(q)) {
+          if (q.type === 'pdf' || q.type === 'slide') continue;
+          const filled = q.answers ? q.answers.filter((x) => x.text).length : 0;
+          const why = q.type === 'quiz' && filled < 2 ? 'צריך לפחות 2 תשובות' : q.type === 'quiz' ? 'לא סומנה תשובה נכונה (עמודת Correct answer)' : 'השאלה לא שלמה';
+          issues.push({ row: rn, col: colLetter(q.type === 'quiz' && filled >= 2 ? head.correct : head.a1), reason: `${why}: השורה דולגה`, level: 'skip' });
+          continue;
+        }
+        rowOk = true;
+        if (q.type !== 'quiz') stats.special++;
+        questions.push(q);
+      }
+      issues.push(...rowIssues);
+      if (!rowOk) {
         stats.skipped++;
         return;
       }
-      issues.push(...rowIssues);
       if (rowIssues.some((x) => x.reason.includes('יובא כרב-ברירה'))) stats.downgraded++;
       if (rowIssues.some((x) => x.reason.startsWith('התמונה'))) stats.missingImages++;
-      if (q.type !== 'quiz') stats.special++;
-      questions.push(q);
     });
     if (head) break;
   }
@@ -480,13 +539,23 @@ async function importXlsx(buffer, title, images = new Map()) {
     if (stored.get(o[key])) o[key] = stored.get(o[key]);
     else delete o[key];
   };
+  // the PDFs: each stored once, the steps point at the stored name
+  const storedPdf = new Map();
   for (const q of questions) {
     keep(q, 'image');
     keep(q, 'explainImage');
     for (const a of q.answers || []) keep(a, 'image');
+    if (q.pdf) {
+      if (!storedPdf.has(q.pdf.file)) {
+        const p = [...pdfs.values()].find((x) => x.alias === q.pdf.file);
+        storedPdf.set(q.pdf.file, p ? saveMedia(id, p.buffer, 'application/pdf') : null);
+      }
+      if (storedPdf.get(q.pdf.file)) q.pdf.file = storedPdf.get(q.pdf.file);
+      else delete q.pdf;
+    }
   }
   save(id, { title: title || 'חידון מיובא', questions });
-  return { id, count: questions.length, images: [...stored.values()].filter(Boolean).length, issues: issues.slice(0, 300), ...stats };
+  return { id, count: questions.length, images: [...stored.values()].filter(Boolean).length, pdfs: [...storedPdf.values()].filter(Boolean).length, slides: questions.filter((q) => q.type === 'slide' || q.type === 'pdf').length, issues: issues.slice(0, 300), ...stats };
 }
 
 // .xlsx, or a .zip with the .xlsx and the pictures its Image column names (any folder inside the zip)
@@ -507,19 +576,26 @@ async function importAny(buffer, title) {
     const buf = await f.async('nodebuffer');
     if (buf.length && buf.length <= 12 * 1024 * 1024) images.set(path.basename(f.name).toLowerCase(), { buffer: buf, mime: IMG_EXT[path.extname(f.name).toLowerCase()] });
   }
+  // PDFs next to the sheet (the Pdf column names them); each gets a safe name inside the program
+  const pdfs = new Map();
+  let nPdf = 0;
+  for (const f of entries.filter((f) => /\.pdf$/i.test(f.name)).slice(0, 12)) {
+    const buf = await f.async('nodebuffer');
+    if (buf.length && buf.length <= 80 * 1024 * 1024 && buf.slice(0, 4).toString('latin1') === '%PDF') pdfs.set(path.basename(f.name).toLowerCase(), { buffer: buf, alias: `deck${++nPdf}.pdf` });
+  }
   const t = title || path.basename(xlsx.name).replace(/\.xlsx$/i, '');
-  return importXlsx(await xlsx.async('nodebuffer'), t, images);
+  return importXlsx(await xlsx.async('nodebuffer'), t, images, pdfs);
 }
 
 // a blank template (or a quiz exported) in the same layout as Kahoot's
 async function templateXlsx(id) {
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Quiz', { views: [{ rightToLeft: true }] });
-  ws.columns = [{ width: 6 }, { width: 50 }, { width: 26 }, { width: 26 }, { width: 26 }, { width: 26 }, { width: 16 }, { width: 20 }, { width: 10 }, { width: 8 }, { width: 18 }, { width: 28 }, { width: 9 }, { width: 24 }, { width: 22 }, { width: 24 }, { width: 14 }, { width: 9 }, { width: 30 }, { width: 16 }, { width: 26 }, { width: 8 }, { width: 30 }, { width: 28 }];
+  ws.columns = [{ width: 6 }, { width: 50 }, { width: 26 }, { width: 26 }, { width: 26 }, { width: 26 }, { width: 16 }, { width: 20 }, { width: 10 }, { width: 8 }, { width: 18 }, { width: 28 }, { width: 9 }, { width: 24 }, { width: 22 }, { width: 24 }, { width: 14 }, { width: 9 }, { width: 30 }, { width: 16 }, { width: 26 }, { width: 8 }, { width: 30 }, { width: 28 }, { width: 12 }, { width: 40 }, { width: 22 }, { width: 8 }, { width: 24 }, { width: 34 }];
   ws.addRow(['', 'תבנית חידון (תואמת לתבנית של Kahoot)']).font = { bold: true, size: 16 };
   ws.addRow(['', 'מלאו שאלה בכל שורה. זמן: 5/10/20/30/60/90/120/240 שניות. תשובה נכונה: מספר התשובה (למשל 2, או 1,3 לכמה תשובות). העמודות אחרי "Correct answer" (I ואילך) אופציונליות: Kahoot מתעלם מהן והתוכנית שלנו קוראת אותן.']);
   ws.addRow([]);
-  const head = ws.addRow(['#', 'Question - שאלה', 'Answer 1 - תשובה 1', 'Answer 2 - תשובה 2', 'Answer 3 - תשובה 3', 'Answer 4 - תשובה 4', 'Time limit (sec) - זמן', 'Correct answer(s) - נכונות', 'Type', 'Points', 'Image', 'Video', 'Reveal', 'Accept', 'Slider', 'Items', 'Pin', 'Puzzle', 'Explanation', 'AfterImage', 'AnsImages', 'Limit', 'Body', 'Scale']);
+  const head = ws.addRow(['#', 'Question - שאלה', 'Answer 1 - תשובה 1', 'Answer 2 - תשובה 2', 'Answer 3 - תשובה 3', 'Answer 4 - תשובה 4', 'Time limit (sec) - זמן', 'Correct answer(s) - נכונות', 'Type', 'Points', 'Image', 'Video', 'Reveal', 'Accept', 'Slider', 'Items', 'Pin', 'Puzzle', 'Explanation', 'AfterImage', 'AnsImages', 'Limit', 'Body', 'Scale', 'Layout', 'Bullets', 'Pdf', 'Timer', 'Notes', 'Source']);
   head.font = { bold: true, color: { argb: 'FFFFFFFF' } };
   head.eachCell((c, cn) => (c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: cn > 8 ? 'FF1E7B4F' : 'FF46178F' } }));
   // extras: Type, Points, Image, Video, Reveal, Accept, Slider, Items, Pin, Puzzle (type "puzzle" is not played yet)

@@ -219,6 +219,27 @@ window.QView = (function () {
       return;
     }
 
+    if (q.type === 'tap') {
+      // the running count goes to the server every moment (not once): the race lasts the whole time
+      let n = 0;
+      let sentN = -1;
+      box.innerHTML = `${head}<div class="q-hint">הקישו כמה שיותר מהר!</div><button class="tap-btn" id="tapB" type="button"><b id="tapN">0</b><span>👆</span></button>`;
+      const btn = box.querySelector('#tapB');
+      const num = box.querySelector('#tapN');
+      const flush = () => { if (!box.isConnected) return clearInterval(iv); if (n !== sentN) { sentN = n; onAnswer({ taps: n }); } };
+      const iv = setInterval(flush, 300);
+      btn.onpointerdown = (e) => {
+        e.preventDefault();
+        n++;
+        num.textContent = n;
+        btn.classList.remove('hit');
+        void btn.offsetWidth;
+        btn.classList.add('hit');
+        if (n % 10 === 0 && navigator.vibrate) navigator.vibrate(8);
+      };
+      return;
+    }
+
     if (q.type === 'rate') {
       const { max, low, high } = q.scale;
       box.innerHTML = `${head}<div class="q-hint">${max === 5 ? 'לחצו על הדירוג שלכם' : `דרגו מ־1 עד ${max}`}</div>

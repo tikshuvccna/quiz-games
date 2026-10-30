@@ -1,0 +1,53 @@
+/* ===== תרגול ולמידה (std- / study-) ===== */
+.study-stage { padding: 18px 24px 90px; overflow: auto; }
+.std-body { display: flex; flex-direction: column; gap: 16px; }
+.std-head { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+.std-head b { font-size: 1.8rem; }
+.std-head span { font-weight: 800; color: #ddd8ff; font-size: 1.2rem; }
+.std-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.std-p { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 18px; background: rgba(255, 255, 255, .09); box-shadow: 0 5px 0 rgba(0, 0, 0, .25); animation: popin .4s var(--spring) both; }
+.std-p.fin { background: rgba(46, 229, 157, .18); box-shadow: inset 0 0 0 2px var(--green), 0 5px 0 rgba(0, 0, 0, .25); }
+.std-p.stuck { background: rgba(255, 92, 122, .2); box-shadow: inset 0 0 0 3px #ff5c7a, 0 5px 0 rgba(0, 0, 0, .25); animation: popin .4s var(--spring) both, std-shake 1.6s ease-in-out infinite; }
+.std-p.off { opacity: .5; }
+.std-pn { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.std-pn b { font-size: 1.2rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.std-pn small { color: #cfc9f5; font-weight: 700; }
+.std-bar { height: 12px; border-radius: 999px; background: rgba(255, 255, 255, .15); overflow: hidden; }
+.std-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #8b5cf6, #2ee59d); transition: width .6s var(--spring); }
+@keyframes std-shake { 0%, 100% { transform: none; } 92% { transform: translateX(0); } 94% { transform: translateX(-4px); } 96% { transform: translateX(4px); } 98% { transform: translateX(-3px); } }
+
+/* phone */
+.std-prog { position: relative; height: 22px; margin: 6px 12px 2px; border-radius: 999px; background: rgba(255, 255, 255, .13); overflow: hidden; flex: none; }
+.std-prog i { position: absolute; inset: 0 0 0 auto; width: 0; background: linear-gradient(270deg, #8b5cf6, #2ee59d); transition: width .5s var(--spring); }
+.std-prog span { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 900; font-size: .85rem; text-shadow: 0 1px 2px rgba(0, 0, 0, .6); }
+.std-wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 14px 14px 18px; overflow-y: auto; }
+.std-card { position: relative; width: 100%; max-width: 420px; min-height: 300px; flex: 1; max-height: 52vh; perspective: 1000px; cursor: pointer; }
+.std-face { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 18px; text-align: center; border-radius: 26px; backface-visibility: hidden; transition: transform .55s var(--spring); box-shadow: 0 8px 0 rgba(0, 0, 0, .3), 0 16px 26px rgba(0, 0, 0, .3); overflow: hidden; }
+.std-face.front { background: #fff; color: #1e1145; }
+.std-face.back { background: linear-gradient(160deg, #3b1a8f, #5b2fd1); transform: rotateY(180deg); }
+.std-card.flipped .front { transform: rotateY(-180deg); }
+.std-card.flipped .back { transform: rotateY(0); }
+.std-face img { max-width: 100%; max-height: 42%; object-fit: contain; border-radius: 12px; }
+.std-t { font-weight: 900; font-size: clamp(1.4rem, 6vw, 2rem); line-height: 1.25; overflow-wrap: anywhere; }
+.std-face small { color: #7a6fb0; font-weight: 800; }
+.std-lbl { font-weight: 800; color: #ddd8ff; }
+.std-ex { padding: 8px 12px; border-radius: 12px; background: rgba(255, 210, 63, .18); font-weight: 700; font-size: .95rem; }
+.std-btns { display: none; gap: 12px; width: 100%; max-width: 420px; }
+.std-btns.show { display: flex; animation: popin .3s var(--spring) both; }
+.std-btns button { flex: 1; border: 0; cursor: pointer; padding: 16px 8px; border-radius: 18px; font: inherit; font-weight: 900; font-size: 1.15rem; color: #fff; box-shadow: 0 5px 0 rgba(0, 0, 0, .3); }
+.std-again { background: linear-gradient(160deg, #ff8a3d, #e9334f); }
+.std-know { background: linear-gradient(160deg, #2ee59d, #14a36b); }
+.std-btns.sent button { opacity: .5; pointer-events: none; }
+.std-fb .fb-answer { text-align: center; }
+.std-done { text-align: center; }
+.std-done h2 { margin: 0; }
+.std-trophy { font-size: 4rem; animation: popin .6s var(--spring) both; }
+.std-score { display: flex; flex-direction: column; align-items: center; }
+.std-score b { font-size: 4.5rem; line-height: 1; color: var(--yellow); text-shadow: 0 4px 0 rgba(0, 0, 0, .3); }
+.std-score span { font-weight: 800; color: #ddd8ff; }
+.std-rev { width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 10px; text-align: start; }
+.std-rev h3 { margin: 4px 0; text-align: center; }
+.std-r { padding: 10px 14px; border-radius: 14px; background: rgba(255, 255, 255, .09); display: flex; flex-direction: column; gap: 4px; }
+.std-r .a { color: var(--green); font-weight: 800; }
+.std-r .w { color: #ff8aa0; font-weight: 700; }
+.std-r .e { color: #ddd8ff; font-size: .9rem; }

@@ -1,0 +1,67 @@
+/* ===== slides: every layout, PDF pages, countdowns (sl-) ===== */
+.sl { position: relative; width: 100%; height: 100%; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(10px, 2vh, 26px); padding: clamp(10px, 2.5vh, 30px) clamp(16px, 4vw, 64px); text-align: center; overflow: hidden; }
+.sl-title { margin: 0; font-weight: 900; line-height: 1.12; font-size: clamp(2rem, 6vw, 5.2rem); text-shadow: 0 5px 0 rgba(0, 0, 0, .3); animation: popin .5s var(--spring) both; overflow-wrap: anywhere; }
+.sl-body { font-weight: 700; font-size: clamp(1.2rem, 2.8vw, 2.4rem); line-height: 1.5; color: #ece9ff; max-width: 1200px; white-space: pre-line; animation: popin .5s var(--spring) .15s both; }
+.sl-bullets { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: clamp(8px, 1.6vh, 18px); text-align: start; max-width: 1200px; width: 100%; }
+.sl-bullets li { position: relative; padding: clamp(8px, 1.4vh, 16px) clamp(16px, 2vw, 28px); padding-inline-start: clamp(46px, 5vw, 72px); border-radius: 18px; background: rgba(255, 255, 255, .1); font-weight: 800; font-size: clamp(1.2rem, 3vw, 2.6rem); line-height: 1.3; animation: popin .5s var(--spring) both; animation-delay: calc(var(--i) * 280ms + 250ms); overflow-wrap: anywhere; }
+.sl-bullets li::before { content: '★'; position: absolute; inset-inline-start: clamp(12px, 1.6vw, 22px); top: 50%; transform: translateY(-50%); color: var(--yellow); font-size: 1.1em; }
+.sl-img { max-width: 100%; max-height: 52vh; object-fit: contain; border-radius: 22px; box-shadow: 0 8px 0 rgba(0, 0, 0, .3), 0 16px 30px rgba(0, 0, 0, .35); animation: popin .5s var(--spring) .1s both; }
+.sl-video { width: min(900px, 100%); aspect-ratio: 16 / 9; border-radius: 18px; overflow: hidden; }
+.sl-video iframe, .sl-video video { width: 100%; height: 100%; border: 0; display: block; }
+
+/* split: text beside a picture (or a PDF page) */
+.sl-l-split { flex-direction: row; gap: clamp(20px, 4vw, 64px); text-align: start; }
+.sl-l-split.rev { flex-direction: row-reverse; }
+.sl-l-split .sl-text { flex: 1.1; display: flex; flex-direction: column; gap: clamp(10px, 2vh, 22px); align-items: flex-start; min-width: 0; }
+.sl-l-split .sl-title { font-size: clamp(1.8rem, 4.4vw, 3.8rem); }
+.sl-l-split .sl-bullets li { font-size: clamp(1.05rem, 2.2vw, 2rem); }
+.sl-l-split .sl-side { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-width: 0; }
+
+/* full picture with the text over it */
+.sl-l-full { padding: 0; }
+.sl-l-full .sl-img { position: absolute; inset: 0; width: 100%; height: 100%; max-height: none; object-fit: cover; border-radius: 0; box-shadow: none; animation: none; }
+.sl-l-full::after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(10, 4, 30, .85), rgba(10, 4, 30, .1) 60%); }
+.sl-over { position: absolute; inset: auto 0 0 0; z-index: 2; padding: clamp(16px, 4vh, 48px) clamp(20px, 5vw, 80px); display: flex; flex-direction: column; gap: 12px; align-items: center; }
+
+/* quote */
+.sl-l-quote { background: radial-gradient(80% 80% at 50% 40%, rgba(139, 92, 246, .3), transparent); }
+.sl-qm { font-size: clamp(5rem, 16vw, 12rem); line-height: .6; color: var(--yellow); font-weight: 900; }
+.sl-qt { font-weight: 900; font-style: italic; font-size: clamp(1.8rem, 4.6vw, 4rem); line-height: 1.3; max-width: 1200px; text-shadow: 0 4px 0 rgba(0, 0, 0, .3); animation: popin .6s var(--spring) both; }
+.sl-qa { font-weight: 800; font-size: clamp(1.1rem, 2.4vw, 2rem); color: var(--yellow); }
+
+/* fun interlude */
+.sl-l-fun { background: radial-gradient(70% 70% at 50% 40%, rgba(255, 79, 163, .35), rgba(34, 199, 232, .15) 60%, transparent); }
+.sl-l-fun .sl-title { font-size: clamp(2.4rem, 7.5vw, 6.5rem); animation: popin .5s var(--spring) both, sl-wob 2.4s ease-in-out infinite .6s; }
+.sl-fun-bg i { position: absolute; font-style: normal; font-size: clamp(2rem, 6vw, 5rem); opacity: .85; animation: sl-float 6s ease-in-out infinite; }
+.sl-fun-bg i:nth-child(1) { top: 8%; inset-inline-start: 8%; }
+.sl-fun-bg i:nth-child(2) { top: 14%; inset-inline-end: 10%; animation-delay: -1s; }
+.sl-fun-bg i:nth-child(3) { bottom: 12%; inset-inline-start: 12%; animation-delay: -2s; }
+.sl-fun-bg i:nth-child(4) { bottom: 10%; inset-inline-end: 14%; animation-delay: -3s; }
+.sl-fun-bg i:nth-child(5) { top: 46%; inset-inline-start: 3%; animation-delay: -4s; }
+.sl-fun-bg i:nth-child(6) { top: 48%; inset-inline-end: 3%; animation-delay: -5s; }
+@keyframes sl-float { 0%, 100% { transform: translateY(0) rotate(-6deg); } 50% { transform: translateY(-26px) rotate(8deg); } }
+@keyframes sl-wob { 0%, 100% { transform: rotate(-1.5deg); } 50% { transform: rotate(1.5deg); } }
+
+/* PDF page */
+.sl-l-pdf { padding: 8px; gap: 8px; background: #0b0620; }
+.sl-pdf { position: relative; flex: 1; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; }
+.sl-pdf canvas { display: block; background: #fff; border-radius: 6px; box-shadow: 0 8px 30px rgba(0, 0, 0, .5); }
+.sl-pdf-load { position: absolute; font-style: normal; font-size: 2rem; animation: sl-wob 1s linear infinite; }
+.sl-pdf.ready .sl-pdf-load { display: none; }
+.sl-pdf.sm { flex: none; width: 100%; height: min(46vh, 420px); }
+.sl-pdf-err { color: #ff8aa0; font-weight: 800; }
+.sl-cap { font-weight: 800; color: #ddd8ff; font-size: clamp(.9rem, 1.6vw, 1.4rem); }
+
+/* countdown */
+.sl-timer { position: absolute; top: 14px; inset-inline-end: 18px; z-index: 3; width: clamp(70px, 9vw, 120px); aspect-ratio: 1; display: grid; place-items: center; }
+.sl-timer svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+.sl-timer .trk { fill: rgba(0, 0, 0, .45); stroke: rgba(255, 255, 255, .15); stroke-width: 8; }
+.sl-timer .ring { fill: none; stroke: var(--yellow); stroke-width: 8; stroke-linecap: round; stroke-dasharray: 276; stroke-dashoffset: 0; }
+.sl-timer b { position: relative; font-size: clamp(1.2rem, 2.4vw, 2rem); font-weight: 900; }
+.sl-timer.low .ring { stroke: #ff5c7a; }
+.sl-timer.done b { animation: sl-wob .4s ease-in-out infinite; }
+
+/* small version (editor thumbnails) */
+.sl-thumb .sl { padding: 6px; gap: 4px; }
+.sl-thumb .sl-title { font-size: 1rem; text-shadow: none; }
+.sl-thumb .sl-body, .sl-thumb .sl-bullets li { font-size: .6rem; }

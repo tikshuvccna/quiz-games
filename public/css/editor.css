@@ -297,3 +297,16 @@ body.drag-quiz .tf[data-drop] { box-shadow: inset 0 0 0 1px rgba(46, 229, 157, .
 .ae-bucket { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: var(--r); background: rgba(255, 255, 255, .06); box-shadow: inset 0 0 0 3px var(--c); }
 .ae-bucket input, .ae-bucket textarea { border: 0; border-radius: 10px; padding: 10px; font: inherit; font-weight: 700; color: #fff; background: rgba(255, 255, 255, .14); outline: none; resize: vertical; }
 .ae-bucket input { font-size: 1.1rem; font-weight: 900; }
+
+/* slide + PDF editors */
+.ae-slide { display: flex; flex-direction: column; gap: 10px; }
+.ae-slide label { display: flex; flex-direction: column; gap: 4px; font-weight: 800; }
+.ae-slide textarea, .ae-slide select { border: 0; border-radius: 10px; padding: 10px; font: inherit; font-weight: 700; color: #fff; background: rgba(255, 255, 255, .12); outline: none; resize: vertical; }
+.ae-slide select option { color: #1e1145; }
+.pdf-ed { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.pdf-prev { width: 100%; display: grid; place-items: center; padding: 8px; border-radius: 14px; background: #0b0620; min-height: 200px; }
+.pdf-prev canvas { background: #fff; border-radius: 4px; max-width: 100%; }
+.pdf-ctl { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; font-weight: 800; }
+.pdf-ctl input { width: 70px; margin-inline-start: 6px; padding: 6px; border-radius: 8px; border: 0; font: inherit; font-weight: 800; text-align: center; }
+
+.pdf-ctl input, #sPdfPg { color: #1e1145; background: #fff; border: 0; border-radius: 8px; padding: 6px; font-weight: 800; }

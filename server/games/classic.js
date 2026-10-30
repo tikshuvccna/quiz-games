@@ -103,11 +103,22 @@ class ClassicGame extends QuizGame {
     const { payload, state } = qt.present(q, this.room.quizData.mediaBase);
     this.cur = { q, payload, state, startAt: 0, deadline: 0, answers: new Map(), reveal: null };
     for (const p of this.players()) if (p.g) p.g.res = null;
-    this.stage = 'ready';
     this.lines = [];
+    if (this.skipReady(q)) return this.open();
+    this.stage = 'ready';
     this.pushEveryone();
     // a ×2 / ×3 / ×4 question gets an extra moment for its splash before the question text
-    this.schedule(() => this.open(), READY_MS + (q.points >= 2 ? MULT_MS : 0));
+    this.schedule(() => this.open(), this.readyDelay(q));
+  }
+
+  // how long the question text is shown alone before the answers open (a ×2 / ×3 / ×4 question gets its splash first)
+  readyDelay(q) {
+    return READY_MS + (q.points >= 2 ? MULT_MS : 0);
+  }
+
+  // true = the step opens at once, without the "get ready" moment (a lesson's slides)
+  skipReady() {
+    return false;
   }
 
   startBonus() {
@@ -123,7 +134,7 @@ class ClassicGame extends QuizGame {
 
   open() {
     const q = this.cur.q;
-    if (q.type === 'slide') {
+    if (q.type === 'slide' || q.type === 'pdf') {
       this.stage = 'slide';
       this.pushEveryone();
       if (!this.manual) this.schedule(() => this.next(), q.time * 1000);
@@ -199,7 +210,8 @@ class ClassicGame extends QuizGame {
     if (type === 'vote') return this.handleVote(p, data || {});
     if (type !== 'answer' || this.stage !== 'question') return;
     const cur = this.cur;
-    if (cur.answers.has(p.id)) return;
+    // a tap race sends its running count again and again until the time is up; everything else answers once
+    if (cur.answers.has(p.id) && cur.q.type !== 'tap') return;
     if (data.qid !== undefined && data.qid !== this.qid()) return;
     const q = cur.q;
     const T = this.questionTime(q);
@@ -215,9 +227,13 @@ class ClassicGame extends QuizGame {
       res.words = kept;
       res.chosen = kept.join(' · ');
     }
+    const before = cur.answers.get(p.id);
+    if (q.type === 'tap' && before && res.taps < before.res.taps) return; // a late, smaller count
     cur.answers.set(p.id, { data, res, ms });
+    if (q.type === 'tap' && before) return this.room.scheduleHostPush(); // the phone stays on its tap button
     this.room.pushPlayer(p);
     this.room.scheduleHostPush();
+    if (q.type === 'tap') return; // the race lasts the whole time
     // everyone who can answer has answered: reveal now
     const waiting = this.players().filter((o) => this.canAnswer(o) && o.connected && !cur.answers.has(o.id));
     if (!waiting.length) this.schedule(() => this.reveal(), 600);
@@ -297,7 +313,7 @@ class ClassicGame extends QuizGame {
     }
     this.rank();
     // what the class answered
-    const rv = { correctText: qt.correctText(q), answered: cur.answers.size, right, explain: q.explain || '', afterImage: qt.afterImage(q, this.room.quizData.mediaBase) };
+    const rv = { correctText: qt.correctText(q), answered: cur.answers.size, right, explain: q.explain || '', afterImage: qt.afterImage(q, this.room.quizData.mediaBase), source: q.source || null };
     const names = new Map(this.players().map((o) => [o.id, o.name]));
     if (q.type === 'quiz' || q.type === 'tf' || q.type === 'poll') {
       rv.dist = cur.state.order.map(() => 0);
@@ -306,6 +322,9 @@ class ClassicGame extends QuizGame {
         for (const c of picks) if (rv.dist[c] !== undefined) rv.dist[c]++;
       }
       rv.correct = q.type === 'poll' ? [] : cur.state.order.map((orig, d) => (q.answers[orig].correct ? d : -1)).filter((d) => d >= 0);
+    } else if (q.type === 'tap') {
+      rv.taps = [...cur.answers].map(([pid, a]) => ({ name: names.get(pid) || '', taps: a.res.taps })).sort((a, b) => b.taps - a.taps).slice(0, 8);
+      rv.totalTaps = [...cur.answers.values()].reduce((s, a) => s + a.res.taps, 0);
     } else if (q.type === 'cloud') {
       const counts = new Map();
       for (const a of cur.answers.values()) {
@@ -507,13 +526,13 @@ class ClassicGame extends QuizGame {
     }
     if (this.stage === 'question') {
       if (!can) return { ...base, phase: 'c_watch' };
-      if (cur.answers.has(p.id)) return { ...base, phase: 'c_locked' };
+      if (cur.answers.has(p.id) && cur.q.type !== 'tap') return { ...base, phase: 'c_locked' };
       return { ...base, phase: 'c_question', question: cur.payload, remain: cur.deadline ? Math.max(0, cur.deadline - Date.now()) : null, conf: this.confOptions(p) };
     }
     // reveal / board: my own result + who is right above me
     const list = this.rank();
     const above = g.rank > 1 ? list[g.rank - 2] : null;
-    return { ...base, phase: can ? 'c_result' : 'c_watch_res', res: g.res, correctText: cur.reveal ? cur.reveal.correctText : '', explain: cur.reveal ? cur.reveal.explain : '', afterImage: cur.reveal ? cur.reveal.afterImage : '', above: above ? { name: above.name, gap: above.g.score - g.score } : null };
+    return { ...base, phase: can ? 'c_result' : 'c_watch_res', res: g.res, correctText: cur.reveal ? cur.reveal.correctText : '', explain: cur.reveal ? cur.reveal.explain : '', afterImage: cur.reveal ? cur.reveal.afterImage : '', source: cur.reveal ? cur.reveal.source : null, above: above ? { name: above.name, gap: above.g.score - g.score } : null };
   }
 
   results() {

@@ -156,3 +156,11 @@
 .qs-b { display: flex; gap: 8px; }
 .qs-b button { flex: 1; border: 0; cursor: pointer; border-radius: 12px; padding: 10px 6px; font: inherit; font-weight: 800; color: #fff; background: rgba(255, 255, 255, .12); box-shadow: inset 0 0 0 2px var(--c); }
 .qs-b button.on { background: var(--c); box-shadow: 0 0 0 3px #fff; text-shadow: 0 2px 0 rgba(0, 0, 0, .25); }
+
+/* tap race */
+.tap-btn { flex: 1; min-height: 0; margin: 8px 0 14px; border: 0; border-radius: 36px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #fff; font: inherit; touch-action: manipulation; user-select: none; -webkit-user-select: none; background: radial-gradient(circle at 50% 30%, #ffb347, #ff4fa3 70%); box-shadow: 0 10px 0 #8f1f5e, 0 18px 30px rgba(0, 0, 0, .35); }
+.tap-btn b { font-size: clamp(4rem, 22vw, 7rem); line-height: 1; text-shadow: 0 5px 0 rgba(0, 0, 0, .3); }
+.tap-btn span { font-size: 3rem; }
+.tap-btn:active, .tap-btn.hit { transform: translateY(6px) scale(.985); box-shadow: 0 3px 0 #8f1f5e, 0 8px 16px rgba(0, 0, 0, .3); }
+.fb-source { max-width: 340px; padding: 10px 14px; border-radius: 14px; background: rgba(255, 255, 255, .09); font-weight: 700; font-size: .9rem; text-align: center; color: #ddd8ff; }
+.fb-source q { display: block; margin-top: 4px; font-weight: 500; font-style: italic; opacity: .85; }

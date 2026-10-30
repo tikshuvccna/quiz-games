@@ -44,8 +44,11 @@ let creating = false;
 function create() {
   if (creating) return;
   creating = true;
-  socket.emit('host:create', { game: 'territory' }, (r) => {
+  // opened from the editor's "▶ הצגה": a lesson room with that quiz already chosen
+  const present = new URLSearchParams(location.search).get('present');
+  socket.emit('host:create', { game: present ? 'lesson' : 'territory' }, (r) => {
     creating = false;
+    if (present) socket.emit('host:setup', { quiz: present });
     store.set({ pin: r.pin, hostToken: r.hostToken });
     ready(r.pin);
   });
@@ -92,6 +95,8 @@ socket.on('host:state', (s) => {
 function render(prev) {
   if (!st) return;
   drawPlayersPanel();
+  // the zoomed join view belongs to the lobby and to a running game
+  if (st.phase === 'countdown' || st.phase === 'ended') closeJoinZoom();
   U.applyScene(st.setup.scene);
   // player photos for every avatar on the big screen
   U.photos = Object.fromEntries((st.players || []).filter((p) => p.photo).map((p) => [p.name, p.photo]));
@@ -124,10 +129,59 @@ function joinBadge() {
   if (box.dataset.sig === sig) return;
   box.dataset.sig = sig;
   const host = joinUrl.replace(/^https?:\/\//, '').split('/')[0];
-  const draw = () => (box.innerHTML = `${qrSmall.svg ? `<div class="hj-qr">${qrSmall.svg}</div>` : ''}<div class="hj-t"><span>מצטרפים באמצע?</span><b dir="ltr">${esc(st.pin)}</b><small dir="ltr">${esc(host)}</small></div>`);
+  const draw = () => (box.innerHTML = `${qrSmall.svg ? `<div class="hj-qr">${qrSmall.svg}</div>` : ''}<div class="hj-t"><span>מצטרפים באמצע?</span><b dir="ltr">${esc(st.pin)}</b><small dir="ltr">${esc(host)}</small></div><span class="hj-zoom" aria-hidden="true">🔍</span>`);
+  box.title = 'לחצו להגדלה';
+  box.onclick = () => openJoinZoom();
   draw();
   if (qrSmall.url !== joinUrl) {
     fetch('/qr?text=' + encodeURIComponent(joinUrl)).then((r) => r.text()).then((svg) => { qrSmall = { url: joinUrl, svg }; draw(); }).catch(() => {});
+  }
+}
+
+// ---------- join zoom: a huge code, a big QR and the link, for the back of the class ----------
+function closeJoinZoom() {
+  const z = document.getElementById('jzOverlay');
+  if (z) z.remove();
+  removeEventListener('keydown', jzKey);
+}
+function jzKey(e) {
+  if (e.key === 'Escape') closeJoinZoom();
+}
+// the room's video (local file or YouTube) as markup, or '' - the same choice the lobby makes
+function videoMarkup() {
+  const v = String((st && st.setup.video) || '');
+  const local = v.startsWith('file:') ? videoLib.find((x) => x.key === v) : null;
+  const id = local ? '' : youtubeId(v);
+  if (local) return `<video src="${esc(local.url)}" autoplay loop playsinline muted controls></video>`;
+  if (id) return `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&rel=0&modestbranding=1" title="סרטון" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+  return '';
+}
+function openJoinZoom() {
+  if (document.getElementById('jzOverlay')) return closeJoinZoom();
+  if (!st || !joinUrl) return;
+  const z = document.createElement('div');
+  z.id = 'jzOverlay';
+  z.className = 'jz';
+  // the video only in the lobby: during a game the screen belongs to the game
+  const video = st.phase === 'lobby' ? videoMarkup() : '';
+  const host = joinUrl.replace(/^https?:\/\//, '').split('/')[0];
+  z.innerHTML = `<button class="jz-x" aria-label="סגירה">✕</button>
+    <div class="jz-in ${video ? 'with-video' : ''}">
+      ${video ? `<div class="jz-video">${video}</div>` : ''}
+      <div class="jz-join">
+        <div class="jz-step">היכנסו מהטלפון ל־<b dir="ltr">${esc(host)}</b></div>
+        <div class="jz-lbl">קוד המשחק</div>
+        <div class="jz-code" dir="ltr">${esc(st.pin)}</div>
+        <div class="jz-qr" id="jzQr">${qrSmall.url === joinUrl ? qrSmall.svg : ''}</div>
+        <div class="jz-url" dir="ltr">${esc(joinUrl)}</div>
+      </div>
+    </div>
+    <div class="jz-hint">לחיצה בכל מקום או Esc: חזרה</div>`;
+  z.onclick = closeJoinZoom;
+  document.body.appendChild(z);
+  addEventListener('keydown', jzKey);
+  if (qrSmall.url !== joinUrl) {
+    fetch('/qr?text=' + encodeURIComponent(joinUrl)).then((r) => r.text()).then((svg) => { qrSmall = { url: joinUrl, svg }; const q = document.getElementById('jzQr'); if (q) q.innerHTML = svg; }).catch(() => {});
   }
 }
 
@@ -148,7 +202,7 @@ function renderLobby() {
       </div>
       <div class="card join-panel">
         <div class="join-step">היכנסו מהטלפון ל־<b id="joinHost"></b></div>
-        <div class="pin-label">קוד המשחק</div>
+        <div class="pin-label">קוד המשחק <button class="jz-open" id="jzBtn" title="הגדלה למסך מלא (למי שיושב בסוף הכיתה)" aria-label="הגדלה">🔍</button></div>
         <div class="pin" id="pin"></div>
         <div class="join-or"><span>או סרקו</span></div>
         <div class="qr" id="qr"></div>
@@ -222,6 +276,7 @@ function renderLobby() {
       socket.emit('host:setup', { video: vu.value });
     };
     document.getElementById('videoClear').onclick = () => { vu.value = ''; socket.emit('host:setup', { video: '' }); };
+    document.getElementById('jzBtn').onclick = () => openJoinZoom();
     document.getElementById('classSel').onchange = (e) => socket.emit('host:setup', { classId: e.target.value });
     document.getElementById('filterOn').onchange = (e) => socket.emit('host:setup', { filter: e.target.checked });
     const wt = document.getElementById('winText');

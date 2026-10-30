@@ -20,12 +20,14 @@
     ['rate', 'דירוג / סולם', 'כוכבים או סולם 1–5 / 1–7 / 1–10, בלי תשובה נכונה · חידון קלאסי בלבד', '⭐'],
     ['rank', 'דירוג פריטים', 'מסדרים לפי העדפה והכיתה רואה את הדירוג המשותף · חידון קלאסי בלבד', '🏅'],
     ['drop', 'סיכה חופשית', 'כולם מניחים סיכה על תמונה · חידון קלאסי בלבד', '📌'],
-    ['slide', 'שקופית מידע', 'רק טקסט/תמונה · חידון קלאסי בלבד', '🖼️'],
+    ['tap', 'מרוץ הקשות', 'כולם מקישים כמה שיותר מהר, בלי תשובה נכונה · חידון קלאסי ושיעור', '👆'],
+    ['slide', 'שקופית', 'כותרת, נקודות, תמונה או סרטון · חידון קלאסי ושיעור', '🖼️'],
+    ['pdf', 'עמוד PDF', 'עמוד מקובץ PDF כשקופית · חידון קלאסי ושיעור', '📄'],
   ];
   const TYPE = Object.fromEntries(TYPES.map((t) => [t[0], t]));
   const TIMES = [5, 10, 20, 30, 45, 60, 90, 120, 180, 240];
   const POINTS = [[0, 'ללא ניקוד'], [1, 'רגיל'], [2, 'כפול ×2'], [3, 'משולש ×3'], [4, 'מרובע ×4']];
-  const UNSCORED = ['slide', 'cloud', 'open', 'brain', 'qna', 'drop', 'rate', 'rank']; // no points
+  const UNSCORED = ['slide', 'pdf', 'tap', 'cloud', 'open', 'brain', 'qna', 'drop', 'rate', 'rank']; // no points
   const LIMITS = { cloud: 3, open: 1, brain: 3, qna: 2 };
   const COLORS = ['#e9334f', '#1f73e0', '#e6a400', '#23a14a', '#8b5cf6', '#0fa3b8'];
 
@@ -69,6 +71,8 @@
     if (type === 'puzzle') { q.puzzle = { rows: 3, cols: 3 }; q.time = 60; }
     if (UNSCORED.includes(type)) q.points = 0;
     if (LIMITS[type]) q.limit = LIMITS[type];
+    if (type === 'pdf') q.pdf = { file: '', page: 1 };
+    if (type === 'tap') q.time = 10;
     return q;
   }
   // switching type keeps the text/picture/time
@@ -91,7 +95,9 @@
   // what is still missing before the question can be played
   function problems(q) {
     const p = [];
-    if (!q.text.trim()) p.push('חסר טקסט לשאלה');
+    const slideish = q.type === 'pdf' || (q.type === 'slide' && (q.image || q.video || q.body || (q.bullets && q.bullets.some((b) => b.trim()))));
+    if (!q.text.trim() && !slideish) p.push('חסר טקסט לשאלה');
+    if (q.type === 'pdf' && !(q.pdf && q.pdf.file)) p.push('בחרו קובץ PDF ועמוד');
     if (q.type === 'quiz') {
       if (q.answers.filter((a) => a.text.trim() || a.image).length < 2) p.push('צריך לפחות 2 תשובות');
       if (!q.answers.some((a) => a.correct && (a.text.trim() || a.image))) p.push('סמנו תשובה נכונה');
@@ -537,6 +543,7 @@
         <label class="bg-sel" title="הרקע שנבחר אוטומטית כשבוחרים את החידון במסך המשחק">🎨<select id="bgSel"><option value="">רקע: לפי החדר</option></select></label>
         <span class="ed-status saved" id="status">נשמר ✓</span>
         <a class="btn ghost sm" href="/api/q/quizzes/${encodeURIComponent(quiz.id)}/export.xlsx">⬇ ייצוא לאקסל</a>
+        <a class="btn green sm" href="/host.html?present=${encodeURIComponent(quiz.id)}" target="_blank" title="פותח חדר שיעור עם השקופיות והפעילויות האלה">▶ הצגה</a>
       </header>
       <div class="ed-main">
         <aside class="ed-list"><div id="qlist"></div><div class="add-wrap"><button class="btn green" id="addQ">+ שאלה</button><div class="type-menu hidden" id="typeMenu">${TYPES.map(([k, l, d, ic]) => `<button data-add="${k}"><span>${ic}</span><b>${l}</b><small>${d}</small></button>`).join('')}</div></div></aside>
@@ -645,9 +652,9 @@
   function drawStage() {
     const q = quiz.questions[cur];
     const st = document.getElementById('stage');
-    const media = q.type === 'pin' ? '' : `<div class="drop ${q.image ? 'has' : ''}" id="drop">${q.image ? `<img src="${mediaUrl(q.image)}" alt=""><button class="img-x" id="imgX" title="הסרת תמונה">✕</button>` : `<div class="drop-hint">🖼️ גררו תמונה לכאן, הדביקו (Ctrl+V) או לחצו להעלאה<small>${q.type === 'puzzle' ? 'התמונה תיחתך לחלקי פאזל' : q.type === 'drop' ? 'השחקנים יניחו עליה סיכות' : 'גם GIF ותמונות מונפשות'}</small></div>`}<input type="file" id="imgFile" accept="image/*,video/*" hidden></div>`;
+    const media = q.type === 'pin' || q.type === 'pdf' ? '' : `<div class="drop ${q.image ? 'has' : ''}" id="drop">${q.image ? `<img src="${mediaUrl(q.image)}" alt=""><button class="img-x" id="imgX" title="הסרת תמונה">✕</button>` : `<div class="drop-hint">🖼️ גררו תמונה לכאן, הדביקו (Ctrl+V) או לחצו להעלאה<small>${q.type === 'puzzle' ? 'התמונה תיחתך לחלקי פאזל' : q.type === 'drop' ? 'השחקנים יניחו עליה סיכות' : 'גם GIF ותמונות מונפשות'}</small></div>`}<input type="file" id="imgFile" accept="image/*,video/*" hidden></div>`;
     const v = q.video;
-    const vid = q.type === 'puzzle' || q.type === 'pin' || q.type === 'drop' ? '' : `
+    const vid = q.type === 'puzzle' || q.type === 'pin' || q.type === 'drop' || q.type === 'pdf' ? '' : `
       <div class="vid-ed ${v ? 'has' : ''}">
         <div class="vid-row">
           <span class="vid-ic">🎬</span>
@@ -696,19 +703,25 @@
     drawAnswers();
   }
 
+  // the PDF files this quiz already has (to reuse one behind several activities)
+  const pdfFiles = () => [...new Set(quiz.questions.flatMap((x) => (x.pdf && x.pdf.file ? [x.pdf.file] : [])))];
+
   async function upload(file, slot) {
     const isVideo = file.type.startsWith('video/');
+    const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '');
+    if (isPdf && file.size > 80 * 1024 * 1024) return toast('ה־PDF גדול מדי (עד 80MB)', true);
     if (slot === 'explain' && isVideo) return toast('תמונת ההסבר צריכה להיות תמונה', true);
     if (String(slot).startsWith('ans:') && isVideo) return toast('תמונת תשובה צריכה להיות תמונה', true);
-    if (!file.type.startsWith('image/') && !isVideo) return toast('רק תמונות או סרטונים', true);
-    if (!isVideo && file.size > 12 * 1024 * 1024) return toast('התמונה גדולה מדי (עד 12MB)', true);
+    if (!file.type.startsWith('image/') && !isVideo && !isPdf) return toast('רק תמונות, סרטונים או PDF', true);
+    if (!isVideo && !isPdf && file.size > 12 * 1024 * 1024) return toast('התמונה גדולה מדי (עד 12MB)', true);
     if (isVideo && file.size > 300 * 1024 * 1024) return toast('הסרטון גדול מדי (עד 300MB)', true);
     const q = quiz.questions[cur];
     if (isVideo && (q.type === 'pin' || q.type === 'puzzle' || q.type === 'drop')) return toast('לשאלה מהסוג הזה אפשר להוסיף רק תמונה', true);
-    const t = isVideo ? toastSticky('מעלה סרטון…') : null;
+    const t = isVideo || isPdf ? toastSticky(isPdf ? 'מעלה PDF…' : 'מעלה סרטון…') : null;
     try {
-      const r = await api(`/quizzes/${encodeURIComponent(quiz.id)}/media`, { method: 'POST', body: file, headers: { 'Content-Type': file.type } });
-      if (isVideo) q.video = { file: r.name, start: 0, end: 0 };
+      const r = await api(`/quizzes/${encodeURIComponent(quiz.id)}/media`, { method: 'POST', body: file, headers: { 'Content-Type': isPdf ? 'application/pdf' : file.type } });
+      if (isPdf) q.pdf = { file: r.name, page: (q.pdf && q.pdf.page) || 1 };
+      else if (isVideo) q.video = { file: r.name, start: 0, end: 0 };
       else if (slot === 'explain') q.explainImage = r.name;
       else if (String(slot).startsWith('ans:')) q.answers[Number(slot.slice(4))].image = r.name;
       else q.image = r.name;
@@ -1031,9 +1044,88 @@
       return;
     }
 
-    box.innerHTML = `<textarea class="q-text-in" id="slBody" maxlength="600" rows="4" placeholder="טקסט נוסף מתחת לכותרת (לא חובה)">${esc(q.body || '')}</textarea>
-      <div class="muted ae-tip">שקופית מידע: מוצגת לכולם בחידון הקלאסי, בלי תשובות. אפשר להוסיף תמונה או סרטון.</div>`;
-    box.oninput = (e) => { if (e.target.id === 'slBody') { if (e.target.value.trim()) q.body = e.target.value; else delete q.body; dirty(); } };
+    if (q.type === 'tap') {
+      box.innerHTML = '<div class="muted ae-tip">כולם מקישים על כפתור גדול בטלפון כמה שיותר מהר, במשך הזמן שנקבע. במסך הגדול מופיע דירוג המקישים. כיף וקצר, בלי תשובה נכונה ובלי ניקוד. אפשר להקיש עד 14 פעמים בשנייה.</div>';
+      return;
+    }
+
+    if (q.type === 'pdf') return pdfEditor(q, box, rerender);
+
+    // a slide: layout, text, bullet points, a countdown, notes (a picture or video goes in the area above)
+    const LAY = [['', 'אוטומטי'], ['title', 'כותרת'], ['bullets', 'כותרת ונקודות'], ['image-right', 'טקסט ותמונה (תמונה משמאל)'], ['image-left', 'טקסט ותמונה (תמונה מימין)'], ['full-image', 'תמונה מלאה עם טקסט'], ['quote', 'ציטוט'], ['fun', 'הפסקה / כיף']];
+    const TIM = [[0, 'בלי'], [30, '30 שניות'], [60, 'דקה'], [120, '2 דקות'], [300, '5 דקות'], [600, '10 דקות']];
+    box.innerHTML = `<div class="ae-slide">
+        <label>🎨 עיצוב השקופית<select id="slLay">${LAY.map(([v, l]) => `<option value="${v}" ${(q.layout || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+        <label>טקסט נוסף מתחת לכותרת<textarea id="slBody" maxlength="600" rows="3" placeholder="לא חובה">${esc(q.body || '')}</textarea></label>
+        <label>נקודות (שורה לכל נקודה, עד 8)<textarea id="slBul" maxlength="900" rows="5" placeholder="נקודה ראשונה&#10;נקודה שנייה">${esc((q.bullets || []).join('\n'))}</textarea></label>
+        <label>⏱ ספירה לאחור על המסך<select id="slTim">${TIM.map(([v, l]) => `<option value="${v}" ${(q.timer || 0) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+        <label>📝 הערות למורה<textarea id="slNot" maxlength="800" rows="2" placeholder="נשמרות כאן בלבד, לא מוצגות לכיתה">${esc(q.notes || '')}</textarea></label>
+      </div>
+      <div class="muted ae-tip">שקופית: מוצגת על המסך הגדול. בשיעור התלמידים מגיבים בטלפון (👍 הבנתי · 🤔 לא בטוח · 🙋 שאלה). תמונה או סרטון מוסיפים באזור שמעל.</div>`;
+    box.oninput = (e) => {
+      const id = e.target.id;
+      if (id === 'slBody') { if (e.target.value.trim()) q.body = e.target.value; else delete q.body; }
+      else if (id === 'slBul') { const b = e.target.value.split('\n').map((x) => x.trim()).filter(Boolean).slice(0, 8); if (b.length) q.bullets = b; else delete q.bullets; }
+      else if (id === 'slNot') { if (e.target.value.trim()) q.notes = e.target.value; else delete q.notes; }
+      else return;
+      soft();
+    };
+    box.onchange = (e) => {
+      if (e.target.id === 'slLay') { if (e.target.value) q.layout = e.target.value; else delete q.layout; dirty(); }
+      if (e.target.id === 'slTim') { const v = Number(e.target.value); if (v) q.timer = v; else delete q.timer; dirty(); }
+    };
+  }
+
+  // ---------- a PDF page as a step ----------
+  function pdfEditor(q, box, rerender) {
+    const f = q.pdf && q.pdf.file;
+    if (!f) {
+      box.innerHTML = '<div class="drop" id="pdfDrop"><div class="drop-hint">📄 העלו קובץ PDF (מצגת שיצאה מפאוורפוינט או גוגל סליידס, מסמך, דף עבודה…)<small>כל עמוד נהיה שקופית, ואפשר להכניס ביניהם סקרים ושאלות</small></div><input type="file" id="pdfFile" accept="application/pdf" hidden></div>';
+      const d = document.getElementById('pdfDrop');
+      d.onclick = () => document.getElementById('pdfFile').click();
+      document.getElementById('pdfFile').onchange = (e) => e.target.files[0] && upload(e.target.files[0]);
+      d.ondragover = (e) => { e.preventDefault(); d.classList.add('over'); };
+      d.ondragleave = () => d.classList.remove('over');
+      d.ondrop = (e) => { e.preventDefault(); d.classList.remove('over'); if (e.dataTransfer.files[0]) upload(e.dataTransfer.files[0]); };
+      return;
+    }
+    const url = mediaUrl(f);
+    box.innerHTML = `<div class="pdf-ed">
+        <div class="pdf-prev" id="pdfPrev"><canvas id="pdfCv"></canvas></div>
+        <div class="pdf-ctl"><button class="btn ghost sm" data-pg="-1">▶ הקודם</button><label>עמוד <input type="number" id="pdfPg" min="1" value="${q.pdf.page}"></label><span class="muted" id="pdfTot"></span><button class="btn ghost sm" data-pg="1">הבא ◀</button></div>
+        <div class="row"><button class="btn ghost sm" id="pdfAll">➕ הוספת שאר העמודים כשקופיות אחרי זו</button><label class="btn ghost sm">🔄 החלפת קובץ<input type="file" id="pdfFile" accept="application/pdf" hidden></label></div>
+        <div class="muted ae-tip">הכותרת למעלה היא כיתוב קטן מתחת לעמוד (לא חובה). אפשר להכניס סקר או שאלה בין העמודים: הוסיפו שאלה והעבירו אותה למקום.</div></div>`;
+    let total = 0;
+    const draw = () => {
+      const cv = document.getElementById('pdfCv');
+      if (cv) Slides.draw(url, q.pdf.page, cv, 520, 330).catch(() => (document.getElementById('pdfPrev').innerHTML = '<div class="muted">לא הצלחנו להציג את העמוד</div>'));
+    };
+    Slides.pages(url).then((n) => {
+      total = n;
+      const t = document.getElementById('pdfTot');
+      if (t) t.textContent = `מתוך ${n}`;
+      const inp = document.getElementById('pdfPg');
+      if (inp) inp.max = n;
+    }).catch(() => {});
+    draw();
+    const go = (p) => { p = Math.max(1, Math.min(total || 999, p)); if (p === q.pdf.page) return; q.pdf.page = p; document.getElementById('pdfPg').value = p; dirty(); draw(); };
+    box.onclick = (e) => {
+      const b = e.target.closest('[data-pg]');
+      if (b) go(q.pdf.page + Number(b.dataset.pg));
+      if (e.target.id === 'pdfAll') {
+        if (!total || q.pdf.page >= total) return toast('אין עוד עמודים אחרי העמוד הזה');
+        const rest = [];
+        for (let p = q.pdf.page + 1; p <= total; p++) rest.push({ type: 'pdf', text: '', time: 20, points: 0, pdf: { file: f, page: p } });
+        quiz.questions.splice(cur + 1, 0, ...rest);
+        dirty();
+        toast(`נוספו ${rest.length} עמודים כשקופיות`);
+        drawAll();
+      }
+    };
+    box.onchange = (e) => {
+      if (e.target.id === 'pdfPg') go(Number(e.target.value) || 1);
+      if (e.target.id === 'pdfFile' && e.target.files[0]) upload(e.target.files[0]);
+    };
   }
 
   function drawSide() {
@@ -1046,14 +1138,29 @@
       ${q.image && q.type !== 'pin' && q.type !== 'puzzle' && q.type !== 'drop' ? `<label>🌫️ חשיפת התמונה<select id="sReveal">${[['', 'מיד'], ['blur', 'טשטוש שמתבהר'], ['tiles', 'אריחים שנעלמים']].map(([v, l]) => `<option value="${v}" ${(q.reveal || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
         ${q.reveal ? `<label>⏳ משך החשיפה<select id="sRevealSec">${[[0, 'לאורך כל הזמן'], [5, '5 שניות'], [10, '10 שניות'], [15, '15 שניות'], [20, '20 שניות'], [30, '30 שניות'], [45, '45 שניות'], [60, 'דקה']].map(([v, l]) => `<option value="${v}" ${(q.revealSec || 0) === v ? 'selected' : ''}>${l}</option>`).join('')}</select><small class="muted">מי שעונה מהר, לפני שרואים הכל, מקבל יותר נקודות</small></label>` : ''}` : ''}
       ${q.image && q.type !== 'pin' && q.type !== 'puzzle' && q.type !== 'drop' && q.type !== 'slide' ? `<label>👁️ מתי להציג את התמונה<select id="sWhen"><option value="">בזמן השאלה</option><option value="after" ${q.imageWhen === 'after' ? 'selected' : ''}>רק אחרי התשובה (להסבר)</option></select></label>` : ''}
-      ${q.type === 'slide' ? '' : `<label>💡 הסבר אחרי התשובה<textarea id="sExplain" maxlength="200" rows="3" placeholder="למה זו התשובה? (לא חובה)">${esc(q.explain || '')}</textarea></label>
+      ${q.type === 'slide' || q.type === 'pdf' ? '' : `<label>💡 הסבר אחרי התשובה<textarea id="sExplain" maxlength="200" rows="3" placeholder="למה זו התשובה? (לא חובה)">${esc(q.explain || '')}</textarea></label>
       <div class="ex-img"><span>🖼️ תמונה להסבר <small>(מוצגת אחרי התשובה)</small></span>${q.explainImage ? `<div class="ex-thumb"><img src="${mediaUrl(q.explainImage)}" alt=""><button id="exImgX" title="הסרה">✕</button></div>` : `<label class="btn ghost sm">⬆ העלאת תמונה<input type="file" id="exImgFile" accept="image/*" hidden></label>`}</div>`}
+      ${q.type === 'slide' || q.type === 'pdf' ? '' : `<div class="ex-img"><span>📄 עמוד PDF שמוצג עם הפעילות <small>(השאלה על העמוד)</small></span>
+        <select id="sPdf"><option value="">בלי</option>${pdfFiles().map((f, i) => `<option value="${esc(f)}" ${q.pdf && q.pdf.file === f ? 'selected' : ''}>PDF ${i + 1}</option>`).join('')}<option value="__new">⬆ העלאת PDF חדש…</option></select>
+        ${q.pdf ? `<label>עמוד <input type="number" id="sPdfPg" min="1" max="999" value="${q.pdf.page}" style="width:70px"></label>` : ''}
+        <input type="file" id="sPdfFile" accept="application/pdf" hidden></div>
+        <div class="ex-img"><span>📖 מקור התשובה <small>(מוצג אחרי התשובה)</small></span>
+        <input class="input sm" id="sSrcDoc" maxlength="80" placeholder="מסמך / ספר" value="${esc((q.source && q.source.doc) || '')}">
+        <input class="input sm" id="sSrcLoc" maxlength="60" placeholder="עמוד / פרק" value="${esc((q.source && q.source.loc) || '')}">
+        <input class="input sm" id="sSrcQuote" maxlength="240" placeholder="ציטוט קצר (לא חובה)" value="${esc((q.source && q.source.quote) || '')}"></div>`}
       <div class="side-note">במשחקים (לא בחידון הקלאסי) אין הגבלת זמן, וניקוד כפול = מתקדמים מהר יותר לתור הבא.</div>
       <div class="probs" id="probs">${probsHtml(q)}</div>
       <div class="side-stats">${quiz.questions.length} שאלות · ${quiz.questions.filter((x) => !problems(x).length).length} מוכנות</div>`;
     side.onchange = (e) => {
       if (e.target.id === 'sType') { quiz.questions[cur] = convert(q, e.target.value); dirty(); drawAll(); }
       if (e.target.id === 'sTime') { q.time = Number(e.target.value); dirty(); }
+      if (e.target.id === 'sPdf') {
+        if (e.target.value === '__new') return document.getElementById('sPdfFile').click();
+        if (e.target.value) q.pdf = { file: e.target.value, page: (q.pdf && q.pdf.page) || 1 }; else delete q.pdf;
+        dirty(); drawSide();
+      }
+      if (e.target.id === 'sPdfPg') { q.pdf.page = Math.max(1, Math.min(999, Number(e.target.value) || 1)); dirty(); }
+      if (e.target.id === 'sPdfFile' && e.target.files[0]) upload(e.target.files[0]);
       if (e.target.id === 'sPts') { q.points = Number(e.target.value); dirty(); }
       if (e.target.id === 'sReveal') { if (e.target.value) q.reveal = e.target.value; else { delete q.reveal; delete q.revealSec; } dirty(); drawSide(); }
       if (e.target.id === 'sWhen') { if (e.target.value) q.imageWhen = e.target.value; else delete q.imageWhen; dirty(); }
@@ -1062,6 +1169,12 @@
     };
     side.oninput = (e) => {
       if (e.target.id === 'sExplain') { q.explain = e.target.value; dirty(); }
+      if (['sSrcDoc', 'sSrcLoc', 'sSrcQuote'].includes(e.target.id)) {
+        const v = (id) => document.getElementById(id).value;
+        const src = { doc: v('sSrcDoc'), loc: v('sSrcLoc'), quote: v('sSrcQuote') };
+        if (src.doc.trim() || src.loc.trim() || src.quote.trim()) q.source = src; else delete q.source;
+        dirty();
+      }
     };
     side.onclick = (e) => {
       if (e.target.id === 'exImgX') { delete q.explainImage; dirty(); drawSide(); }

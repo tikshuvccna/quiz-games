@@ -4,7 +4,7 @@
 
 **משחקי חידון חיים לכיתה.** המורה מקרינה מהמחשב, התלמידים משחקים מהטלפון, וכל תשובה נכונה הופכת לפעולה במשחק: לבעוט פנדל, לכבוש טירה, לברוח מרובוט או לטפס מהר געש.
 
-23 משחקים · קבוצה נגד קבוצה, כל אחד לעצמו, או כל הכיתה יחד · בלי הרשמה, בלי אפליקציה ובלי אינטרנט
+25 משחקים · קבוצה נגד קבוצה, כל אחד לעצמו, או כל הכיתה יחד · בלי הרשמה, בלי אפליקציה ובלי אינטרנט
 
 ### ⬇️ [להורדה (Windows)](https://github.com/tikshuvccna/quiz-games/releases/latest/download/BrainBlast-Windows.zip)
 
@@ -59,7 +59,7 @@
 
 **Live classroom quiz games.** The teacher projects the host screen, students play on their phones, and every correct answer turns into a move in a game: take a penalty, capture a castle, outrun a robot, climb out of a volcano.
 
-23 games: team vs team, everyone for themselves, or the whole class together. No sign-up, no app, no internet needed. The interface is in Hebrew.
+25 games: team vs team, everyone for themselves, or the whole class together. No sign-up, no app, no internet needed. The interface is in Hebrew.
 
 **[Download for Windows](https://github.com/tikshuvccna/quiz-games/releases/latest/download/BrainBlast-Windows.zip)**: extract the zip, double-click `start.bat`, allow the firewall prompt once. Students on the same Wi-Fi scan the QR code. Node.js is bundled; nothing to install.
 

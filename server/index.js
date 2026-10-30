@@ -99,7 +99,7 @@ app.put('/api/q/quizzes/:id', api((req) => Quizzes.save(req.params.id, req.body)
 app.delete('/api/q/quizzes/:id', api((req) => (Quizzes.remove(req.params.id), { ok: true })));
 app.post('/api/q/quizzes/:id/duplicate', api((req) => Quizzes.duplicate(req.params.id)));
 // pictures (incl. animated GIF / APNG / WebP) and video files for questions
-app.post('/api/q/quizzes/:id/media', express.raw({ type: ['image/*', 'video/*'], limit: '300mb' }), api((req) => {
+app.post('/api/q/quizzes/:id/media', express.raw({ type: ['image/*', 'video/*', 'application/pdf'], limit: '300mb' }), api((req) => {
   const name = Quizzes.saveMedia(req.params.id, req.body, String(req.headers['content-type'] || '').split(';')[0]);
   return { name, url: `/media/${encodeURIComponent(req.params.id)}/${name}` };
 }));
@@ -176,6 +176,8 @@ app.get('/api/q/quizzes/:id/export.xlsx', api(async (req, res) => sendXlsx(res, 
 
 // background music: every mp3 in the music folder (big screen only)
 const MUSIC_DIR = path.join(__dirname, '..', 'music');
+// PDF.js (Mozilla, Apache-2.0) draws PDF pages in the browser, offline
+app.use('/vendor/pdfjs', express.static(path.join(__dirname, '..', 'node_modules', 'pdfjs-dist', 'build'), { maxAge: '1d' }));
 app.use('/music', express.static(MUSIC_DIR, { maxAge: '1d' }));
 app.get('/api/music', (req, res) => {
   let files = [];
@@ -317,6 +319,13 @@ io.on('connection', (socket) => {
   on('host:next', () => {
     const room = hostRoom();
     if (room && room.phase === 'playing' && room.game.hostCommand) room.game.hostCommand('next');
+  });
+
+  // a lesson: back one step, or jump to any step
+  on('host:cmd', (d) => {
+    const room = hostRoom();
+    const o = obj(d);
+    if (room && room.phase === 'playing' && room.game.hostCommand && ['next', 'prev', 'goto'].includes(o.cmd)) room.game.hostCommand(o.cmd, o.arg);
   });
 
   on('host:end', () => {
