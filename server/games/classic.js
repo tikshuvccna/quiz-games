@@ -28,7 +28,7 @@ class ClassicGame extends QuizGame {
   static teamAvg = true; // team score = average of its members (like Kahoot)
   static blurb = 'החידון הקלאסי: כולם עונים על אותה שאלה מהמסך הגדול. תשובה נכונה ומהירה = יותר נקודות, רצפים נותנים בונוס, ובין השאלות יש לוח מובילים. אפשר גם בקבוצות.';
   static tickMs = 500;
-  static defaults = { duration: 600, count: 0, order: 'original', advance: 'manual', bonus: 'off', style: 'speed', timer: 'question', surprise: 'off' };
+  static defaults = { duration: 600, count: 0, order: 'original', advance: 'manual', bonus: 'off', style: 'speed', timer: 'question', surprise: 'off', final: 'normal', lives: 'off' };
   static options = [
     { key: 'style', label: 'סגנון ניקוד', choices: [['speed', 'קלאסי: מהירות + דיוק'], ['accuracy', 'דיוק בלבד (נקודה לכל נכונה)'], ['confidence', 'ביטחון: בוסט או בטוח'], ['learn', 'למידה: בלי ניקוד ובלי לוח מובילים']] },
     { key: 'timer', label: 'זמן לשאלה', choices: [['question', 'לפי השאלה'], ['unlimited', 'ללא הגבלה']] },
@@ -36,6 +36,8 @@ class ClassicGame extends QuizGame {
     { key: 'order', label: 'סדר השאלות', choices: [['original', 'לפי החידון'], ['shuffle', 'מעורבב']] },
     { key: 'advance', label: 'מעבר בין שלבים', choices: [['manual', 'ידני (לחיצה)'], ['auto', 'אוטומטי']] },
     { key: 'bonus', label: 'הזדמנות שנייה ל־5 האחרונים', choices: [['off', 'לא'], ['on', 'כן']] },
+    { key: 'final', label: 'השאלה האחרונה', choices: [['normal', 'רגילה'], ['double', 'שווה כפול']] },
+    { key: 'lives', label: 'הישרדות', choices: [['off', 'ללא'], [3, '3 חיים'], [1, 'חיים אחד: טעות אחת וזהו']] },
     { key: 'surprise', label: '🎁 הפתעות בלוח המובילים', choices: [['off', 'ללא'], ['sometimes', 'לפעמים'], ['often', 'הרבה']] },
   ];
 
@@ -65,7 +67,17 @@ class ClassicGame extends QuizGame {
   }
 
   freshG() {
-    return { score: 0, streak: 0, bestStreak: 0, correct: 0, wrong: 0, rank: 0, prevRank: 0, res: null, fastest: null, conf: 1, boosts: 0 };
+    return { score: 0, streak: 0, bestStreak: 0, correct: 0, wrong: 0, rank: 0, prevRank: 0, res: null, fastest: null, conf: 1, boosts: 0, lives: this.livesStart() };
+  }
+
+  // survival: wrong answers cost lives, and a player with none left only watches (classic quiz only)
+  livesStart() {
+    const n = Number(this.room.settings.lives);
+    return this.constructor.id === 'classic' && n > 0 ? n : 0;
+  }
+
+  get livesOn() {
+    return this.livesStart() > 0;
   }
 
   // joins in the middle: answers from the next question on
@@ -104,7 +116,9 @@ class ClassicGame extends QuizGame {
     const { payload, state } = qt.present(q, this.room.quizData.mediaBase);
     this.cur = { q, payload, state, startAt: 0, deadline: 0, answers: new Map(), reveal: null };
     // a "double points" surprise from the last leaderboard: this question counts twice (shown as a bigger multiplier)
-    if (this.dbl && q.points > 0 && qt.SCORED.has(q.type)) {
+    const finalQ = this.constructor.id === 'classic' && this.room.settings.final === 'double' && !this.inBonus && this.i === this.list.length - 1;
+    if (finalQ && q.points > 0 && qt.SCORED.has(q.type)) this.addFeed('🎁 השאלה האחרונה שווה כפול!');
+    if ((this.dbl || finalQ) && q.points > 0 && qt.SCORED.has(q.type)) {
       this.cur.dbl = true;
       payload.points = Math.min(4, q.points * 2);
     }
@@ -210,7 +224,7 @@ class ClassicGame extends QuizGame {
   afterReveal() {}
 
   canAnswer(p) {
-    return !!p.g && (!this.eligible || this.eligible.has(p.id));
+    return !!p.g && (!this.eligible || this.eligible.has(p.id)) && !(this.livesOn && p.g.lives <= 0);
   }
 
   handle(p, type, data) {
@@ -312,6 +326,10 @@ class ClassicGame extends QuizGame {
         } else {
           g.streak = 0;
           g.wrong++;
+          if (this.livesOn && g.lives > 0) {
+            g.lives--;
+            if (g.lives === 0) this.addFeed(`💀 ${p.name} הודח/ה מההישרדות`);
+          }
         }
         pts = this.scoreFor(p, q, a, ok);
         g.score = Math.max(0, g.score + pts);
@@ -418,6 +436,7 @@ class ClassicGame extends QuizGame {
     if (this.isLast()) return this.room.end();
     // learning: no leaderboard at all, straight to the next question
     if (this.style === 'learn') return this.next();
+    if (this.livesOn && this.players().filter((p) => p.g && p.g.lives > 0).length <= (this.players().length > 1 ? 1 : 0)) return this.room.end();
     this.sur = this.maybeSurprise();
     this.stage = 'board';
     this.pushEveryone();
@@ -476,7 +495,9 @@ class ClassicGame extends QuizGame {
   }
 
   rank() {
-    const list = this.players().filter((p) => p.g).sort((a, b) => b.g.score - a.g.score);
+    // survival: those still in the game rank above those who were knocked out
+    const out = (p) => (this.livesOn && p.g.lives <= 0 ? 1 : 0);
+    const list = this.players().filter((p) => p.g).sort((a, b) => out(a) - out(b) || b.g.score - a.g.score);
     list.forEach((p, i) => (p.g.rank = i + 1));
     return list;
   }
@@ -559,7 +580,7 @@ class ClassicGame extends QuizGame {
   personal(p) {
     const g = p.g;
     const cur = this.cur;
-    const base = { score: g.score, rank: g.rank, streak: g.streak, qid: this.qid(), qnum: this.i + 1, total: this.list.length, bonus: this.inBonus, stage: this.stage, qtype: cur ? cur.q.type : '', style: this.style };
+    const base = { score: g.score, rank: g.rank, streak: g.streak, qid: this.qid(), qnum: this.i + 1, total: this.list.length, bonus: this.inBonus, stage: this.stage, lives: this.livesOn ? g.lives : null, qtype: cur ? cur.q.type : '', style: this.style };
     const can = this.canAnswer(p);
     if (!cur) return { ...base, phase: 'c_ready' };
     if (this.stage === 'ready') return { ...base, phase: can ? 'c_ready' : 'c_watch', text: cur.q.text, points: cur.q.points };

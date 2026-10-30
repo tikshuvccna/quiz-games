@@ -299,7 +299,8 @@
         }, 0);
       }
       if (you.style === 'learn') return '';
-      return `<span class="hchip">⭐ ${you.score || 0}</span>${you.rank ? `<span class="hchip">#${you.rank}</span>` : ''}`;
+      const lives = you.lives != null ? `<span class="hchip">${you.lives > 0 ? '❤️'.repeat(you.lives) : '💀'}</span>` : '';
+      return `<span class="hchip">⭐ ${you.score || 0}</span>${lives}${you.rank ? `<span class="hchip">#${you.rank}</span>` : ''}`;
     },
 
     playerPhase(app, you, ctx) {
