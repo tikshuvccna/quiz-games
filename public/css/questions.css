@@ -107,3 +107,52 @@
 .fb-pic { max-width: min(320px, 80%); max-height: 24vh; object-fit: contain; border-radius: var(--r); box-shadow: 0 6px 0 rgba(0, 0, 0, .2); animation: popin .5s var(--spring) .3s both; }
 .fb-pic { cursor: zoom-in; }
 .fb-pic.zoomed { position: fixed; inset: 0; z-index: 450; width: 100vw; height: 100vh; max-width: none; max-height: none; object-fit: contain; padding: 16px; border-radius: 0; background: rgba(5, 2, 20, .94); cursor: zoom-out; animation: fadein .2s; }
+
+/* picture answers on the phone */
+.answers.pics .ans { padding: 8px; flex-direction: column; gap: 6px; }
+.answers.pics .ans .shape { z-index: 2; }
+.ans-pic { flex: 1; min-height: 0; width: 100%; object-fit: contain; border-radius: 12px; background: rgba(255, 255, 255, .22); }
+.ans.has-pic span { font-size: .8em; }
+
+/* word cloud / free text / brainstorm: a few inputs and one send button */
+.q-words { flex: 1; display: flex; flex-direction: column; gap: 10px; justify-content: center; }
+.q-words .input.big-in { font-size: 1.5rem; padding: 16px; resize: none; }
+.q-words textarea.big-in { min-height: 140px; }
+
+/* brainstorm vote: pick up to 3 ideas */
+.ide-list { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 4px 2px; }
+.ide-opt { border: 0; border-radius: var(--r); padding: 16px 18px; text-align: start; font: inherit; font-weight: 800; font-size: 1.15rem; color: #fff; cursor: pointer; background: rgba(255, 255, 255, .12); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .15), 0 4px 0 rgba(0, 0, 0, .25); transition: transform .08s, background .15s; }
+.ide-opt.picked { background: linear-gradient(135deg, #22c7e8, #8b5cf6); box-shadow: 0 0 0 3px #fff, 0 4px 0 rgba(0, 0, 0, .25); transform: scale(1.02); }
+.ide-list.locked { opacity: .6; pointer-events: none; }
+
+/* rating: stars (5) or a numbered scale (7 / 10) */
+.q-rate { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 0; }
+.rate-b { flex: 1; max-width: 64px; aspect-ratio: 1; border: 0; border-radius: 16px; cursor: pointer; display: grid; place-items: center; color: #fff; font: inherit; font-weight: 900; background: rgba(255, 255, 255, .13); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .18), 0 5px 0 rgba(0, 0, 0, .25); transition: transform .1s, background .15s; animation: ansin .45s var(--spring) both; animation-delay: calc(var(--i) * 50ms); }
+.rate-b b { font-size: 1.3rem; }
+.q-rate.n5 .rate-b { max-width: none; aspect-ratio: auto; height: 96px; flex-direction: column; }
+.q-rate.n5 .rate-b .st { font-size: 2.4rem; line-height: 1; opacity: .5; }
+.q-rate.n5 .rate-b b { font-size: 1rem; opacity: .8; }
+.rate-b.on { background: linear-gradient(160deg, #ffd23f, #ff9f1c); color: #3a2a00; box-shadow: 0 0 0 3px #fff, 0 5px 0 rgba(0, 0, 0, .25); }
+.rate-b.on .st { opacity: 1; }
+.rate-b:active { transform: translateY(4px); }
+.q-rate.n10 { flex-wrap: wrap; }
+.q-rate.n10 .rate-b { flex: 0 0 calc(20% - 8px); max-width: none; }
+.rate-ends { display: flex; justify-content: space-between; font-weight: 800; color: var(--muted); padding: 0 4px; }
+.sent .rate-b { pointer-events: none; }
+
+/* matching: two columns, tap one from each to connect them */
+.q-match { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-content: center; overflow-y: auto; }
+.qm-col { display: flex; flex-direction: column; gap: 10px; }
+.qm-it { border: 0; cursor: pointer; border-radius: var(--r); padding: 14px 10px; min-height: 60px; font: inherit; font-weight: 800; font-size: 1.05rem; color: #fff; overflow-wrap: anywhere; background: rgba(255, 255, 255, .12); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .15), 0 4px 0 rgba(0, 0, 0, .25); transition: transform .08s; }
+.qm-it.paired { background: var(--c); box-shadow: 0 4px 0 rgba(0, 0, 0, .3); text-shadow: 0 2px 0 rgba(0, 0, 0, .25); }
+.qm-it.pick { box-shadow: 0 0 0 4px #fff, 0 4px 0 rgba(0, 0, 0, .3); transform: scale(1.03); }
+.sent .qm-it, .sent .qs-b button { pointer-events: none; }
+
+/* sorting: every item gets one of 2-3 colored groups */
+.q-sort { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 2px; }
+.qs-row { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: var(--r); background: rgba(255, 255, 255, .08); }
+.qs-row.done { background: rgba(255, 255, 255, .04); }
+.qs-row .t { font-weight: 800; font-size: 1.15rem; overflow-wrap: anywhere; }
+.qs-b { display: flex; gap: 8px; }
+.qs-b button { flex: 1; border: 0; cursor: pointer; border-radius: 12px; padding: 10px 6px; font: inherit; font-weight: 800; color: #fff; background: rgba(255, 255, 255, .12); box-shadow: inset 0 0 0 2px var(--c); }
+.qs-b button.on { background: var(--c); box-shadow: 0 0 0 3px #fff; text-shadow: 0 2px 0 rgba(0, 0, 0, .25); }

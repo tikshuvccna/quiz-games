@@ -43,9 +43,15 @@ window.QMedia = (function () {
   }
 
   // the zone that counts as right on a pin question: a circle (radius in % of the width) or a rectangle
+  // one zone: circle · rect · ellipse (x/y = center) · polygon (points in %)
+  function zone1(z, cls) {
+    if (z.shape === 'polygon') return `<svg class="${cls} poly" viewBox="0 0 100 100" preserveAspectRatio="none"><polygon points="${z.points.map((p) => p.join(',')).join(' ')}"/></svg>`;
+    if (z.shape === 'rect' || z.shape === 'ellipse') return `<i class="${cls} ${z.shape}" style="left:${z.x - z.w / 2}%;top:${z.y - z.h / 2}%;width:${z.w}%;height:${z.h}%"></i>`;
+    return `<i class="${cls}" style="left:${z.x}%;top:${z.y}%;--r:${z.r}"></i>`;
+  }
+  // the pin's zone and any extra zones that also count
   function pinZone(pin, cls) {
-    if (pin.shape === 'rect') return `<i class="${cls} rect" style="left:${pin.x - pin.w / 2}%;top:${pin.y - pin.h / 2}%;width:${pin.w}%;height:${pin.h}%"></i>`;
-    return `<i class="${cls}" style="left:${pin.x}%;top:${pin.y}%;--r:${pin.r}"></i>`;
+    return [pin, ...(pin.extra || [])].map((z) => zone1(z, cls)).join('');
   }
 
   // ---------- video ----------
@@ -282,5 +288,5 @@ window.QMedia = (function () {
     return { order: () => at.slice() };
   }
 
-  return { picture, mount, pinZone, video, cuts, piecePath, pieceSvg, puzzleOutline, jigsaw, size, rng };
+  return { picture, mount, pinZone, zone1, video, cuts, piecePath, pieceSvg, puzzleOutline, jigsaw, size, rng };
 })();

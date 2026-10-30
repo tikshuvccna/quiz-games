@@ -1,4 +1,5 @@
 // Bots play a short round of every game against a running server: node scripts/smoke-test.js [territory|gems|asteroids]
+// KICK=1 node scripts/smoke-test.js: the teacher also removes one player in the middle of every game.
 const { io } = require('socket.io-client');
 const Q = require('../questions/sample.json');
 const URL = process.env.QG_URL || 'http://localhost:3000';
@@ -78,13 +79,15 @@ function run(game) {
         return s;
       });
       setTimeout(() => host.emit('host:start'), 500);
+      // KICK=1: the teacher removes a player in the middle of the game (nothing may break)
+      if (process.env.KICK) setTimeout(() => { const v = hs.players[1]; if (v) host.emit('host:kick', v.id); }, 4500);
       setTimeout(() => {
         const b = hs.board;
         console.log(game, 'playing:', JSON.stringify(b).slice(0, 220));
         host.emit('host:end');
       }, 10000);
       setTimeout(() => {
-        console.log(game, 'ended:', hs.phase, JSON.stringify(hs.results).slice(0, 260));
+        console.log(game, 'ended:', hs.phase, process.env.KICK ? `players left: ${hs.players ? hs.players.length : '?'} ` : '', JSON.stringify(hs.results).slice(0, 200));
         [host, ...bots].forEach((s) => s.close());
         resolve();
       }, 10600);

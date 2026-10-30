@@ -8,14 +8,25 @@
     ['type', 'הקלדת תשובה', 'השחקן מקליד, כמה איותים מותרים', '⌨️'],
     ['slider', 'סרגל מספרים', 'בוחרים מספר בטווח', '🎚️'],
     ['order', 'סידור', 'מסדרים פריטים בסדר הנכון', '🔢'],
+    ['match', 'התאמה', 'מחברים כל פריט לבן הזוג שלו', '🔗'],
+    ['sort', 'מיון לקבוצות', 'מכניסים כל פריט לקבוצה הנכונה', '🗂️'],
     ['pin', 'סימון על תמונה', 'לוחצים על המקום הנכון', '📍'],
     ['puzzle', 'פאזל אמיתי', 'התמונה נחתכת לחלקי פאזל שמרכיבים', '🧩'],
-    ['poll', 'סקר', 'בלי תשובה נכונה · חידון קלאסי בלבד', '📊'],
+    ['poll', 'סקר', 'בלי תשובה נכונה, אפשר גם כמה תשובות · חידון קלאסי בלבד', '📊'],
+    ['cloud', 'ענן מילים', 'כולם שולחים מילה והנפוצות גדולות · חידון קלאסי בלבד', '☁️'],
+    ['open', 'תשובה פתוחה', 'כולם כותבים תשובה חופשית · חידון קלאסי בלבד', '✍️'],
+    ['brain', 'סיעור מוחות', 'רעיונות מהכיתה ואז הצבעה · חידון קלאסי בלבד', '💡'],
+    ['qna', 'שאלות מהכיתה', 'התלמידים שולחים שאלות ומצביעים על החשובות · חידון קלאסי בלבד', '❓'],
+    ['rate', 'דירוג / סולם', 'כוכבים או סולם 1–5 / 1–7 / 1–10, בלי תשובה נכונה · חידון קלאסי בלבד', '⭐'],
+    ['rank', 'דירוג פריטים', 'מסדרים לפי העדפה והכיתה רואה את הדירוג המשותף · חידון קלאסי בלבד', '🏅'],
+    ['drop', 'סיכה חופשית', 'כולם מניחים סיכה על תמונה · חידון קלאסי בלבד', '📌'],
     ['slide', 'שקופית מידע', 'רק טקסט/תמונה · חידון קלאסי בלבד', '🖼️'],
   ];
   const TYPE = Object.fromEntries(TYPES.map((t) => [t[0], t]));
   const TIMES = [5, 10, 20, 30, 45, 60, 90, 120, 180, 240];
   const POINTS = [[0, 'ללא ניקוד'], [1, 'רגיל'], [2, 'כפול ×2'], [3, 'משולש ×3'], [4, 'מרובע ×4']];
+  const UNSCORED = ['slide', 'cloud', 'open', 'brain', 'qna', 'drop', 'rate', 'rank']; // no points
+  const LIMITS = { cloud: 3, open: 1, brain: 3, qna: 2 };
   const COLORS = ['#e9334f', '#1f73e0', '#e6a400', '#23a14a', '#8b5cf6', '#0fa3b8'];
 
   let quiz = null; // the quiz being edited
@@ -50,10 +61,14 @@
     if (type === 'tf') q.answers = [{ text: 'נכון', correct: true }, { text: 'לא נכון', correct: false }];
     if (type === 'type') q.accept = [''];
     if (type === 'slider') q.slider = { min: 0, max: 100, step: 1, answer: 50, tol: 0 };
-    if (type === 'order') q.items = ['', '', ''];
+    if (type === 'order' || type === 'rank') q.items = ['', '', ''];
+    if (type === 'rate') q.scale = { max: 5, low: '', high: '' };
+    if (type === 'match') { q.pairs = [{ a: '', b: '' }, { a: '', b: '' }, { a: '', b: '' }]; q.time = 30; }
+    if (type === 'sort') { q.buckets = [{ name: '', items: [] }, { name: '', items: [] }]; q.time = 30; }
     if (type === 'pin') q.pin = { shape: 'circle', x: 50, y: 50, r: 10 };
     if (type === 'puzzle') { q.puzzle = { rows: 3, cols: 3 }; q.time = 60; }
-    if (type === 'slide') q.points = 0;
+    if (UNSCORED.includes(type)) q.points = 0;
+    if (LIMITS[type]) q.limit = LIMITS[type];
     return q;
   }
   // switching type keeps the text/picture/time
@@ -61,7 +76,8 @@
     const n = blank(type);
     n.text = q.text;
     n.time = q.time;
-    if (type !== 'slide') n.points = q.points;
+    if (!UNSCORED.includes(type)) n.points = q.points;
+    if (q.body) n.body = q.body;
     if (q.image) n.image = q.image;
     if (q.reveal) n.reveal = q.reveal;
     if (q.revealSec) n.revealSec = q.revealSec;
@@ -69,7 +85,7 @@
     if (q.explain) n.explain = q.explain;
     if (q.explainImage) n.explainImage = q.explainImage;
     if (q.imageWhen) n.imageWhen = q.imageWhen;
-    if ((type === 'quiz' || type === 'poll') && q.answers && q.type !== 'tf') n.answers = q.answers.map((a) => ({ text: a.text, correct: type === 'quiz' && !!a.correct }));
+    if ((type === 'quiz' || type === 'poll') && q.answers && q.type !== 'tf') n.answers = q.answers.map((a) => ({ text: a.text, correct: type === 'quiz' && !!a.correct, ...(a.image ? { image: a.image } : {}) }));
     return n;
   }
   // what is still missing before the question can be played
@@ -77,11 +93,20 @@
     const p = [];
     if (!q.text.trim()) p.push('חסר טקסט לשאלה');
     if (q.type === 'quiz') {
-      if (q.answers.filter((a) => a.text.trim()).length < 2) p.push('צריך לפחות 2 תשובות');
-      if (!q.answers.some((a) => a.correct && a.text.trim())) p.push('סמנו תשובה נכונה');
+      if (q.answers.filter((a) => a.text.trim() || a.image).length < 2) p.push('צריך לפחות 2 תשובות');
+      if (!q.answers.some((a) => a.correct && (a.text.trim() || a.image))) p.push('סמנו תשובה נכונה');
     }
+    if (q.type === 'poll' && q.answers.filter((a) => a.text.trim() || a.image).length < 2) p.push('צריך לפחות 2 אפשרויות');
+    if (q.type === 'drop' && !q.image) p.push('צריך תמונה כדי להניח עליה סיכה');
+    if (q.type === 'pin' && q.pin.shape === 'polygon' && (q.pin.points || []).length < 3) p.push('מצולע צריך לפחות 3 נקודות');
     if (q.type === 'type' && !q.accept.some((a) => a.trim())) p.push('הוסיפו תשובה נכונה אחת לפחות');
-    if (q.type === 'order' && q.items.filter((x) => x.trim()).length < 2) p.push('צריך לפחות 2 פריטים');
+    if ((q.type === 'order' || q.type === 'rank') && q.items.filter((x) => x.trim()).length < 2) p.push('צריך לפחות 2 פריטים');
+    if (q.type === 'match' && q.pairs.filter((x) => x.a.trim() && x.b.trim()).length < 2) p.push('צריך לפחות 2 זוגות מלאים');
+    if (q.type === 'sort') {
+      if (q.buckets.some((b) => !b.name.trim())) p.push('לכל קבוצה צריך שם');
+      if (q.buckets.some((b) => !b.items.some((x) => x.trim()))) p.push('בכל קבוצה צריך לפחות פריט אחד');
+      if (q.buckets.reduce((n, b) => n + b.items.filter((x) => x.trim()).length, 0) > 8) p.push('אפשר עד 8 פריטים בסך הכל');
+    }
     if (q.type === 'pin' && !q.image) p.push('צריך תמונה כדי לסמן עליה');
     if (q.type === 'puzzle' && !q.image) p.push('צריך תמונה כדי לחתוך לפאזל');
     if (q.type === 'slider' && (q.slider.answer < q.slider.min || q.slider.answer > q.slider.max)) p.push('התשובה מחוץ לטווח');
@@ -167,7 +192,7 @@
           <div class="lib-bar"><nav class="crumbs" id="crumbs"></nav><div class="folder-acts" id="folderActs"></div></div>
           <div class="lib-tools">
             <button class="btn green sm" id="newQuiz">+ חידון חדש</button>
-            <label class="btn blue sm">⬆ ייבוא קובץ<input type="file" id="importFile" accept=".xlsx,.zip,.qgz" hidden></label>
+            <label class="btn blue sm">⬆ ייבוא קובץ<input type="file" id="importFile" accept=".xlsx,.zip,.qgz,.json" hidden></label>
             <button class="btn ghost sm" id="importLink">🔗 ייבוא מקישור</button>
             <button class="btn ghost sm" id="freeText">📝 ייבוא חופשי</button>
             <a class="btn ghost sm" href="/api/q/template.xlsx">⬇ תבנית ריקה</a>
@@ -197,7 +222,7 @@
       document.getElementById('grid').innerHTML =
         subs.map((x, i) => `<button class="fcard" data-folder="${esc(x.path)}" data-drop="1" style="--i:${i}"><span class="fc-ic">📁</span><b>${esc(x.name)}</b><small>${x.count} חידונים</small></button>`).join('') +
         qs.map((q, i) => `<div class="qcard" style="--i:${i + subs.length}" ${q.builtin ? '' : `draggable="true" data-drag="${esc(q.id)}"`}>
-          <div class="qc-cover" data-open="${esc(q.id)}">${q.cover ? `<img src="/media/${encodeURIComponent(q.id)}/${encodeURIComponent(q.cover)}" alt="" loading="lazy">` : `<span>${ICONS[i % 6]}</span>`}<b class="qc-count">${q.count} שאלות</b>${q.types && q.types.some((t) => t !== 'quiz' && t !== 'tf') ? `<b class="qc-types">${q.types.includes('puzzle') ? '🧩' : ''}${q.types.includes('pin') ? '📍' : ''}${q.types.includes('slider') ? '🎚️' : ''}${q.types.includes('type') ? '⌨️' : ''}</b>` : ''}</div>
+          <div class="qc-cover" data-open="${esc(q.id)}">${q.cover ? `<img src="/media/${encodeURIComponent(q.id)}/${encodeURIComponent(q.cover)}" alt="" loading="lazy">` : `<span>${ICONS[i % 6]}</span>`}<b class="qc-count">${q.count} שאלות</b>${q.types && q.types.some((t) => t !== 'quiz' && t !== 'tf') ? `<b class="qc-types">${['puzzle', 'pin', 'slider', 'match', 'sort', 'type', 'cloud', 'open', 'brain', 'qna', 'drop', 'rate', 'rank'].filter((t) => q.types.includes(t)).map((t) => TYPE[t][3]).join('')}</b>` : ''}</div>
           <div class="qc-body"><div class="qc-title">${esc(q.title)}</div>
             <div class="qc-sub">${q.builtin ? 'מובנה · שכפלו כדי לערוך' : q.updated ? 'עודכן ' + new Date(q.updated).toLocaleDateString('he-IL') : ''}${curFolder === '*' && q.folder ? ` · 📁 ${esc(q.folder)}` : ''}${q.playable < q.count ? ` · <span class="bad-t">${q.count - q.playable} לא מוכנות</span>` : ''}</div>
             <div class="qc-actions">${q.builtin ? '' : `<button data-open="${esc(q.id)}">✏️ עריכה</button>`}<button data-dup="${esc(q.id)}">⧉ שכפול</button>${q.builtin ? '' : `<button data-menu="${esc(q.id)}" class="more">⋯</button>`}</div>
@@ -228,10 +253,11 @@
       if (!file) return;
       const t = toastSticky('מייבא…');
       try {
-        const r = await api(`/import?title=${encodeURIComponent(file.name.replace(/\.(xlsx|zip|qgz)$/i, ''))}&folder=${encodeURIComponent(curFolder === '*' ? '' : curFolder)}`, { method: 'POST', body: await file.arrayBuffer(), headers: { 'Content-Type': 'application/octet-stream' } });
+        const r = await api(`/import?title=${encodeURIComponent(file.name.replace(/\.(xlsx|zip|qgz|json)$/i, ''))}&folder=${encodeURIComponent(curFolder === '*' ? '' : curFolder)}`, { method: 'POST', body: await file.arrayBuffer(), headers: { 'Content-Type': 'application/octet-stream' } });
         t.remove();
-        if (r.kind === 'folder') { toast(`התיקייה "${r.folder.split('/').pop()}" יובאה עם ${r.count} חידונים`); curFolder = r.folder; return reload(); }
-        if (r.kind === 'quiz') { toast(`החידון "${r.title}" יובא (${r.count} שאלות)`); return open(r.id); }
+        const report = () => r.issues && r.issues.length && importReport(r, file.name);
+        if (r.kind === 'folder') { toast(`התיקייה "${r.folder.split('/').pop()}" יובאה עם ${r.count} חידונים`); curFolder = r.folder; await reload(); return report(); }
+        if (r.kind === 'quiz') { toast(`החידון "${r.title}" יובא (${r.count} שאלות)`); await open(r.id); return report(); }
         const notes = [r.special ? `${r.special} מיוחדות` : '', r.images ? `${r.images} תמונות` : '', r.skipped ? `${r.skipped} דולגו` : '', r.downgraded ? `${r.downgraded} יובאו כרב-ברירה` : '', r.missingImages ? `${r.missingImages} תמונות חסרות` : ''].filter(Boolean);
         toast(`יובאו ${r.count} שאלות${notes.length ? ` (${notes.join(', ')})` : ''}`);
         await open(r.id);
@@ -619,9 +645,9 @@
   function drawStage() {
     const q = quiz.questions[cur];
     const st = document.getElementById('stage');
-    const media = q.type === 'pin' ? '' : `<div class="drop ${q.image ? 'has' : ''}" id="drop">${q.image ? `<img src="${mediaUrl(q.image)}" alt=""><button class="img-x" id="imgX" title="הסרת תמונה">✕</button>` : `<div class="drop-hint">🖼️ גררו תמונה לכאן, הדביקו (Ctrl+V) או לחצו להעלאה<small>${q.type === 'puzzle' ? 'התמונה תיחתך לחלקי פאזל' : 'גם GIF ותמונות מונפשות'}</small></div>`}<input type="file" id="imgFile" accept="image/*,video/*" hidden></div>`;
+    const media = q.type === 'pin' ? '' : `<div class="drop ${q.image ? 'has' : ''}" id="drop">${q.image ? `<img src="${mediaUrl(q.image)}" alt=""><button class="img-x" id="imgX" title="הסרת תמונה">✕</button>` : `<div class="drop-hint">🖼️ גררו תמונה לכאן, הדביקו (Ctrl+V) או לחצו להעלאה<small>${q.type === 'puzzle' ? 'התמונה תיחתך לחלקי פאזל' : q.type === 'drop' ? 'השחקנים יניחו עליה סיכות' : 'גם GIF ותמונות מונפשות'}</small></div>`}<input type="file" id="imgFile" accept="image/*,video/*" hidden></div>`;
     const v = q.video;
-    const vid = q.type === 'slide' || q.type === 'puzzle' || q.type === 'pin' ? '' : `
+    const vid = q.type === 'puzzle' || q.type === 'pin' || q.type === 'drop' ? '' : `
       <div class="vid-ed ${v ? 'has' : ''}">
         <div class="vid-row">
           <span class="vid-ic">🎬</span>
@@ -673,16 +699,18 @@
   async function upload(file, slot) {
     const isVideo = file.type.startsWith('video/');
     if (slot === 'explain' && isVideo) return toast('תמונת ההסבר צריכה להיות תמונה', true);
+    if (String(slot).startsWith('ans:') && isVideo) return toast('תמונת תשובה צריכה להיות תמונה', true);
     if (!file.type.startsWith('image/') && !isVideo) return toast('רק תמונות או סרטונים', true);
     if (!isVideo && file.size > 12 * 1024 * 1024) return toast('התמונה גדולה מדי (עד 12MB)', true);
     if (isVideo && file.size > 300 * 1024 * 1024) return toast('הסרטון גדול מדי (עד 300MB)', true);
     const q = quiz.questions[cur];
-    if (isVideo && (q.type === 'pin' || q.type === 'puzzle' || q.type === 'slide')) return toast('לשאלה מהסוג הזה אפשר להוסיף רק תמונה', true);
+    if (isVideo && (q.type === 'pin' || q.type === 'puzzle' || q.type === 'drop')) return toast('לשאלה מהסוג הזה אפשר להוסיף רק תמונה', true);
     const t = isVideo ? toastSticky('מעלה סרטון…') : null;
     try {
       const r = await api(`/quizzes/${encodeURIComponent(quiz.id)}/media`, { method: 'POST', body: file, headers: { 'Content-Type': file.type } });
       if (isVideo) q.video = { file: r.name, start: 0, end: 0 };
       else if (slot === 'explain') q.explainImage = r.name;
+      else if (String(slot).startsWith('ans:')) q.answers[Number(slot.slice(4))].image = r.name;
       else q.image = r.name;
       dirty();
       drawAll();
@@ -711,15 +739,23 @@
         <div class="ae-ans ${a.correct ? 'correct' : ''}" style="--a:${fixed ? ['#1f73e0', '#e9334f'][i] : COLORS[i]}">
           <span class="ae-shape">${Art.shape(fixed ? i * 3 : i)}</span>
           <input data-i="${i}" maxlength="${fixed ? 40 : 120}" value="${esc(a.text)}" placeholder="תשובה ${i + 1}${i > 1 ? ' (לא חובה)' : ''}">
+          ${fixed ? '' : `<label class="ae-pic" title="תמונה לתשובה">${a.image ? `<img src="${mediaUrl(a.image)}" alt=""><b data-xpic="${i}">✕</b>` : '🖼️'}<input type="file" accept="image/*" data-pic="${i}" hidden></label>`}
           ${q.type === 'poll' ? '' : `<button class="ae-ok" data-ok="${i}" title="תשובה נכונה">${a.correct ? '✓' : ''}</button>`}
           ${!fixed && q.answers.length > 2 ? `<button class="ae-x" data-x="${i}" title="הסרה">✕</button>` : ''}
         </div>`).join('')}</div>
         ${!fixed && q.answers.length < 6 ? '<button class="btn ghost sm" id="addAns">+ תשובה</button>' : ''}
-        ${q.type === 'quiz' ? '<div class="muted ae-tip">לחצו על העיגול כדי לסמן תשובה נכונה. כמה נכונות = השחקנים יבחרו את כולן.</div>' : ''}`;
+        ${q.type === 'poll' ? `<label class="ae-multi"><input type="checkbox" id="pollMulti" ${q.multi ? 'checked' : ''}> אפשר לבחור כמה תשובות</label>` : ''}
+        ${q.type === 'quiz' ? '<div class="muted ae-tip">לחצו על העיגול כדי לסמן תשובה נכונה. כמה נכונות = השחקנים יבחרו את כולן. לכל תשובה אפשר להוסיף תמונה (🖼️).</div>' : ''}`;
+      box.onchange = (e) => {
+        if (e.target.dataset.pic !== undefined && e.target.files[0]) upload(e.target.files[0], 'ans:' + e.target.dataset.pic);
+        if (e.target.id === 'pollMulti') { if (e.target.checked) q.multi = true; else delete q.multi; dirty(); }
+      };
       box.oninput = (e) => { if (e.target.dataset.i !== undefined) { q.answers[e.target.dataset.i].text = e.target.value; soft(); } };
       box.onclick = (e) => {
         const ok = e.target.closest('[data-ok]');
         const x = e.target.closest('[data-x]');
+        const xp = e.target.closest('[data-xpic]');
+        if (xp) { e.preventDefault(); delete q.answers[Number(xp.dataset.xpic)].image; rerender(); return; }
         if (ok) {
           const i = Number(ok.dataset.ok);
           if (fixed) q.answers.forEach((a, k) => (a.correct = k === i));
@@ -753,8 +789,54 @@
       return;
     }
 
-    if (q.type === 'order') {
-      box.innerHTML = `<div class="muted ae-tip">כתבו את הפריטים בסדר הנכון. השחקנים יקבלו אותם מעורבבים.</div>
+    if (q.type === 'match') {
+      box.innerHTML = `<div class="muted ae-tip">כתבו זוגות: בעמודה הימנית הפריט, ובשמאלית בן הזוג שלו. השחקנים מקבלים את העמודה השמאלית מעורבבת. ניקוד חלקי למי שחיבר חלק מהזוגות נכון.</div>
+        <div class="ae-list">${q.pairs.map((p, i) => `<div class="ae-row"><span class="ae-num">${i + 1}</span><input data-a="${i}" maxlength="60" value="${esc(p.a)}" placeholder="פריט ${i + 1}"><span class="pz-x">=</span><input data-b="${i}" maxlength="60" value="${esc(p.b)}" placeholder="בן הזוג">${q.pairs.length > 2 ? `<button data-x="${i}">✕</button>` : ''}</div>`).join('')}</div>
+        ${q.pairs.length < 6 ? '<button class="btn ghost sm" id="addPair">+ זוג</button>' : ''}`;
+      box.oninput = (e) => {
+        if (e.target.dataset.a !== undefined) q.pairs[e.target.dataset.a].a = e.target.value;
+        if (e.target.dataset.b !== undefined) q.pairs[e.target.dataset.b].b = e.target.value;
+        soft();
+      };
+      box.onclick = (e) => {
+        const x = e.target.closest('[data-x]');
+        if (x) { q.pairs.splice(Number(x.dataset.x), 1); rerender(); }
+        if (e.target.id === 'addPair') { q.pairs.push({ a: '', b: '' }); rerender(); }
+      };
+      return;
+    }
+
+    if (q.type === 'sort') {
+      const used = q.buckets.reduce((n, b) => n + b.items.filter((x) => x.trim()).length, 0);
+      box.innerHTML = `<div class="muted ae-tip">שתי או שלוש קבוצות. בכל קבוצה כתבו את הפריטים שלה, פריט בכל שורה (עד 8 פריטים בסך הכל, כרגע ${used}). השחקנים מקבלים את כל הפריטים מעורבבים.</div>
+        <div class="ae-buckets">${q.buckets.map((b, i) => `<div class="ae-bucket" style="--c:${COLORS[i]}"><input data-bn="${i}" maxlength="30" value="${esc(b.name)}" placeholder="שם קבוצה ${i + 1}"><textarea data-bi="${i}" rows="5" placeholder="פריט בכל שורה">${esc(b.items.join('\n'))}</textarea>${q.buckets.length > 2 ? `<button class="btn ghost sm" data-x="${i}">הסרת הקבוצה</button>` : ''}</div>`).join('')}</div>
+        ${q.buckets.length < 3 ? '<button class="btn ghost sm" id="addBucket">+ קבוצה</button>' : ''}`;
+      box.oninput = (e) => {
+        if (e.target.dataset.bn !== undefined) q.buckets[e.target.dataset.bn].name = e.target.value;
+        if (e.target.dataset.bi !== undefined) q.buckets[e.target.dataset.bi].items = e.target.value.split('\n');
+        soft();
+      };
+      box.onclick = (e) => {
+        const x = e.target.closest('[data-x]');
+        if (x) { q.buckets.splice(Number(x.dataset.x), 1); rerender(); }
+        if (e.target.id === 'addBucket') { q.buckets.push({ name: '', items: [] }); rerender(); }
+      };
+      return;
+    }
+
+    if (q.type === 'rate') {
+      const S = q.scale;
+      box.innerHTML = `<div class="ae-slider"><label>סולם<select id="scMax">${[[5, '5 כוכבים'], [7, 'סולם 1–7'], [10, 'סולם 1–10']].map(([v, l]) => `<option value="${v}" ${v === S.max ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+        <label>תווית לקצה הנמוך<input id="scLow" maxlength="30" value="${esc(S.low)}" placeholder="למשל: בכלל לא"></label>
+        <label>תווית לקצה הגבוה<input id="scHigh" maxlength="30" value="${esc(S.high)}" placeholder="למשל: מאוד"></label></div>
+        <div class="muted ae-tip">כל שחקן נותן דירוג אחד. במסך הגדול רואים את ההתפלגות ואת הממוצע. אין תשובה נכונה ואין ניקוד.</div>`;
+      box.onchange = (e) => { if (e.target.id === 'scMax') { S.max = Number(e.target.value); dirty(); } };
+      box.oninput = (e) => { if (e.target.id === 'scLow') { S.low = e.target.value; dirty(); } if (e.target.id === 'scHigh') { S.high = e.target.value; dirty(); } };
+      return;
+    }
+
+    if (q.type === 'order' || q.type === 'rank') {
+      box.innerHTML = `<div class="muted ae-tip">${q.type === 'rank' ? 'כתבו את הפריטים (אין סדר נכון). כל שחקן מסדר אותם לפי ההעדפה שלו, ובמסך הגדול רואים את הדירוג המשותף של הכיתה.' : 'כתבו את הפריטים בסדר הנכון. השחקנים יקבלו אותם מעורבבים.'}</div>
         <div class="ae-list">${q.items.map((it, i) => `<div class="ae-row"><span class="ae-num">${i + 1}</span><input data-i="${i}" maxlength="80" value="${esc(it)}" placeholder="פריט ${i + 1}"><button data-up="${i}">▲</button>${q.items.length > 2 ? `<button data-x="${i}">✕</button>` : ''}</div>`).join('')}</div>
         ${q.items.length < 6 ? '<button class="btn ghost sm" id="addIt">+ פריט</button>' : ''}`;
       box.oninput = (e) => { if (e.target.dataset.i !== undefined) { q.items[e.target.dataset.i] = e.target.value; soft(); } };
@@ -769,14 +851,49 @@
     }
 
     if (q.type === 'pin') {
-      const rect = q.pin.shape === 'rect';
+      const NAMES = { circle: '⭕ עיגול', rect: '▭ מלבן', ellipse: '⬭ אליפסה', polygon: '⬠ מצולע' };
+      const SUB = { circle: 'נקודה במקום מסוים', rect: 'שורה, עמודה, אזור או קו שלם', ellipse: 'איבר או אזור עגול', polygon: 'צורה חופשית, למשל מדינה במפה' };
+      const TIP = {
+        circle: 'לחצו על התמונה כדי לסמן את המקום הנכון. העיגול הוא האזור שנחשב לתשובה נכונה.',
+        rect: 'גררו על התמונה כדי לצייר את המלבן (לחיצה אחת מזיזה אותו). המלבן הוא האזור שנחשב לתשובה נכונה.',
+        ellipse: 'גררו על התמונה כדי לצייר את האליפסה (לחיצה אחת מזיזה אותה). האליפסה היא האזור שנחשב לתשובה נכונה.',
+        polygon: 'לחצו על התמונה כדי להוסיף פינות לצורה, לפי הסדר סביב האזור (לפחות 3). הצורה היא האזור שנחשב לתשובה נכונה.',
+      };
+      const P = q.pin;
+      const shape = P.shape;
+      const drag = shape === 'rect' || shape === 'ellipse';
+      const extras = P.extra || [];
+      // the zone itself, without the picture's proportions or the extra zones
+      const zoneOf = (z) => { const { ar, extra, ...rest } = z; return JSON.parse(JSON.stringify(rest)); };
+      const fresh = (sh) => (sh === 'rect' || sh === 'ellipse' ? { shape: sh, x: 50, y: 50, w: 30, h: 12 } : sh === 'polygon' ? { shape: 'polygon', points: [] } : { shape: 'circle', x: 50, y: 50, r: 10 });
+      // same area, other shape
+      const reshape = (z, to) => {
+        const ar = z.ar || 1;
+        let b;
+        if (z.shape === 'polygon') {
+          const xs = z.points.map((p) => p[0]);
+          const ys = z.points.map((p) => p[1]);
+          b = xs.length ? { x: (Math.min(...xs) + Math.max(...xs)) / 2, y: (Math.min(...ys) + Math.max(...ys)) / 2, w: Math.max(1, Math.max(...xs) - Math.min(...xs)), h: Math.max(1, Math.max(...ys) - Math.min(...ys)) } : { x: 50, y: 50, w: 30, h: 12 };
+        } else if (z.shape === 'circle') b = { x: z.x, y: z.y, w: z.r * 2, h: Math.min(100, (z.r * 2) / ar) };
+        else b = { x: z.x, y: z.y, w: z.w, h: z.h };
+        const out = { ar: z.ar, extra: z.extra };
+        if (to === 'circle') return { ...out, shape: 'circle', x: b.x, y: b.y, r: Math.max(2, Math.min(40, Math.round(b.w / 2))) };
+        if (to === 'polygon') {
+          const c = (v) => Math.max(0, Math.min(100, Math.round(v * 10) / 10));
+          return { ...out, shape: 'polygon', points: [[c(b.x - b.w / 2), c(b.y - b.h / 2)], [c(b.x + b.w / 2), c(b.y - b.h / 2)], [c(b.x + b.w / 2), c(b.y + b.h / 2)], [c(b.x - b.w / 2), c(b.y + b.h / 2)]] };
+        }
+        return { ...out, shape: to, x: b.x, y: b.y, w: b.w, h: b.h };
+      };
       box.innerHTML = q.image
-        ? `<div class="pin-shapes"><button data-shape="circle" class="${rect ? '' : 'on'}">⭕ עיגול<small>נקודה במקום מסוים</small></button><button data-shape="rect" class="${rect ? 'on' : ''}">▭ מלבן<small>שורה, עמודה, אזור או קו שלם</small></button></div>
-           <div class="muted ae-tip">${rect ? 'גררו על התמונה כדי לצייר את המלבן (לחיצה אחת מזיזה אותו). המלבן הוא האזור שנחשב לתשובה נכונה.' : 'לחצו על התמונה כדי לסמן את המקום הנכון. העיגול הוא האזור שנחשב לתשובה נכונה.'}</div>
-           <div class="pin-box"><div class="pin-ed" id="pinEd"><img src="${mediaUrl(q.image)}" alt="" draggable="false">${QMedia.pinZone(q.pin, 'pin-zone')}</div></div>
-           ${rect
-             ? `<div class="pin-sizes"><label class="ae-rad">רוחב <input type="range" dir="ltr" id="pinW" min="1" max="100" value="${q.pin.w}"></label><label class="ae-rad">גובה <input type="range" dir="ltr" id="pinH" min="1" max="100" value="${q.pin.h}"></label></div>`
-             : `<label class="ae-rad">גודל האזור <input type="range" dir="ltr" id="pinR" min="2" max="40" value="${q.pin.r}"></label>`}
+        ? `<div class="pin-shapes">${Object.keys(NAMES).map((k) => `<button data-shape="${k}" class="${k === shape ? 'on' : ''}">${NAMES[k]}<small>${SUB[k]}</small></button>`).join('')}</div>
+           <div class="muted ae-tip">${TIP[shape]}</div>
+           <div class="pin-box"><div class="pin-ed" id="pinEd"><img src="${mediaUrl(q.image)}" alt="" draggable="false">${extras.map((z) => QMedia.zone1(z, 'pin-zone dim')).join('')}${QMedia.zone1(P, 'pin-zone pin-main')}${shape === 'polygon' ? P.points.map(([x, y]) => `<i class="pin-dot" style="left:${x}%;top:${y}%"></i>`).join('') : ''}</div></div>
+           ${drag
+             ? `<div class="pin-sizes"><label class="ae-rad">רוחב <input type="range" dir="ltr" id="pinW" min="1" max="100" value="${P.w}"></label><label class="ae-rad">גובה <input type="range" dir="ltr" id="pinH" min="1" max="100" value="${P.h}"></label></div>`
+             : shape === 'polygon'
+               ? `<div class="row"><button class="btn ghost sm" id="polyUndo">↩ מחיקת הנקודה האחרונה</button><button class="btn ghost sm" id="polyClear">🗑 התחלה מחדש</button><span class="muted">${P.points.length} נקודות</span></div>`
+               : `<label class="ae-rad">גודל האזור <input type="range" dir="ltr" id="pinR" min="2" max="40" value="${P.r}"></label>`}
+           <div class="pin-zones">${extras.map((z, i) => `<button class="chip" data-sw="${i}" title="עריכת האזור הזה">${NAMES[z.shape]} ${i + 1}<i data-rm="${i}" title="הסרה">✕</i></button>`).join('')}<button class="btn ghost sm" id="addZone" ${extras.length >= 5 || (shape === 'polygon' && P.points.length < 3) ? 'disabled' : ''}>➕ אזור נוסף</button>${extras.length ? '<span class="muted">כל האזורים נחשבים תשובה נכונה</span>' : ''}</div>
            <div class="row"><label class="btn ghost sm">🖼️ החלפת תמונה<input type="file" id="pinFile" accept="image/*" hidden></label><button class="btn ghost sm" id="pinX">הסרת תמונה</button></div>`
         : `<div class="drop" id="pinDrop"><div class="drop-hint">📍 העלו תמונה (מפה, שרטוט, גוף האדם…) ואז סמנו עליה את המקום הנכון</div><input type="file" id="pinFile" accept="image/*" hidden></div>`;
       const file = document.getElementById('pinFile');
@@ -790,10 +907,26 @@
       }
       box.querySelector('.pin-shapes').onclick = (e) => {
         const b = e.target.closest('[data-shape]');
-        if (!b || b.dataset.shape === q.pin.shape) return;
-        q.pin = b.dataset.shape === 'rect'
-          ? { shape: 'rect', x: q.pin.x, y: q.pin.y, w: 30, h: 12, ar: q.pin.ar }
-          : { shape: 'circle', x: q.pin.x, y: q.pin.y, r: 10, ar: q.pin.ar };
+        if (!b || b.dataset.shape === shape) return;
+        q.pin = reshape(P, b.dataset.shape);
+        rerender();
+      };
+      box.querySelector('.pin-zones').onclick = (e) => {
+        const rm = e.target.closest('[data-rm]');
+        const sw = e.target.closest('[data-sw]');
+        if (rm) {
+          P.extra.splice(Number(rm.dataset.rm), 1);
+          if (!P.extra.length) delete P.extra;
+        } else if (sw) {
+          // edit that zone: it swaps places with the one being edited
+          const i = Number(sw.dataset.sw);
+          const list = P.extra.slice();
+          const z = list[i];
+          list[i] = zoneOf(P);
+          q.pin = { ...z, ar: P.ar, extra: list };
+        } else if (e.target.closest('#addZone')) {
+          q.pin = { ...fresh(shape), ar: P.ar, extra: [...extras, zoneOf(P)] };
+        } else return;
         rerender();
       };
       const ed = document.getElementById('pinEd');
@@ -807,13 +940,13 @@
       };
       if (img.complete) keepAr();
       img.addEventListener('load', keepAr);
-      const zone = () => { ed.querySelector('.pin-zone').outerHTML = QMedia.pinZone(q.pin, 'pin-zone'); soft(); };
+      const zone = () => { ed.querySelector('.pin-main').outerHTML = QMedia.zone1(q.pin, 'pin-zone pin-main'); soft(); };
       const at = (e) => {
         const r = ed.getBoundingClientRect();
         return { x: Math.max(0, Math.min(100, ((e.clientX - r.left) / r.width) * 100)), y: Math.max(0, Math.min(100, ((e.clientY - r.top) / r.height) * 100)) };
       };
-      if (rect) {
-        // drag = draw a new rectangle; a click without dragging moves it
+      if (drag) {
+        // drag = draw a new rectangle / ellipse; a click without dragging moves it
         let start = null;
         ed.onpointerdown = (e) => { e.preventDefault(); start = at(e); ed.setPointerCapture(e.pointerId); };
         ed.onpointermove = (e) => {
@@ -838,6 +971,14 @@
         };
         document.getElementById('pinW').oninput = (e) => { q.pin.w = Number(e.target.value); zone(); };
         document.getElementById('pinH').oninput = (e) => { q.pin.h = Number(e.target.value); zone(); };
+      } else if (shape === 'polygon') {
+        ed.onclick = (e) => {
+          const p = at(e);
+          q.pin.points.push([Math.round(p.x * 10) / 10, Math.round(p.y * 10) / 10]);
+          rerender();
+        };
+        document.getElementById('polyUndo').onclick = () => { q.pin.points.pop(); rerender(); };
+        document.getElementById('polyClear').onclick = () => { q.pin.points = []; rerender(); };
       } else {
         ed.onclick = (e) => {
           Object.assign(q.pin, at(e));
@@ -872,7 +1013,27 @@
       return;
     }
 
-    box.innerHTML = '<div class="muted ae-tip">שקופית מידע: מוצגת לכולם בחידון הקלאסי, בלי תשובות.</div>';
+    if (q.type === 'cloud' || q.type === 'open' || q.type === 'brain' || q.type === 'qna') {
+      const what = { cloud: 'מילים', open: 'תשובות', brain: 'רעיונות', qna: 'שאלות' }[q.type];
+      const tip = {
+        cloud: 'כל שחקן שולח מילה או ביטוי קצר. במסך הגדול המילים שחוזרות הרבה מופיעות גדולות יותר. המורה יכול ללחוץ על מילה כדי להסתיר אותה.',
+        open: 'כל שחקן כותב תשובה חופשית, והתשובות מופיעות כפתקים על המסך הגדול (אפשר להסתיר פתק בלחיצה). אין תשובה נכונה ואין ניקוד.',
+        brain: 'כל שחקן שולח רעיונות, ואז כולם מצביעים (עד 3 רעיונות, לא על הרעיון של עצמם). בסוף מוצג דירוג הרעיונות.',
+        qna: 'כל שחקן שולח שאלות לכיתה, ואז כולם מצביעים על השאלות שהכי חשוב לענות עליהן (עד 3, לא על השאלה של עצמם). בסוף מוצג דירוג השאלות, מהחשובה ביותר.',
+      }[q.type];
+      box.innerHTML = `<div class="ae-slider"><label>כמה ${what} כל שחקן יכול לשלוח<select id="limSel">${[1, 2, 3, 4, 5].map((n) => `<option value="${n}" ${n === q.limit ? 'selected' : ''}>${n}</option>`).join('')}</select></label></div><div class="muted ae-tip">${tip}</div>`;
+      box.onchange = (e) => { if (e.target.id === 'limSel') { q.limit = Number(e.target.value); dirty(); } };
+      return;
+    }
+
+    if (q.type === 'drop') {
+      box.innerHTML = '<div class="muted ae-tip">העלו תמונה. כל שחקן מניח עליה סיכה במקום שהוא בוחר, ובמסך הגדול רואים את כל הסיכות יחד. אין תשובה נכונה ואין ניקוד.</div>';
+      return;
+    }
+
+    box.innerHTML = `<textarea class="q-text-in" id="slBody" maxlength="600" rows="4" placeholder="טקסט נוסף מתחת לכותרת (לא חובה)">${esc(q.body || '')}</textarea>
+      <div class="muted ae-tip">שקופית מידע: מוצגת לכולם בחידון הקלאסי, בלי תשובות. אפשר להוסיף תמונה או סרטון.</div>`;
+    box.oninput = (e) => { if (e.target.id === 'slBody') { if (e.target.value.trim()) q.body = e.target.value; else delete q.body; dirty(); } };
   }
 
   function drawSide() {
@@ -881,10 +1042,10 @@
     side.innerHTML = `
       <label>סוג השאלה<select id="sType">${TYPES.map(([k, l, , ic]) => `<option value="${k}" ${k === q.type ? 'selected' : ''}>${ic} ${l}</option>`).join('')}</select></label>
       <label>⏱ זמן לשאלה<select id="sTime">${TIMES.map((t) => `<option value="${t}" ${t === q.time ? 'selected' : ''}>${t < 60 ? t + ' שניות' : t / 60 + ' דק׳'}</option>`).join('')}</select></label>
-      ${q.type === 'slide' ? '' : `<label>⭐ ניקוד<select id="sPts">${POINTS.map(([v, l]) => `<option value="${v}" ${v === q.points ? 'selected' : ''}>${l}</option>`).join('')}</select></label>`}
-      ${q.image && q.type !== 'pin' && q.type !== 'puzzle' ? `<label>🌫️ חשיפת התמונה<select id="sReveal">${[['', 'מיד'], ['blur', 'טשטוש שמתבהר'], ['tiles', 'אריחים שנעלמים']].map(([v, l]) => `<option value="${v}" ${(q.reveal || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      ${UNSCORED.includes(q.type) ? '' : `<label>⭐ ניקוד<select id="sPts">${POINTS.map(([v, l]) => `<option value="${v}" ${v === q.points ? 'selected' : ''}>${l}</option>`).join('')}</select></label>`}
+      ${q.image && q.type !== 'pin' && q.type !== 'puzzle' && q.type !== 'drop' ? `<label>🌫️ חשיפת התמונה<select id="sReveal">${[['', 'מיד'], ['blur', 'טשטוש שמתבהר'], ['tiles', 'אריחים שנעלמים']].map(([v, l]) => `<option value="${v}" ${(q.reveal || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
         ${q.reveal ? `<label>⏳ משך החשיפה<select id="sRevealSec">${[[0, 'לאורך כל הזמן'], [5, '5 שניות'], [10, '10 שניות'], [15, '15 שניות'], [20, '20 שניות'], [30, '30 שניות'], [45, '45 שניות'], [60, 'דקה']].map(([v, l]) => `<option value="${v}" ${(q.revealSec || 0) === v ? 'selected' : ''}>${l}</option>`).join('')}</select><small class="muted">מי שעונה מהר, לפני שרואים הכל, מקבל יותר נקודות</small></label>` : ''}` : ''}
-      ${q.image && q.type !== 'pin' && q.type !== 'puzzle' && q.type !== 'slide' ? `<label>👁️ מתי להציג את התמונה<select id="sWhen"><option value="">בזמן השאלה</option><option value="after" ${q.imageWhen === 'after' ? 'selected' : ''}>רק אחרי התשובה (להסבר)</option></select></label>` : ''}
+      ${q.image && q.type !== 'pin' && q.type !== 'puzzle' && q.type !== 'drop' && q.type !== 'slide' ? `<label>👁️ מתי להציג את התמונה<select id="sWhen"><option value="">בזמן השאלה</option><option value="after" ${q.imageWhen === 'after' ? 'selected' : ''}>רק אחרי התשובה (להסבר)</option></select></label>` : ''}
       ${q.type === 'slide' ? '' : `<label>💡 הסבר אחרי התשובה<textarea id="sExplain" maxlength="200" rows="3" placeholder="למה זו התשובה? (לא חובה)">${esc(q.explain || '')}</textarea></label>
       <div class="ex-img"><span>🖼️ תמונה להסבר <small>(מוצגת אחרי התשובה)</small></span>${q.explainImage ? `<div class="ex-thumb"><img src="${mediaUrl(q.explainImage)}" alt=""><button id="exImgX" title="הסרה">✕</button></div>` : `<label class="btn ghost sm">⬆ העלאת תמונה<input type="file" id="exImgFile" accept="image/*" hidden></label>`}</div>`}
       <div class="side-note">במשחקים (לא בחידון הקלאסי) אין הגבלת זמן, וניקוד כפול = מתקדמים מהר יותר לתור הבא.</div>

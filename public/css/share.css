@@ -31,6 +31,7 @@
 .sh-ans span { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 10px; background: var(--a); font-weight: 800; opacity: .55; }
 .sh-ans span.ok { opacity: 1; box-shadow: 0 0 0 3px #fff; }
 .sh-ans .shape { width: 16px; height: 16px; }
+.sh-apic { height: 44px; max-width: 80px; object-fit: contain; border-radius: 6px; background: rgba(255, 255, 255, .25); }
 .sh-line { font-weight: 700; color: #ddd8ff; }
 .sh-line b { color: var(--yellow); }
 .sh-explain { margin-top: 8px; font-weight: 600; color: var(--muted); }

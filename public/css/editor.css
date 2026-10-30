@@ -274,3 +274,26 @@ body.drag-quiz .tf[data-drop] { box-shadow: inset 0 0 0 1px rgba(46, 229, 157, .
 .ex-thumb { position: relative; align-self: flex-start; }
 .ex-thumb img { max-width: 100%; max-height: 120px; border-radius: 10px; display: block; }
 .ex-thumb button { position: absolute; top: 4px; inset-inline-start: 4px; width: 26px; height: 26px; border-radius: 50%; border: 0; cursor: pointer; background: rgba(0, 0, 0, .65); color: #fff; }
+
+/* answer pictures in the editor */
+.ae-pic { flex: none; position: relative; width: 52px; height: 52px; border-radius: 10px; background: rgba(255, 255, 255, .16); display: grid; place-items: center; cursor: pointer; font-size: 1.3rem; overflow: hidden; }
+.ae-pic img { width: 100%; height: 100%; object-fit: cover; }
+.ae-pic b { position: absolute; top: 1px; inset-inline-start: 1px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: .7rem; background: rgba(0, 0, 0, .65); }
+.ae-multi { display: flex; align-items: center; gap: 8px; font-weight: 800; padding: 6px 2px; cursor: pointer; }
+
+/* pin zones: ellipse, polygon, extra zones */
+.pin-zone.ellipse { aspect-ratio: auto; transform: none; border-radius: 50%; }
+.pin-zone.poly { aspect-ratio: auto; transform: none; inset: 0; left: 0; top: 0; width: 100%; height: 100%; border: 0; border-radius: 0; background: none; box-shadow: none; overflow: visible; }
+.pin-zone.poly polygon { fill: rgba(46, 229, 157, .35); stroke: #fff; stroke-width: 3px; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 8px #2ee59d); }
+.pin-zone.dim { opacity: .5; filter: grayscale(.6); }
+.pin-zone.dim.poly polygon { filter: none; }
+.pin-dot { position: absolute; width: 14px; height: 14px; margin: -7px; border-radius: 50%; background: #ff4d6d; border: 2px solid #fff; pointer-events: none; }
+.pin-zones { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+.pin-zones .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; border: 0; cursor: pointer; font: inherit; font-weight: 800; color: #fff; background: rgba(255, 255, 255, .14); }
+.pin-zones .chip i { font-style: normal; opacity: .7; }
+
+/* sort editor: a card per group */
+.ae-buckets { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 12px; }
+.ae-bucket { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: var(--r); background: rgba(255, 255, 255, .06); box-shadow: inset 0 0 0 3px var(--c); }
+.ae-bucket input, .ae-bucket textarea { border: 0; border-radius: 10px; padding: 10px; font: inherit; font-weight: 700; color: #fff; background: rgba(255, 255, 255, .14); outline: none; resize: vertical; }
+.ae-bucket input { font-size: 1.1rem; font-weight: 900; }

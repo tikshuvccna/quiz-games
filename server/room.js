@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { shuffle } = require('./shuffle');
+const Filter = require('./filter');
 const Quizzes = require('./quizzes');
 const TEAMS = require('./teams');
 const { randomName } = require('./names');
@@ -69,7 +70,7 @@ class Room {
     this.destroyed = false;
     this.createdAt = new Date();
     // room-wide options that survive game changes and rematches
-    this.setup = { nameMode: 'custom', scene: 'classic', video: '', winText: '', quiz: Quizzes.SAMPLE_ID, photos: true };
+    this.setup = { nameMode: 'custom', scene: 'classic', video: '', winText: '', quiz: Quizzes.SAMPLE_ID, photos: true, filter: true };
     this.quizData = null;
     this.quizCache = null;
     this.round = 0;
@@ -112,6 +113,7 @@ class Room {
     if (NAME_MODES.includes(s.nameMode)) this.setup.nameMode = s.nameMode;
     if (validScene(s.scene)) this.setup.scene = s.scene;
     if (typeof s.photos === 'boolean') this.setup.photos = s.photos;
+    if (typeof s.filter === 'boolean') this.setup.filter = s.filter;
     if (typeof s.video === 'string') this.setup.video = s.video.trim().slice(0, 300);
     if (typeof s.winText === 'string') this.setup.winText = s.winText.replace(/[\u0000-\u001f]/g, ' ').slice(0, 140);
     if (typeof s.quiz === 'string' && s.quiz !== this.setup.quiz) {
@@ -189,6 +191,7 @@ class Room {
     if (this.setup.nameMode === 'custom') {
       name = String(rawName || '').replace(/[\u0000-\u001f​-‏‪-‮]/g, '').trim().slice(0, 14);
       if (!name) return { error: 'צריך לבחור שם' };
+      if (this.setup.filter && Filter.bad(name)) return { error: 'השם הזה לא מתאים, נסו אחר' };
       for (const p of this.players.values()) {
         if (p.name.toLowerCase() !== name.toLowerCase()) continue;
         // the same name of someone who dropped out = it's them coming back: their progress is kept
@@ -277,11 +280,41 @@ class Room {
     }, LOBBY_GRACE_MS);
   }
 
+  // the teacher renames a player (any time, the score stays): no name = a new random one
+  renamePlayer(pid, rawName) {
+    const p = this.players.get(pid);
+    if (!p) return { error: 'השחקן לא נמצא' };
+    let name;
+    if (rawName === undefined || rawName === null || rawName === '') name = randomName(this.takenNames());
+    else {
+      name = String(rawName).replace(/[\u0000-\u001f\u200b-\u200f\u202a-\u202e]/g, '').trim().slice(0, 14);
+      if (!name) return { error: 'שם לא תקין' };
+      if (this.setup.filter && Filter.bad(name)) return { error: 'השם הזה לא מתאים' };
+      for (const o of this.players.values()) if (o !== p && o.name.toLowerCase() === name.toLowerCase()) return { error: 'השם כבר תפוס' };
+    }
+    p.name = name;
+    this.touched = Date.now();
+    this.pushPlayer(p);
+    this.pushAll();
+    return { ok: true, name };
+  }
+
   removePlayer(pid, kicked) {
     const p = this.players.get(pid);
     if (!p) return;
     clearTimeout(p.graceTimer);
     this.players.delete(pid);
+    // a game in progress lets go of the player (turns, teams, queues)
+    if (this.phase === 'playing' && this.game) {
+      try {
+        if (this.game.onRemove) this.game.onRemove(p);
+        this.game.addFeed && this.game.addFeed(`👋 ${p.name} הוסר/ה מהמשחק`, p.team);
+      } catch (e) {
+        console.error('onRemove failed:', e);
+      }
+      if (this.players.size === 0) this.end();
+      else this.pushAll();
+    }
     if (p.socketId) {
       const s = this.io.sockets.sockets.get(p.socketId);
       if (s && s.data.room === this) {

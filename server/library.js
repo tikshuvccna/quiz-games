@@ -5,6 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 const JSZip = require('jszip');
 const Q = require('./quizzes');
+const Kahoot = require('./importers/kahoot');
 
 const APP = 'quiz-games';
 const PKG_VERSION = 1;
@@ -99,6 +100,7 @@ async function addQuiz(zip, prefix, id) {
       if (x.image) used.add(x.image);
       if (x.video && x.video.file) used.add(x.video.file);
       if (x.explainImage) used.add(x.explainImage);
+      for (const a of x.answers || []) if (a.image) used.add(a.image);
     }
     for (const f of fs.readdirSync(dir)) if (used.has(f)) zip.file(prefix + 'media/' + f, fs.readFileSync(path.join(dir, f)));
   }
@@ -178,13 +180,111 @@ async function importPackage(zip, target = '') {
   throw new Error('סוג חבילה לא מוכר');
 }
 
-// any import: a quiz-games package, a Kahoot-style .xlsx, or a .zip with an .xlsx + pictures
+// ---------- Kahoot quizzes (from the browser extension, or the raw JSON of one quiz) ----------
+const jsonOf = (text) => {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+};
+// → the Kahoot quizzes inside whatever JSON this is (one quiz, a list, or { quizzes: [...] })
+function kahootList(j) {
+  const list = Array.isArray(j) ? j : j && Array.isArray(j.quizzes) ? j.quizzes : j && Array.isArray(j.questions) ? [j] : [];
+  return list.filter((k) => k && Array.isArray(k.questions));
+}
+
+// list = Kahoot quiz JSONs; images = Map(lowercase picture id → { buffer, mime })
+function importKahoot(list, images, target = '', title = '') {
+  if (!list.length) throw new Error('לא נמצאו חידוני Kahoot בקובץ');
+  const base = Q.cleanFolder(target);
+  let folder = base;
+  if (list.length > 1) {
+    // several quizzes go into their own folder, so nothing is mixed with the rest of the library
+    const names = new Set(folders().map((f) => f.path));
+    const name = 'Kahoot';
+    folder = Q.cleanFolder((base ? base + '/' : '') + name);
+    for (let i = 2; names.has(folder); i++) folder = Q.cleanFolder((base ? base + '/' : '') + `${name} (${i})`);
+    createFolder(folder);
+  }
+  const done = [];
+  const issues = [];
+  let imageCount = 0;
+  let skipped = 0;
+  for (const k of list) {
+    const c = Kahoot.convert(k, images);
+    issues.push(...c.notes);
+    skipped += c.total - c.questions.length;
+    if (!c.questions.length) {
+      issues.push({ row: 0, col: c.title.slice(0, 24), reason: 'אף שאלה לא יובאה, החידון לא נוצר', level: 'skip' });
+      continue;
+    }
+    const q = Q.create(c.title || title, [], folder);
+    // each picture is copied into the quiz's media folder once
+    const stored = new Map();
+    const keep = (o) => {
+      if (!o.image) return;
+      if (!stored.has(o.image)) {
+        const img = images.get(o.image);
+        stored.set(o.image, img ? Q.saveMedia(q.id, img.buffer, img.mime) : null);
+      }
+      if (stored.get(o.image)) o.image = stored.get(o.image);
+      else delete o.image;
+    };
+    for (const x of c.questions) {
+      keep(x);
+      for (const a of x.answers || []) keep(a);
+    }
+    imageCount += [...stored.values()].filter(Boolean).length;
+    Q.save(q.id, { title: c.title, description: c.description, folder, source: c.source, questions: c.questions });
+    if (folder && list.length === 1) setQuizFolder(q.id, folder);
+    done.push({ id: q.id, title: c.title, count: c.questions.length });
+  }
+  if (!done.length) {
+    const e = new Error(`אף חידון לא יובא. ${issues.slice(0, 3).map((x) => x.reason).join(' · ')}`);
+    e.issues = issues;
+    throw e;
+  }
+  const count = done.reduce((n, x) => n + x.count, 0);
+  const common = { count, images: imageCount, skipped, issues: issues.slice(0, 300) };
+  if (done.length === 1 && list.length === 1) return { kind: 'quiz', id: done[0].id, title: done[0].title, folder, ...common };
+  return { kind: 'folder', folder, id: done[0].id, quizzes: done.length, ...common, count: done.length, questions: count };
+}
+
+// a zip: the quizzes as .json files (manifest.json from the extension lists them) + their pictures
+async function importKahootZip(zip, target, title) {
+  const entries = Object.values(zip.files).filter((f) => !f.dir && !/(^|\/)(__MACOSX\/|\.)/.test(f.name));
+  const list = [];
+  for (const f of entries.filter((f) => /\.json$/i.test(f.name) && !/(^|\/)manifest\.json$/i.test(f.name)).slice(0, 300)) {
+    list.push(...kahootList(jsonOf(await f.async('string'))));
+  }
+  const images = new Map();
+  for (const f of entries.filter((f) => Q.IMG_EXT[path.extname(f.name).toLowerCase()]).slice(0, 3000)) {
+    const buf = await f.async('nodebuffer');
+    if (buf.length && buf.length <= 12 * 1024 * 1024) images.set(path.basename(f.name, path.extname(f.name)).toLowerCase(), { buffer: buf, mime: Q.IMG_EXT[path.extname(f.name).toLowerCase()] });
+  }
+  return importKahoot(list, images, target, title);
+}
+
+// any import: a quiz-games package, a Kahoot export (.zip / .json), a Kahoot-style .xlsx, or a .zip with an .xlsx + pictures
 async function importAny(buffer, title, target = '') {
   let zip = null;
   try {
     zip = await JSZip.loadAsync(buffer);
   } catch {}
-  if (zip && zip.file('manifest.json')) return importPackage(zip, target);
+  if (zip) {
+    const mf = zip.file('manifest.json');
+    const man = mf ? jsonOf(await mf.async('string')) : null;
+    if (man && man.app === 'kahoot-export') return importKahootZip(zip, target, title);
+    if (mf) return importPackage(zip, target);
+    // a zip of Kahoot quiz files (no spreadsheet inside)
+    const names = Object.keys(zip.files);
+    if (!zip.file('xl/workbook.xml') && !names.some((n) => /\.xlsx$/i.test(n)) && names.some((n) => /\.json$/i.test(n))) return importKahootZip(zip, target, title);
+  } else if (/^\s*[\[{]/.test(buffer.slice(0, 64).toString('utf8'))) {
+    const list = kahootList(jsonOf(buffer.toString('utf8')));
+    if (list.length) return importKahoot(list, new Map(), target, title);
+    throw new Error('קובץ ה־JSON אינו חידון Kahoot');
+  }
   const r = await Q.importAny(buffer, title);
   const f = Q.cleanFolder(target);
   if (f) setQuizFolder(r.id, f);

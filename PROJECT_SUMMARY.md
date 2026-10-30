@@ -4,7 +4,7 @@
 
 - **Runs on**: the local network (LAN) only. The internet version with a database comes later (Phase E).
 - **Language**: Hebrew UI. The chat with the user is in English.
-- **Last updated**: 2026-10-23. Phases A (questions) and B (classic quiz + quiz modes) are done, plus music, and ROADMAP.md items 4–8 (question media, folders and sharing, import, backgrounds). Phase D (new games) is in progress: batch 1 (5 games) and batch 2 (the co-op chase family: 3 new games plus checkpoint mini-games) shipped 2026-10-23, so there are 23 games.
+- **Last updated**: 2026-10-30 (all Kahoot question types supported; Kahoot import ready, the browser extension is the next step). Phases A (questions) and B (classic quiz + quiz modes) are done, plus music, and ROADMAP.md items 4–8 (question media, folders and sharing, import, backgrounds). Phase D (new games) is in progress: batch 1 (5 games) and batch 2 (the co-op chase family: 3 new games plus checkpoint mini-games) shipped 2026-10-23, so there are 23 games.
 
 ---
 
@@ -28,6 +28,11 @@
 | `node scripts/feature-test.js` | Name modes and reroll, 3 teams, reward settings, winner text, rematch with the same PIN, the report, an individual game played in teams. 14 checks. |
 | `node scripts/classic-test.js` | Classic quiz: every stage, team averages, the second-chance round for the bottom 5. |
 | `node scripts/pyramid-test.js` | The Lost Pyramid (4 teams), the accuracy style and the confidence style. |
+| `node scripts/kahoot-import-test.js` | No server needed. The Kahoot converter on made-up quizzes in Kahoot's JSON shape (every type), import from raw JSON and from the extension's zip, the package round trip, pin zones (polygon, ellipse, several zones), the new types and the new spreadsheet columns. |
+| `node scripts/matchsort-test.js` | Classic quiz with a match and a sort question: a perfect, a half-right and a wrong answer, partial credit, the class averages. |
+| `node scripts/players-test.js` | The teacher renames (typed and random) and removes players in the middle of a game; rude, taken and empty names are refused. |
+| `KICK=1 node scripts/smoke-test.js` | Like the smoke test, and one player is removed from the middle of every one of the 23 games (nothing may break). |
+| `node scripts/livetypes-test.js` | Classic quiz with a multi-select poll, word cloud, free text, brainstorm with its vote, drop-a-pin, picture answers and a text slide. It saves one quiz and deletes it. |
 | `node scripts/demo.js <game> 8 9999` | A room with 8 bots for visual demos. Put the printed pin and token into the browser's `sessionStorage.host`, reload `/host.html`, and press start. |
 | `node scripts/bots.js <pin> [n]` | Adds n bots to an existing room (they answer every question type, including confidence). |
 
@@ -167,11 +172,24 @@ scripts/                tests, bots, demo
   - True/false.
   - Typed answer: several spellings; case, spaces, punctuation and vowel marks are ignored.
   - Slider: range, step and tolerance.
-  - Order (puzzle).
-  - Pin on an image.
-  - Poll and info slide (classic quiz only).
+  - Order (Kahoot calls it "puzzle"; our own "puzzle" is the jigsaw).
+  - Pin on an image: a circle, rectangle, ellipse or polygon zone, and several zones that all count.
+  - **Match** (`match`: connect each item to its partner, 2-6 pairs) and **sort** (`sort`: put items in 2-3 groups, up to 8 items). Both are scored in every game; the classic quiz gives partial credit like the jigsaw (half or more right = part of the points).
+  - Pictures as answers (quiz and poll): an answer can be a picture, with or without text.
+  - Live types, **classic quiz only**, nothing graded: poll (also multi-select), word cloud (`cloud`), free text (`open`, sticky notes), brainstorm (`brain`: ideas, then a 30-second vote for up to 3 ideas, then a ranking), drop-a-pin (`drop`: everyone drops a pin, the big screen shows all of them).
+  - Info slide with a title, body text, a picture or a YouTube video.
+  - Also live: 5-star / 1–7 / 1–10 **rating** (`rate`, distribution and average), **ranking** of 2-6 items (`rank`, combined ranking), and **Q&A** (`qna`: students send questions, everyone upvotes up to 3, ranked list; same flow as the brainstorm).
+  - **Word filter** (`server/filter.js`, list in `server/badwords.json`, room setting 🛡️ on by default): refuses rude nicknames at join and drops rude words from free text, clouds, ideas, questions and typed answers on the big screen (the host sees how many were hidden). Hebrew + English, undoes spacing, symbols, repeated letters, final letters and number swaps; an `allow` list covers innocent words that contain a listed one.
+  - The teacher can also hide a word, note or idea from the big screen with a click (client only).
+  - **Players panel** (👥 in every game's header): rename a player (typed, or 🎲 random), or remove them from the game. The score stays on a rename; removal works in all 23 games.
 - **Per question**: time limit (5–240 seconds), points (none, ×1, ×2, ×3, ×4), image reveal (blur that clears).
-- **Excel**: import Kahoot's spreadsheet template (or ours), download a blank template, export any quiz.
+- **Excel**: import Kahoot's spreadsheet template (or ours), download a blank template, export any quiz. Our extra columns: Type, Points, Image, Video, Reveal, Accept, Slider, Items, Pin, Puzzle, Explanation, AfterImage, AnsImages, Limit, Body, Scale (match uses Items as `a=b|c=d`, sort as `Name:item,item|Name:item,item`; the Claude Project instructions in `docs/CLAUDE_PROJECT_INSTRUCTIONS.md` describe them).
+- **Kahoot import** (`server/importers/kahoot.js`, called from `server/library.js` `importAny`)
+  - Input: the JSON of a Kahoot quiz (`create.kahoot.it/rest/kahoots/<uuid>`) plus its pictures. Either a raw `.json`, or a `.zip` with `manifest.json` `{ app: 'kahoot-export' }`, the quiz `.json` files and the pictures as `images/<picture id>.<ext>` (the id is the last part of `media.kahoot.it/<id>`).
+  - One quiz becomes a quiz; several go into a new "Kahoot" folder. The original author, URL, language and tags are kept in the quiz's `source` and survive editing.
+  - Type map: quiz → quiz (a 2-answer TRUE_FALSE layout → tf); multiple_select_quiz → quiz with several right answers; open_ended → type; jumble → order; slider → slider (tolerance is a share of the range); pin_it → pin; drop_pin → drop; survey / multiple_select_poll → poll; word_cloud → cloud; feedback → open; brainstorming → brain; content → slide. Texts lose their HTML. GRIDREVEAL → tiles reveal. YouTube videos come along; a video uploaded to Kahoot does not.
+  - Not imported: the picture crop Kahoot applies on screen, Kahoot's layouts, music and themes.
+  - Checked on 40 real public quizzes (789 questions, all 13 Kahoot types seen) and a zip with 41 real pictures.
 - **Grading**: all grading happens on the server.
 
 ### 3.4 Kahoot experiences: how each maps here
@@ -266,7 +284,8 @@ Also check:
 - **Real phones**: the platform was tested with bots, a desktop browser and a phone-sized browser tab. Testing on real phones over Wi-Fi with a full class is still needed.
 - **Music**: nobody has listened to the six tracks yet. Check that there are no vocals and that the loudness is even.
 - **Games that trust the client**: the timing games (tower, dragon) and gem catching trust what the phone reports (the classroom threat model). Answers themselves are always graded on the server.
-- **Excel import**: only the "quiz" (multiple choice) question type comes from Excel. Other types are made in the editor.
+- **Kahoot JSON**: it is an unofficial format and can change. The conversion lives in one file (`server/importers/kahoot.js`) so a fix is quick. The slider tolerance (a share of the range) and pin zones measured from the picture's top-left corner were confirmed only on a few quizzes. Kahoot's terms don't allow scraping; keep the extension for a teacher's own use and not on the Chrome Web Store.
+- **Live types on big screens**: free text, brainstorm, Q&A and word cloud show what the students type. The word filter and click-to-hide help, but a determined student can still find a spelling the list misses. Add words to `server/badwords.json`.
 - **Background tabs**: browsers pause CSS animations in background tabs, so for Playwright screenshots of a phone tab, call `bringToFront()` first.
 
 ## 6. Open questions for the user

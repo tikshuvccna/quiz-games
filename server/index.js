@@ -286,9 +286,18 @@ io.on('connection', (socket) => {
     if (room) room.start();
   });
 
+  // remove a player: in the lobby and, since 2026-10-30, also in the middle of a game
   on('host:kick', (pid) => {
     const room = hostRoom();
-    if (room && room.phase === 'lobby') room.removePlayer(str(pid), true);
+    if (room && room.phase !== 'ended' && room.phase !== 'countdown') room.removePlayer(str(pid), true);
+  });
+
+  // rename a player (no name = a random one); the score stays
+  on('host:rename', (data, ack) => {
+    const room = hostRoom();
+    const d = obj(data);
+    const r = room ? room.renamePlayer(str(d.id), typeof d.name === 'string' ? d.name : undefined) : { error: 'אין חדר' };
+    if (typeof ack === 'function') ack(r);
   });
 
   // classic quiz: next stage (open answers / reveal / leaderboard / next question)

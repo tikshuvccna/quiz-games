@@ -4,17 +4,23 @@
   const { esc } = U;
   const app = document.getElementById('app');
   const token = (location.pathname.match(/\/share\/([\w-]+)/) || [])[1] || '';
-  const TYPE = { quiz: '🔷 חידון', tf: '⚖️ נכון / לא נכון', type: '⌨️ הקלדה', slider: '🎚️ סרגל', order: '🔢 סידור', pin: '📍 סימון', puzzle: '🧩 פאזל', poll: '📊 סקר', slide: '🖼️ שקופית' };
+  const TYPE = { quiz: '🔷 חידון', tf: '⚖️ נכון / לא נכון', type: '⌨️ הקלדה', slider: '🎚️ סרגל', order: '🔢 סידור', match: '🔗 התאמה', sort: '🗂️ מיון', pin: '📍 סימון', puzzle: '🧩 פאזל', poll: '📊 סקר', cloud: '☁️ ענן מילים', open: '✍️ תשובה פתוחה', brain: '💡 סיעור מוחות', qna: '❓ שאלות מהכיתה', rate: '⭐ דירוג', rank: '🏅 דירוג פריטים', drop: '📌 סיכה חופשית', slide: '🖼️ שקופית' };
   const COLORS = ['#e9334f', '#1f73e0', '#e6a400', '#23a14a', '#8b5cf6', '#0fa3b8'];
 
-  function answers(q) {
+  function answers(q, base) {
     if (q.answers && q.type !== 'slide') {
-      return `<div class="sh-ans">${q.answers.filter((a) => a.text).map((a, i) => `<span class="${a.correct ? 'ok' : ''}" style="--a:${q.type === 'tf' ? ['#1f73e0', '#e9334f'][i] : COLORS[i % 6]}">${Art.shape(q.type === 'tf' ? i * 3 : i)}${esc(a.text)}${a.correct ? ' ✓' : ''}</span>`).join('')}</div>`;
+      return `<div class="sh-ans">${q.answers.filter((a) => a.text || a.image).map((a, i) => `<span class="${a.correct ? 'ok' : ''}" style="--a:${q.type === 'tf' ? ['#1f73e0', '#e9334f'][i] : COLORS[i % 6]}">${Art.shape(q.type === 'tf' ? i * 3 : i)}${a.image ? `<img class="sh-apic" src="${base}${encodeURIComponent(a.image)}" alt="">` : ''}${esc(a.text)}${a.correct ? ' ✓' : ''}</span>`).join('')}</div>`;
     }
     if (q.type === 'type') return `<div class="sh-line">✓ ${q.accept.map(esc).join(' · ')}</div>`;
     if (q.type === 'slider') return `<div class="sh-line">✓ ${q.slider.answer}${q.slider.tol ? ` (±${q.slider.tol})` : ''} · בטווח ${q.slider.min}–${q.slider.max}</div>`;
     if (q.type === 'order') return `<div class="sh-line">${q.items.map((t, i) => `<b>${i + 1}.</b> ${esc(t)}`).join('  ')}</div>`;
     if (q.type === 'puzzle') return `<div class="sh-line">${q.puzzle.rows}×${q.puzzle.cols} חלקים</div>`;
+    if (q.type === 'match') return `<div class="sh-line">${q.pairs.map((p) => `${esc(p.a)} = ${esc(p.b)}`).join(' · ')}</div>`;
+    if (q.type === 'sort') return `<div class="sh-line">${q.buckets.map((b) => `<b>${esc(b.name)}:</b> ${b.items.map(esc).join(', ')}`).join(' · ')}</div>`;
+    if (q.type === 'rate') return `<div class="sh-line">סולם 1–${q.scale.max}${q.scale.low || q.scale.high ? ` (${q.scale.low} … ${q.scale.high})` : ''}</div>`;
+    if (q.type === 'rank') return `<div class="sh-line">${q.items.map((t, i) => `<b>${i + 1}.</b> ${esc(t)}`).join('  ')}</div>`;
+    if (q.type === 'cloud' || q.type === 'open' || q.type === 'brain' || q.type === 'qna') return `<div class="sh-line">עד ${q.limit} ${{ cloud: 'מילים', open: 'תשובות', brain: 'רעיונות', qna: 'שאלות' }[q.type]} לשחקן</div>`;
+    if (q.type === 'pin' && q.pin.extra) return `<div class="sh-line">${q.pin.extra.length + 1} אזורים נכונים</div>`;
     return '';
   }
 
@@ -26,7 +32,8 @@
         <div class="sh-text">${esc(q.text)}</div>
         ${q.image ? `<img class="sh-img" src="${qz.mediaBase}${encodeURIComponent(q.image)}" alt="" loading="lazy">` : ''}
         ${q.video && q.video.id ? `<div class="sh-line">🎬 סרטון יוטיוב</div>` : q.video ? '<div class="sh-line">🎬 סרטון</div>' : ''}
-        ${answers(q)}
+        ${q.body ? `<div class="sh-line">${esc(q.body)}</div>` : ''}
+        ${answers(q, qz.mediaBase)}
         ${q.explain ? `<div class="sh-explain">💡 ${esc(q.explain)}</div>` : ''}
       </li>`).join('')}</ol></details>`;
   }

@@ -5,11 +5,14 @@
 const QuizGame = require('./base');
 const qt = require('../qtypes');
 const { shuffle } = require('../shuffle');
+const Filter = require('../filter');
 
 const READY_MS = 3500; // question text alone before the answers open
 const MULT_MS = 2200; // the ×2 / ×3 / ×4 splash before it
 const AUTO_REVEAL_MS = 5500;
 const AUTO_BOARD_MS = 6500;
+const VOTE_MS = 30000; // brainstorm: time to vote for the ideas
+const VOTES_EACH = 3;
 const BONUS_PLAYERS = 5;
 const BONUS_QUESTIONS = 2;
 
@@ -19,7 +22,7 @@ class ClassicGame extends QuizGame {
   static title = 'חידון קלאסי';
   static emoji = '🎯';
   static mode = 'ffa';
-  static classic = true; // uses every question type, incl. polls and slides
+  static classic = true; // uses every question type, incl. polls, word clouds, free text, brainstorms, drop-pins and slides
   static noReward = true;
   static untimed = true; // ends when the questions run out, not on a clock
   static teamAvg = true; // team score = average of its members (like Kahoot)
@@ -160,7 +163,7 @@ class ClassicGame extends QuizGame {
       return picks.length > 0 && picks.every((i) => q.answers[i] && q.answers[i].correct);
     }
     if (q.type === 'slider') return Math.abs(Number(a.data.value) - q.slider.answer) <= q.slider.tol + (q.slider.max - q.slider.min) * 0.1;
-    if (q.type === 'puzzle') return a.res.ratio >= 0.75;
+    if (q.type === 'puzzle' || q.type === 'match' || q.type === 'sort') return a.res.ratio >= 0.75;
     return false;
   }
 
@@ -169,7 +172,7 @@ class ClassicGame extends QuizGame {
     if (this.style === 'accuracy') return ok && q.points > 0 ? 1 : 0;
     let pts = ok ? this.points(q, a.ms, p.g.streak) : 0;
     // a jigsaw that is mostly right still earns part of the points (no streak)
-    if (!ok && a && q.type === 'puzzle' && a.res.ratio >= 0.5) pts = Math.round(this.points(q, a.ms, 0) * a.res.ratio * 0.5);
+    if (!ok && a && (q.type === 'puzzle' || q.type === 'match' || q.type === 'sort') && a.res.ratio >= 0.5) pts = Math.round(this.points(q, a.ms, 0) * a.res.ratio * 0.5);
     if (this.style === 'confidence' && a && a.data.conf === 1) {
       p.g.boosts++;
       if (ok) {
@@ -190,7 +193,9 @@ class ClassicGame extends QuizGame {
   }
 
   handle(p, type, data) {
-    if (this.over || !p.g || type !== 'answer' || this.stage !== 'question' || !this.canAnswer(p)) return;
+    if (this.over || !p.g || !this.canAnswer(p)) return;
+    if (type === 'vote') return this.handleVote(p, data || {});
+    if (type !== 'answer' || this.stage !== 'question') return;
     const cur = this.cur;
     if (cur.answers.has(p.id)) return;
     if (data.qid !== undefined && data.qid !== this.qid()) return;
@@ -199,13 +204,14 @@ class ClassicGame extends QuizGame {
     const ms = T ? Math.min(Date.now() - cur.startAt, T * 1000) : Date.now() - cur.startAt;
     const conf = this.confOptions(p);
     if (conf && !conf.some((o) => o.v === data.conf)) return;
-    let res;
-    if (q.type === 'poll') {
-      if (!Number.isInteger(data.choice) || data.choice < 0 || data.choice >= cur.state.order.length) return;
-      res = { valid: true, ok: null, chosen: q.answers[cur.state.order[data.choice]].text };
-    } else {
-      res = qt.check(q, cur.state, data);
-      if (!res.valid) return;
+    const res = qt.check(q, cur.state, data);
+    if (!res.valid) return;
+    // text that is shown on the big screen: words the filter blocks are dropped (the answer still counts as sent)
+    if (res.words && this.room.setup.filter) {
+      const kept = res.words.filter((w) => !Filter.bad(w));
+      res.hidden = res.words.length - kept.length;
+      res.words = kept;
+      res.chosen = kept.join(' · ');
     }
     cur.answers.set(p.id, { data, res, ms });
     this.room.pushPlayer(p);
@@ -224,11 +230,42 @@ class ClassicGame extends QuizGame {
     return base + Math.min(500, Math.max(0, streak - 1) * 100);
   }
 
+  // brainstorm: after the ideas come in, everyone votes for the ones they like best
+  startVote() {
+    const cur = this.cur;
+    const ideas = [];
+    for (const [pid, a] of cur.answers) for (const text of a.res.words) ideas.push({ text, by: pid });
+    cur.ideas = shuffle(ideas).slice(0, 60);
+    cur.votes = new Map();
+    cur.voteEnd = Date.now() + VOTE_MS;
+    this.stage = 'vote';
+    this.pushEveryone();
+    this.schedule(() => this.reveal(), VOTE_MS + 300);
+  }
+
+  handleVote(p, data) {
+    const cur = this.cur;
+    if (this.stage !== 'vote' || cur.votes.has(p.id)) return;
+    if (data.qid !== undefined && data.qid !== this.qid()) return;
+    const picks = Array.isArray(data.ideas) ? data.ideas : [];
+    if (!picks.length || picks.length > VOTES_EACH || new Set(picks).size !== picks.length) return;
+    if (picks.some((i) => !Number.isInteger(i) || i < 0 || i >= cur.ideas.length || cur.ideas[i].by === p.id)) return;
+    cur.votes.set(p.id, picks);
+    this.room.pushPlayer(p);
+    this.room.scheduleHostPush();
+    const waiting = this.players().filter((o) => this.canAnswer(o) && o.connected && !cur.votes.has(o.id));
+    if (!waiting.length) this.schedule(() => this.reveal(), 600);
+  }
+
   reveal() {
-    if (this.stage !== 'question') return;
+    if (this.stage !== 'question' && this.stage !== 'vote') return;
     clearTimeout(this.timer);
     const cur = this.cur;
     const q = cur.q;
+    if ((q.type === 'brain' || q.type === 'qna') && this.stage === 'question') {
+      const n = [...cur.answers.values()].reduce((s, a) => s + a.res.words.length, 0);
+      if (n >= 2) return this.startVote();
+    }
     const scored = qt.SCORED.has(q.type);
     this.rankSnapshot();
     let right = 0;
@@ -259,6 +296,7 @@ class ClassicGame extends QuizGame {
     this.rank();
     // what the class answered
     const rv = { correctText: qt.correctText(q), answered: cur.answers.size, right, explain: q.explain || '', afterImage: qt.afterImage(q, this.room.quizData.mediaBase) };
+    const names = new Map(this.players().map((o) => [o.id, o.name]));
     if (q.type === 'quiz' || q.type === 'tf' || q.type === 'poll') {
       rv.dist = cur.state.order.map(() => 0);
       for (const a of cur.answers.values()) {
@@ -266,6 +304,42 @@ class ClassicGame extends QuizGame {
         for (const c of picks) if (rv.dist[c] !== undefined) rv.dist[c]++;
       }
       rv.correct = q.type === 'poll' ? [] : cur.state.order.map((orig, d) => (q.answers[orig].correct ? d : -1)).filter((d) => d >= 0);
+    } else if (q.type === 'cloud') {
+      const counts = new Map();
+      for (const a of cur.answers.values()) {
+        for (const w of a.res.words) {
+          const k = qt.norm(w);
+          const e = counts.get(k) || { text: w, n: 0 };
+          e.n++;
+          counts.set(k, e);
+        }
+      }
+      rv.words = [...counts.values()].sort((a, b) => b.n - a.n).slice(0, 60);
+    } else if (q.type === 'open') {
+      rv.texts = [...cur.answers].flatMap(([pid, a]) => a.res.words.map((text) => ({ text, by: names.get(pid) || '' }))).slice(0, 80);
+    } else if (q.type === 'rate') {
+      const max = q.scale.max;
+      const dist = Array.from({ length: max }, () => 0);
+      let sum = 0;
+      for (const a of cur.answers.values()) {
+        dist[a.res.value - 1]++;
+        sum += a.res.value;
+      }
+      rv.rate = { max, dist, avg: cur.answers.size ? Math.round((sum / cur.answers.size) * 10) / 10 : null };
+    } else if (q.type === 'rank') {
+      // every position gives points (first place = most); the item with the most points is the class's favorite
+      const n = q.items.length;
+      const pts = q.items.map(() => 0);
+      for (const a of cur.answers.values()) a.res.ranks.forEach((item, pos) => (pts[item] += n - pos));
+      rv.rank = q.items.map((text, i) => ({ text, score: pts[i] })).sort((a, b) => b.score - a.score);
+    } else if (q.type === 'brain' || q.type === 'qna') {
+      const votes = (cur.ideas || []).map(() => 0);
+      for (const picks of (cur.votes || new Map()).values()) for (const i of picks) votes[i]++;
+      const list = cur.ideas || [...cur.answers].flatMap(([pid, a]) => a.res.words.map((text) => ({ text, by: pid })));
+      rv.ideas = list.map((x, i) => ({ text: x.text, by: names.get(x.by) || '', votes: votes[i] || 0 })).sort((a, b) => b.votes - a.votes).slice(0, 24);
+      rv.voters = cur.votes ? cur.votes.size : 0;
+    } else if (q.type === 'drop') {
+      rv.pins = [...cur.answers.values()].map((a) => [Math.round(a.data.x * 10) / 10, Math.round(a.data.y * 10) / 10]).slice(0, 200);
     } else if (q.type === 'slider') {
       const vals = [...cur.answers.values()].map((a) => Number(a.data.value)).filter(Number.isFinite);
       rv.avg = vals.length ? Math.round((vals.reduce((s, v) => s + v, 0) / vals.length) * 10) / 10 : null;
@@ -281,12 +355,17 @@ class ClassicGame extends QuizGame {
         e.n++;
         counts.set(k, e);
       }
-      rv.top = [...counts.values()].sort((a, b) => b.n - a.n).slice(0, 6);
+      rv.top = [...counts.values()].filter((t) => !(this.room.setup.filter && Filter.bad(t.text))).sort((a, b) => b.n - a.n).slice(0, 6);
     } else if (q.type === 'pin') {
       rv.pins = [...cur.answers.values()].map((a) => [Math.round(a.data.x * 10) / 10, Math.round(a.data.y * 10) / 10, a.res.ok]).slice(0, 200);
       rv.target = q.pin;
     } else if (q.type === 'order') {
       rv.items = q.items;
+    } else if (q.type === 'match' || q.type === 'sort') {
+      if (q.type === 'match') rv.pairs = q.pairs;
+      else rv.buckets = q.buckets;
+      const ratios = [...cur.answers.values()].map((a) => a.res.ratio || 0);
+      rv.avgPct = ratios.length ? Math.round((ratios.reduce((s, v) => s + v, 0) / ratios.length) * 100) : 0;
     } else if (q.type === 'puzzle') {
       const ratios = [...cur.answers.values()].map((a) => a.res.ratio || 0);
       rv.avgPct = ratios.length ? Math.round((ratios.reduce((s, v) => s + v, 0) / ratios.length) * 100) : 0;
@@ -295,6 +374,7 @@ class ClassicGame extends QuizGame {
       const boosted = [...cur.answers.values()].filter((a) => a.data.conf === 1).length;
       rv.boostPct = cur.answers.size ? Math.round((boosted / cur.answers.size) * 100) : 0;
     }
+    rv.hidden = [...cur.answers.values()].reduce((n, a) => n + (a.res.hidden || 0), 0);
     cur.reveal = rv;
     this.afterReveal(rv);
     this.lines = this.funLines(fastest, right);
@@ -316,7 +396,7 @@ class ClassicGame extends QuizGame {
   hostCommand(cmd) {
     if (this.over || cmd !== 'next') return;
     if (this.stage === 'ready') this.open();
-    else if (this.stage === 'question') this.reveal();
+    else if (this.stage === 'question' || this.stage === 'vote') this.reveal();
     else if (this.stage === 'reveal') this.board();
     else this.next(); // board, slide
   }
@@ -336,7 +416,7 @@ class ClassicGame extends QuizGame {
     const out = [];
     const take = this.eligible ? list.filter((p) => this.eligible.has(p.id)) : list;
     const asked = take.length || 1;
-    if (this.cur.q.type !== 'poll' && this.cur.q.type !== 'slide') {
+    if (qt.SCORED.has(this.cur.q.type)) {
       const pct = Math.round((right / asked) * 100);
       if (pct >= 80) out.push(`👏 ${pct}% ענו נכון! איזו כיתה חכמה`);
       else if (pct <= 30) out.push(`🤔 שאלה קשה! רק ${pct}% צדקו`);
@@ -388,6 +468,12 @@ class ClassicGame extends QuizGame {
       out.remain = cur.deadline ? Math.max(0, cur.deadline - Date.now()) : null;
       out.time = this.questionTime(cur.q);
     }
+    if (this.stage === 'vote') {
+      out.ideas = cur.ideas.map((x) => x.text);
+      out.voted = cur.votes.size;
+      out.remain = Math.max(0, cur.voteEnd - Date.now());
+      out.time = VOTE_MS / 1000;
+    }
     if (this.stage === 'reveal' || this.stage === 'board') {
       out.reveal = cur.reveal;
       out.lines = this.lines;
@@ -401,11 +487,19 @@ class ClassicGame extends QuizGame {
   personal(p) {
     const g = p.g;
     const cur = this.cur;
-    const base = { score: g.score, rank: g.rank, streak: g.streak, qid: this.qid(), qnum: this.i + 1, total: this.list.length, bonus: this.inBonus, stage: this.stage };
+    const base = { score: g.score, rank: g.rank, streak: g.streak, qid: this.qid(), qnum: this.i + 1, total: this.list.length, bonus: this.inBonus, stage: this.stage, qtype: cur ? cur.q.type : '' };
     const can = this.canAnswer(p);
     if (!cur) return { ...base, phase: 'c_ready' };
     if (this.stage === 'ready') return { ...base, phase: can ? 'c_ready' : 'c_watch', text: cur.q.text, points: cur.q.points };
     if (this.stage === 'slide') return { ...base, phase: 'c_slide', q: cur.payload };
+    if (this.stage === 'vote') {
+      if (!can) return { ...base, phase: 'c_watch' };
+      if (cur.votes.has(p.id)) return { ...base, phase: 'c_locked' };
+      // the ideas as the phone numbers them (own ideas can't be voted for, so they are left out)
+      const ideas = cur.ideas.map((x, i) => ({ i, text: x.text })).filter((x) => cur.ideas[x.i].by !== p.id);
+      if (!ideas.length) return { ...base, phase: 'c_watch' };
+      return { ...base, phase: 'c_vote', text: cur.q.text, ideas, picks: VOTES_EACH, remain: Math.max(0, cur.voteEnd - Date.now()) };
+    }
     if (this.stage === 'question') {
       if (!can) return { ...base, phase: 'c_watch' };
       if (cur.answers.has(p.id)) return { ...base, phase: 'c_locked' };

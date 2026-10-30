@@ -6,6 +6,11 @@
   const TF = ['#1f73e0', '#e9334f'];
   const color = (q, i) => (q.type === 'tf' ? TF[i] : COLORS[i]);
   const shape = (q, i) => Art.shape(q.type === 'tf' ? i * 3 : i);
+  const LIVE = ['poll', 'cloud', 'open', 'brain', 'qna', 'drop', 'rate', 'rank']; // everyone answers, nothing is graded
+  const NOTE_COLORS = ['#ffe27a', '#9be7ff', '#ffb3c7', '#b9f6ca', '#d7b8ff', '#ffc999'];
+  const CLOUD_COLORS = ['#ff6b81', '#ffd23f', '#4dd4ff', '#7ef0a8', '#c79bff', '#ff9f5a', '#ffffff'];
+  // the same wobble for the same word every time it is drawn
+  const wob = (i, n) => (((i * 37 + n * 11) % 9) - 4);
   let timerRaf = 0;
 
   // circular countdown on the host, bar on phones
@@ -28,18 +33,19 @@
 
   function tiles(q, rv) {
     const max = rv ? Math.max(1, ...rv.dist) : 1;
-    return `<div class="cl-answers n${q.options.length} ${rv ? 'revealed' : ''}">${q.options
+    return `<div class="cl-answers n${q.options.length} ${rv ? 'revealed' : ''} ${q.optionImages ? 'pics' : ''}">${q.options
       .map((o, i) => {
         const ok = rv && rv.correct.includes(i);
+        const pic = q.optionImages && q.optionImages[i];
         return `<div class="cl-ans ${rv ? (ok ? 'ok' : q.type === 'poll' ? '' : 'no') : ''}" style="--a:${color(q, i)};--i:${i}">
-          ${shape(q, i)}<span class="t">${esc(o)}</span>${rv ? `<span class="cnt">${ok ? '✓ ' : ''}${rv.dist[i]}</span><i class="bar" style="--w:${(rv.dist[i] / max) * 100}%"></i>` : ''}</div>`;
+          ${shape(q, i)}${pic ? `<img class="cl-ans-pic" src="${esc(pic)}" alt="">` : ''}${o ? `<span class="t">${esc(o)}</span>` : ''}${rv ? `<span class="cnt">${ok ? '✓ ' : ''}${rv.dist[i]}</span><i class="bar" style="--w:${(rv.dist[i] / max) * 100}%"></i>` : ''}</div>`;
       })
       .join('')}</div>`;
   }
 
   function media(q, rv) {
-    if (q.type === 'pin') {
-      const pins = rv ? rv.pins.map(([x, y, ok]) => `<i class="cl-pin ${ok ? 'ok' : ''}" style="left:${x}%;top:${y}%"></i>`).join('') + QMedia.pinZone(rv.target, 'cl-target') : '';
+    if (q.type === 'pin' || q.type === 'drop') {
+      const pins = rv ? rv.pins.map(([x, y, ok]) => `<i class="cl-pin ${ok ? 'ok' : ''}" style="left:${x}%;top:${y}%"></i>`).join('') + (rv.target ? QMedia.pinZone(rv.target, 'cl-target') : '') : '';
       return `<div class="cl-pinbox"><div class="cl-pinframe" id="pinFrame"><img src="${esc(q.image)}" alt="">${pins}</div></div>`;
     }
     if (q.type === 'puzzle') return `<div class="cl-pinbox"><div class="cl-pinframe cl-pz" id="pinFrame" data-pz="1"><img src="${esc(q.image)}" alt=""></div></div>`;
@@ -53,6 +59,33 @@
 
   function body(q, rv) {
     if (q.type === 'quiz' || q.type === 'tf' || q.type === 'poll') return tiles(q, rv);
+    if (q.type === 'cloud') {
+      if (!rv) return '<div class="cl-hint big">☁️ כתבו בטלפון מילה או שתיים</div>';
+      const max = Math.max(1, ...rv.words.map((w) => w.n));
+      return `<div class="cld-wall">${rv.words.map((w, i) => `<span class="cld-w" data-hide style="--s:${(w.n / max).toFixed(2)};--c:${CLOUD_COLORS[i % CLOUD_COLORS.length]};--rot:${wob(i, w.text.length)}deg;--i:${i}">${esc(w.text)}${w.n > 1 ? `<small>×${w.n}</small>` : ''}</span>`).join('') || '<span class="cl-hint">אף אחד לא ענה</span>'}</div>`;
+    }
+    if (q.type === 'open') {
+      if (!rv) return '<div class="cl-hint big">✍️ כתבו בטלפון את התשובה שלכם</div>';
+      return `<div class="opn-wall">${rv.texts.map((t, i) => `<div class="opn-note" data-hide style="--c:${NOTE_COLORS[i % NOTE_COLORS.length]};--rot:${wob(i, t.text.length) / 2}deg;--i:${i}">${esc(t.text)}${t.by ? `<small>${esc(t.by)}</small>` : ''}</div>`).join('') || '<span class="cl-hint">אף אחד לא ענה</span>'}</div><div class="cl-hint">לחיצה על פתק מסתירה אותו מהמסך</div>`;
+    }
+    if (q.type === 'rate') {
+      if (!rv) return '<div class="cl-hint big">⭐ דרגו בטלפון</div>';
+      const R = rv.rate;
+      const top = Math.max(1, ...R.dist);
+      return `<div class="rt-wrap"><div class="rt-avg"><b>${R.avg ?? '—'}</b><span>ממוצע (מתוך ${R.max})</span></div>
+        <div class="rt-bars">${R.dist.map((n, i) => `<div class="rt-col" style="--i:${i}"><b>${n}</b><i style="--h:${Math.round((n / top) * 100)}"></i><span>${R.max === 5 ? '★ ' : ''}${i + 1}</span></div>`).join('')}</div>
+        ${q.scale.low || q.scale.high ? `<div class="rt-ends"><span>${esc(q.scale.low)}</span><span>${esc(q.scale.high)}</span></div>` : ''}</div>`;
+    }
+    if (q.type === 'rank') {
+      if (!rv) return `<div class="cl-order">${q.items.map((t, i) => `<span style="--i:${i}">${esc(t)}</span>`).join('')}</div><div class="cl-hint">🏅 סדרו בטלפון לפי ההעדפה שלכם</div>`;
+      const top = Math.max(1, ...rv.rank.map((x) => x.score));
+      return `<div class="ide-rank">${rv.rank.map((x, i) => `<div class="ide-row ${i === 0 ? 'first' : ''}" style="--i:${i};--w:${(x.score / top) * 100}%"><i class="bar"></i><span class="rk">${i + 1}</span><span class="t">${esc(x.text)}</span><b class="n">${x.score}</b></div>`).join('')}</div><div class="cl-hint">נקודות: מקום ראשון מקבל הכי הרבה</div>`;
+    }
+    if (q.type === 'brain' || q.type === 'qna') {
+      if (!rv) return q.type === 'qna' ? '<div class="cl-hint big">❓ שלחו בטלפון שאלות לכיתה. אחר כך מצביעים על השאלות שהכי חשוב לענות עליהן</div>' : '<div class="cl-hint big">💡 שלחו בטלפון רעיונות. אחר כך מצביעים על הטובים ביותר</div>';
+      const top = Math.max(1, ...rv.ideas.map((x) => x.votes));
+      return `<div class="ide-rank">${rv.ideas.map((x, i) => `<div class="ide-row ${i === 0 && x.votes ? 'first' : ''}" data-hide style="--i:${i};--w:${(x.votes / top) * 100}%"><i class="bar"></i><span class="rk">${i + 1}</span><span class="t">${esc(x.text)}${x.by ? `<small>${esc(x.by)}</small>` : ''}</span><b class="n">${x.votes}</b></div>`).join('') || '<span class="cl-hint">אף אחד לא ענה</span>'}</div>${rv.voters ? `<div class="cl-hint">🗳️ ${rv.voters} הצביעו</div>` : ''}`;
+    }
     if (q.type === 'slider') {
       if (!rv) return `<div class="cl-slider"><span>${q.slider.min}</span><i></i><span>${q.slider.max}</span></div><div class="cl-hint">🎚️ בחרו מספר בטלפון</div>`;
       const pos = (v) => ((v - q.slider.min) / (q.slider.max - q.slider.min)) * 100;
@@ -66,6 +99,15 @@
     if (q.type === 'order') {
       const items = rv ? rv.items : q.items;
       return `<div class="cl-order ${rv ? 'rv' : ''}">${items.map((t, i) => `<span style="--i:${i}">${rv ? `<b>${i + 1}</b>` : ''}${esc(t)}</span>`).join(rv ? '' : '')}</div>${rv ? '' : '<div class="cl-hint">🧩 סדרו בטלפון בסדר הנכון</div>'}`;
+    }
+    if (q.type === 'drop') return rv ? `<div class="cl-hint">📍 ${rv.answered} סיכות על התמונה</div>` : '<div class="cl-hint">📍 הניחו בטלפון סיכה על התמונה</div>';
+    if (q.type === 'match') {
+      if (!rv) return `<div class="mt-cols"><div>${q.left.map((t, i) => `<span style="--i:${i}">${esc(t)}</span>`).join('')}</div><div>${q.right.map((t, i) => `<span style="--i:${i}">${esc(t)}</span>`).join('')}</div></div><div class="cl-hint">🔗 חברו בטלפון כל פריט לבן הזוג שלו</div>`;
+      return `<div class="mt-pairs">${rv.pairs.map((p, i) => `<div style="--i:${i}"><span>${esc(p.a)}</span><i>=</i><span>${esc(p.b)}</span></div>`).join('')}</div><div class="cl-hint">${rv.right} מתוך ${rv.answered} חיברו הכל נכון · בממוצע <b>${rv.avgPct}%</b> מהזוגות</div>`;
+    }
+    if (q.type === 'sort') {
+      if (!rv) return `<div class="st-buckets">${q.buckets.map((b, k) => `<div class="st-b" style="--k:${k}"><b>${esc(b)}</b></div>`).join('')}</div><div class="st-pool">${q.items.map((t, i) => `<span style="--i:${i}">${esc(t)}</span>`).join('')}</div><div class="cl-hint">🗂️ מיינו בטלפון כל פריט לקבוצה שלו</div>`;
+      return `<div class="st-buckets">${rv.buckets.map((b, k) => `<div class="st-b" style="--k:${k}"><b>${esc(b.name)}</b>${b.items.map((t, i) => `<span style="--i:${i}">${esc(t)}</span>`).join('')}</div>`).join('')}</div><div class="cl-hint">${rv.right} מתוך ${rv.answered} מיינו הכל נכון · בממוצע <b>${rv.avgPct}%</b> במקום הנכון</div>`;
     }
     if (q.type === 'pin') return rv ? `<div class="cl-hint">${rv.right} מתוך ${rv.answered} פגעו במקום הנכון</div>` : '<div class="cl-hint">📍 סמנו בטלפון את המקום הנכון</div>';
     if (q.type === 'puzzle') return rv ? `<div class="cl-hint">🧩 ${rv.right} מתוך ${rv.answered} הרכיבו את כל הפאזל · בממוצע <b>${rv.avgPct}%</b> מהחלקים במקום</div>` : `<div class="cl-hint">🧩 הרכיבו את הפאזל בטלפון (${q.puzzle.rows}×${q.puzzle.cols} חלקים)</div>`;
@@ -87,9 +129,9 @@
       }
       U.hostTick(st, `${b.players} משתתפים${b.bonus ? ' · ⭐ הזדמנות שנייה' : ''}`);
       document.getElementById('clNum').textContent = b.q ? `${b.index + 1}/${b.total}` : '—';
-      document.getElementById('clAns').textContent = `${b.answered || 0}/${b.players}`;
+      document.getElementById('clAns').textContent = `${(b.stage === 'vote' ? b.voted : b.answered) || 0}/${b.players}`;
       const next = document.getElementById('clNext');
-      const label = { ready: 'פתחו תשובות ▶', question: 'סיימו את הזמן ⏭', reveal: b.last ? 'לתוצאות 🏆' : 'ללוח המובילים ▶', board: 'לשאלה הבאה ▶', slide: 'הבא ▶' }[b.stage];
+      const label = { ready: 'פתחו תשובות ▶', question: 'סיימו את הזמן ⏭', vote: 'סיימו הצבעה ⏭', reveal: b.last ? 'לתוצאות 🏆' : 'ללוח המובילים ▶', board: 'לשאלה הבאה ▶', slide: 'הבא ▶' }[b.stage];
       next.textContent = label || 'הבא ▶';
       next.classList.toggle('hidden', !b.manual && b.stage !== 'slide');
       const key = `${b.stage}:${b.bonus}:${b.index}`;
@@ -97,7 +139,7 @@
       if (box.dataset.key === key) {
         // same stage: only live numbers change
         const n = document.getElementById('clCount');
-        if (n) U.countTo(n, b.answered || 0, 300);
+        if (n) U.countTo(n, (b.stage === 'vote' ? b.voted : b.answered) || 0, 300);
         return;
       }
       box.dataset.key = key;
@@ -109,7 +151,15 @@
         if (mult) U.multSplash(box, q.points, true);
         else U.sfx('tick');
       } else if (b.stage === 'slide') {
-        box.innerHTML = `<div class="cl-slide">${q.text ? `<div class="cl-qtext big">${esc(q.text)}</div>` : ''}${media(q)}</div>`;
+        box.innerHTML = `<div class="cl-slide">${q.text ? `<div class="cl-qtext big">${esc(q.text)}</div>` : ''}${q.body ? `<div class="cl-slide-body">${esc(q.body)}</div>` : ''}${media(q)}</div>`;
+      } else if (b.stage === 'vote') {
+        box.innerHTML = `<div class="cl-q"><div class="cl-qtext">${esc(q.text)}</div>
+          <div class="cl-mid"><div class="cl-timer" id="clTimer"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" class="trk"/><circle cx="50" cy="50" r="44" class="ring"/></svg><b></b></div>
+            <div class="cl-hint big">🗳️ ${q.type === 'qna' ? 'הצביעו בטלפון על השאלות שהכי חשוב לענות עליהן (עד 3)' : 'הצביעו בטלפון על הרעיונות הכי טובים (עד 3)'}</div>
+            <div class="cl-counter"><b id="clCount">0</b><span>הצביעו</span></div></div>
+          <div class="ide-wall">${b.ideas.map((t, i) => `<div class="opn-note" style="--c:${NOTE_COLORS[i % NOTE_COLORS.length]};--rot:${wob(i, t.length) / 2}deg;--i:${i}">${esc(t)}</div>`).join('')}</div></div>`;
+        runTimer(document.getElementById('clTimer'), b.remain, (b.time || 30) * 1000);
+        U.sfx('go');
       } else if (b.stage === 'question') {
         box.innerHTML = `<div class="cl-q">
           <div class="cl-qtext">${esc(q.text)}${q.points !== 1 ? `<span class="pts-chip p${q.points}">${q.points ? '×' + q.points : 'ללא ניקוד'}</span>` : ''}</div>
@@ -124,12 +174,13 @@
         const rv = b.reveal;
         box.innerHTML = `<div class="cl-q rv">
           <div class="cl-qtext">${esc(q.text)}</div>
-          <div class="cl-mid"><div class="cl-score-sum"><b>${rv.right}</b><span>ענו נכון</span></div><div class="cl-media">${media(q, rv)}</div><div class="cl-counter"><b>${rv.answered}</b><span>ענו</span></div></div>
+          <div class="cl-mid">${LIVE.includes(q.type) ? '<span></span>' : `<div class="cl-score-sum"><b>${rv.right}</b><span>ענו נכון</span></div>`}<div class="cl-media">${media(q, rv)}</div><div class="cl-counter"><b>${rv.answered}</b><span>ענו</span></div></div>
           ${body(q, rv)}
           ${rv.explain ? `<div class="cl-explain">💡 ${esc(rv.explain)}</div>` : ''}
+          ${rv.hidden ? `<div class="cl-hint">🛡️ ${rv.hidden} הוסתרו בסינון מילים</div>` : ''}
           ${rv.boostPct !== undefined ? `<div class="cl-hint">🚀 ${rv.boostPct}% בחרו בוסט</div>` : ''}
           ${b.lines && b.lines.length ? `<div class="cl-lines">${b.lines.map((l, i) => `<span style="--i:${i}">${esc(l)}</span>`).join('')}</div>` : ''}</div>`;
-        U.sfx(q.type === 'poll' ? 'pop' : 'good');
+        U.sfx(LIVE.includes(q.type) ? 'pop' : 'good');
       } else if (b.stage === 'board' && this.boardHtml) {
         box.innerHTML = this.boardHtml(b);
         if (this.afterBoard) this.afterBoard(box, b);
@@ -143,6 +194,8 @@
         box.querySelectorAll('.cl-row .sc').forEach((el, i) => setTimeout(() => U.countTo(el, b.board[i].score, 900), 250 + i * 120));
       }
       QMedia.mount(box);
+      // the teacher can hide a note, word or idea from the big screen with a click
+      box.querySelectorAll('[data-hide]').forEach((el) => (el.onclick = () => el.classList.add('cl-gone')));
       const zb = box.querySelector('[data-zoom]');
       if (zb) zb.onclick = () => this.zoom(zb.dataset.zoom, b.reveal && b.reveal.explain, q.text);
       // pins sit on the picture's real proportions
@@ -211,7 +264,11 @@
       if (!ph.startsWith('c_')) return false;
       if (!ctx.setView(key)) return ctx.refreshTop(), true;
       let html = '';
-      if (ph === 'c_ready') {
+      if (ph === 'c_vote') {
+        html = `<div class="timebar"><i style="animation-duration:${you.remain}ms"></i></div><div class="q-wrap"><div class="q-card">${esc(you.text)}</div><div class="q-hint">${you.qtype === 'qna' ? `בחרו עד ${you.picks} שאלות שהכי מעניין לענות עליהן` : `בחרו עד ${you.picks} רעיונות שאהבתם`}</div>
+          <div class="ide-list" id="vl">${you.ideas.map((x) => `<button class="ide-opt" data-i="${x.i}">${esc(x.text)}</button>`).join('')}</div>
+          <button class="btn big q-send" id="vSend" disabled>הצביעו ✓</button></div>`;
+      } else if (ph === 'c_ready') {
         html = `<div class="cl-p-ready ${you.points >= 2 ? 'after-mult' : ''}"><div class="pill">שאלה ${you.qnum} מתוך ${you.total}${you.bonus ? ' · ⭐ ניקוד כפול' : ''}${you.points >= 2 ? ` · ×${you.points}` : ''}</div><div class="cl-p-big">התכוננו!</div>${you.text ? `<div class="q-card">${esc(you.text)}</div>` : ''}<div class="cl-readybar"><i></i></div></div>`;
       } else if (ph === 'c_locked') {
         html = `<div class="cl-p-wait"><div class="cl-p-icon">✔</div><h2>התשובה נשלחה!</h2><div class="muted">מחכים לשאר הכיתה<span class="dots"><i></i><i></i><i></i></span></div></div>`;
@@ -223,9 +280,9 @@
         const r = you.res || {};
         const poll = r.ok === null;
         const cls = poll ? 'poll' : r.ok ? 'good' : 'bad';
-        const title = poll ? 'תודה על ההצבעה!' : !r.answered ? '⏰ לא הספקתם' : r.ok ? 'נכון!' : 'לא נכון';
+        const title = poll ? (you.qtype === 'poll' ? 'תודה על ההצבעה!' : 'התשובה נשלחה, תודה!') : !r.answered ? '⏰ לא הספקתם' : r.ok ? 'נכון!' : 'לא נכון';
         html = `<div class="fb-screen ${cls}">
-          ${poll ? '<div class="cl-p-icon">📊</div>' : `<div class="fb-icon">${r.ok ? Art.check() : Art.cross()}</div>`}
+          ${poll ? `<div class="cl-p-icon">${{ cloud: '☁️', open: '✍️', brain: '💡', qna: '❓', drop: '📍', rate: '⭐', rank: '🏅' }[you.qtype] || '📊'}</div>` : `<div class="fb-icon">${r.ok ? Art.check() : Art.cross()}</div>`}
           <div class="fb-title">${title}</div>
           ${r.pts ? `<div class="cl-p-pts ${r.pts < 0 ? 'neg' : ''}">${r.pts > 0 ? '+' : ''}${r.pts}${this.ptsUnit ? ` <small>${this.ptsUnit}</small>` : ''}</div>` : ''}
           ${r.conf === 1 && you.stage !== undefined && !this.pyramidMode ? `<div class="pill">🚀 ${r.ok ? 'הבוסט הצליח!' : 'הבוסט נכשל'}</div>` : ''}
@@ -240,6 +297,27 @@
         }
       } else return false;
       app.innerHTML = `${ctx.topBar()}${html}`;
+      if (ph === 'c_vote') {
+        const list = app.querySelector('#vl');
+        const send = app.querySelector('#vSend');
+        let sent = false;
+        list.onclick = (e) => {
+          const b = e.target.closest('.ide-opt');
+          if (!b || sent) return;
+          if (!b.classList.contains('picked') && list.querySelectorAll('.picked').length >= you.picks) return U.shake(b);
+          b.classList.toggle('picked');
+          U.sfx('tick');
+          send.disabled = !list.querySelector('.picked');
+        };
+        send.onclick = () => {
+          const ideas = [...list.querySelectorAll('.picked')].map((b) => Number(b.dataset.i));
+          if (!ideas.length || sent) return;
+          sent = true;
+          list.classList.add('locked');
+          U.sfx('pop');
+          ctx.act('vote', { ideas, qid: you.qid });
+        };
+      }
       if (ph === 'c_ready' && you.points >= 2) U.multSplash(app, you.points, false);
       if (ph === 'c_result' && you.res && you.res.ok) {
         const s = app.querySelector('.fb-screen');

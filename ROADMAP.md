@@ -85,11 +85,11 @@ New question types / features:
 
 Requested 2026-10-26, after kids typed rude words as their nicknames.
 
-- [ ] **Bad-word filter for nicknames** (Hebrew + English, including common tricks: spacing, symbols, letter swaps, final letters). A blocked name is refused on the phone with a friendly message ("השם הזה לא מתאים, נסו אחר") before it ever reaches the big screen.
+- [x] (done 2026-10-30: `server/filter.js`, `server/badwords.json`, room setting 🛡️, also applied to typed answers, clouds, free text, ideas and questions) **Bad-word filter for nicknames** (Hebrew + English, including common tricks: spacing, symbols, letter swaps, final letters). A blocked name is refused on the phone with a friendly message ("השם הזה לא מתאים, נסו אחר") before it ever reaches the big screen.
   - A **room setting** "🛡️ סינון מילים לא יפות", **on by default**, which the teacher can turn off.
   - The word list lives in an editable file (`server/badwords.json` or similar), so the teacher can add words.
   - Also applies to the random-name reroll (no change needed) and any other typed text shown on the big screen (open answers / word clouds, when they exist).
-- [ ] **Teacher control during a game** (today ✕ works only in the lobby):
+- [x] (done 2026-10-30: 👥 players panel in every game, `host:kick` in any phase, `host:rename`) **Teacher control during a game** (today ✕ works only in the lobby):
   - Kick a player mid-game, from a players list on the host screen.
   - Rename a player ("🎲 שם אקראי" or a typed name) without losing their score.
 

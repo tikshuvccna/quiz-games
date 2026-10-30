@@ -119,3 +119,74 @@
 .clz-q { font-size: clamp(1.4rem, 2.6vw, 2.2rem); font-weight: 900; text-align: center; }
 .clz-ex { max-width: 1100px; padding: 12px 24px; border-radius: var(--r); background: rgba(255, 210, 63, .16); box-shadow: inset 0 0 0 2px rgba(255, 210, 63, .4); font-size: clamp(1.2rem, 2.2vw, 1.8rem); font-weight: 800; text-align: center; }
 .clz-x { position: absolute; top: 18px; inset-inline-start: 18px; width: 48px; height: 48px; border-radius: 50%; border: 0; cursor: pointer; font-size: 1.3rem; background: rgba(255, 255, 255, .12); color: #fff; }
+
+/* ---------- picture answers ---------- */
+.cl-answers.pics .cl-ans { min-height: 190px; flex-direction: column; justify-content: center; text-align: center; padding-top: 18px; }
+.cl-answers.pics .cl-ans .shape { position: absolute; top: 10px; inset-inline-start: 12px; z-index: 2; }
+.cl-ans-pic { position: relative; z-index: 1; width: 100%; height: 150px; object-fit: contain; border-radius: 12px; background: rgba(255, 255, 255, .2); }
+.cl-answers.pics .cl-ans .cnt { position: absolute; z-index: 2; top: 8px; inset-inline-end: 14px; text-shadow: 0 2px 4px rgba(0, 0, 0, .6); }
+
+/* ---------- pin zones: ellipse, polygon ---------- */
+.cl-target.ellipse { aspect-ratio: auto; transform: none; border-radius: 50%; background: rgba(46, 229, 157, .18); }
+.cl-target.poly { aspect-ratio: auto; transform: none; inset: 0; left: 0; top: 0; width: 100%; height: 100%; border: 0; border-radius: 0; box-shadow: none; overflow: visible; pointer-events: none; }
+.cl-target.poly polygon { fill: rgba(46, 229, 157, .22); stroke: #fff; stroke-width: 4px; stroke-dasharray: 10 6; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 10px #2ee59d); }
+
+/* ---------- slide text ---------- */
+.cl-slide-body { max-width: 1100px; margin: 0 auto 14px; font-size: clamp(1.3rem, 2.2vw, 2rem); font-weight: 700; line-height: 1.5; text-align: center; white-space: pre-line; color: #ece9ff; }
+
+/* ---------- word cloud ---------- */
+.cld-wall { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; align-content: center; gap: 4px 26px; min-height: 300px; padding: 22px 34px; border-radius: 28px; background: rgba(255, 255, 255, .06); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .12); }
+.cld-w { font-weight: 900; line-height: 1.05; font-size: calc(1.3rem + var(--s) * 3.6rem); color: var(--c); text-shadow: 0 3px 0 rgba(0, 0, 0, .3); rotate: var(--rot); cursor: pointer; animation: popin .55s var(--spring) both; animation-delay: calc(var(--i) * 50ms); }
+.cld-w small { font-size: .38em; opacity: .75; margin-inline-start: 6px; }
+
+/* ---------- sticky notes (free text, brainstorm ideas) ---------- */
+.opn-wall, .ide-wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; padding: 6px 4px; }
+.opn-note { position: relative; padding: 16px 18px 12px; border-radius: 6px 6px 20px 6px; background: var(--c); color: #2a2350; font-weight: 800; font-size: clamp(1.05rem, 1.5vw, 1.45rem); line-height: 1.25; overflow-wrap: anywhere; rotate: var(--rot); cursor: pointer; box-shadow: 0 6px 0 rgba(0, 0, 0, .25), 0 12px 18px rgba(0, 0, 0, .2); animation: popin .5s var(--spring) both; animation-delay: calc(var(--i) * 60ms); }
+.opn-note small { display: block; margin-top: 8px; font-size: .68em; opacity: .6; }
+.cl-gone { display: none !important; }
+
+/* ---------- brainstorm ranking ---------- */
+.ide-rank { display: flex; flex-direction: column; gap: 10px; }
+.ide-row { position: relative; display: flex; align-items: center; gap: 16px; padding: 12px 20px; border-radius: 16px; background: rgba(255, 255, 255, .09); overflow: hidden; font-weight: 800; font-size: clamp(1.1rem, 1.7vw, 1.6rem); cursor: pointer; animation: ansin .5s var(--spring) both; animation-delay: calc(var(--i) * 70ms); }
+.ide-row .bar { position: absolute; inset: 0 0 0 auto; width: var(--w); background: linear-gradient(270deg, rgba(34, 199, 232, .5), rgba(139, 92, 246, .35)); transform-origin: right; animation: grow .8s ease-out both; }
+.ide-row .rk { position: relative; z-index: 1; flex: none; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .16); }
+.ide-row .t { position: relative; z-index: 1; flex: 1; }
+.ide-row .t small { display: block; font-size: .6em; opacity: .6; }
+.ide-row .n { position: relative; z-index: 1; font-size: 1.8rem; }
+.ide-row.first { box-shadow: 0 0 0 4px var(--yellow), 0 0 28px rgba(255, 210, 63, .5); }
+.ide-row.first .rk { background: var(--yellow); color: #3a2a00; }
+
+/* walls (words, notes, ideas) fill the stage instead of the middle row */
+.cl-q:has(.cld-wall, .opn-wall, .ide-wall, .ide-rank) .cl-mid { flex: none; }
+.cl-q:has(.cld-wall, .opn-wall, .ide-wall, .ide-rank) .cl-mid .cl-media:empty { display: none; }
+.cld-wall, .opn-wall, .ide-wall, .ide-rank { flex: 1; min-height: 0; overflow: auto; align-content: center; }
+.ide-rank { justify-content: safe center; gap: 8px; }
+.ide-row { flex: none; min-height: 52px; padding-block: 8px; }
+
+/* ---------- rating results ---------- */
+.rt-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; flex: 1; min-height: 0; justify-content: center; }
+.rt-avg { display: flex; align-items: baseline; gap: 14px; }
+.rt-avg b { font-size: clamp(3rem, 7vw, 5.5rem); line-height: 1; color: var(--yellow); text-shadow: 0 4px 0 rgba(0, 0, 0, .3); }
+.rt-avg span { font-weight: 800; font-size: 1.3rem; color: #ddd8ff; }
+.rt-bars { display: flex; align-items: flex-end; justify-content: center; gap: 14px; height: 200px; width: min(900px, 100%); }
+.rt-col { flex: 1; max-width: 110px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 6px; }
+.rt-col b { font-size: 1.6rem; }
+.rt-col i { display: block; width: 100%; height: calc(var(--h) * 1.3px); min-height: 6px; flex: none; border-radius: 12px 12px 4px 4px; background: linear-gradient(180deg, #ffd23f, #ff9f1c); box-shadow: 0 5px 0 rgba(0, 0, 0, .25); transform-origin: bottom; animation: growY .7s var(--spring) both; animation-delay: calc(var(--i) * 80ms); }
+.rt-col span { font-weight: 900; font-size: 1.15rem; color: #ddd8ff; }
+.rt-ends { display: flex; justify-content: space-between; width: min(900px, 100%); font-weight: 800; color: #b9b3e6; }
+@keyframes growY { from { transform: scaleY(0); } }
+
+/* ---------- matching and sorting on the big screen ---------- */
+.mt-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; width: min(900px, 100%); margin: 0 auto; }
+.mt-cols > div { display: flex; flex-direction: column; gap: 10px; }
+.mt-cols span, .mt-pairs span { padding: 12px 18px; border-radius: 14px; background: rgba(255, 255, 255, .12); font-weight: 800; font-size: clamp(1.1rem, 1.8vw, 1.6rem); text-align: center; animation: ansin .5s var(--spring) both; animation-delay: calc(var(--i) * 70ms); }
+.mt-pairs { display: flex; flex-direction: column; gap: 10px; width: min(900px, 100%); margin: 0 auto; }
+.mt-pairs > div { display: grid; grid-template-columns: 1fr 40px 1fr; align-items: center; gap: 10px; animation: ansin .5s var(--spring) both; animation-delay: calc(var(--i) * 80ms); }
+.mt-pairs span { background: rgba(46, 229, 157, .22); box-shadow: inset 0 0 0 2px var(--green); }
+.mt-pairs i { font-style: normal; font-weight: 900; font-size: 1.6rem; text-align: center; }
+.st-buckets { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 16px; width: min(1100px, 100%); margin: 0 auto; }
+.st-b { display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 18px; min-height: 120px; background: rgba(255, 255, 255, .08); box-shadow: inset 0 0 0 3px hsl(calc(var(--k) * 130 + 350) 80% 60%); }
+.st-b b { font-size: clamp(1.2rem, 2vw, 1.8rem); text-align: center; color: hsl(calc(var(--k) * 130 + 350) 90% 72%); }
+.st-b span { padding: 8px 12px; border-radius: 10px; background: rgba(255, 255, 255, .14); font-weight: 800; text-align: center; animation: ansin .5s var(--spring) both; animation-delay: calc(var(--i) * 70ms); }
+.st-pool { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.st-pool span { padding: 10px 18px; border-radius: 999px; background: rgba(255, 255, 255, .14); font-weight: 800; font-size: 1.3rem; animation: popin .5s var(--spring) both; animation-delay: calc(var(--i) * 60ms); }

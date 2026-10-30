@@ -295,10 +295,12 @@ window.U = {
         <div class="hg-teams" id="hgTeams"></div>
         <div class="hg-join" id="hgJoin"></div>
         <div class="hg-timer" id="hgTimer"><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="19" class="trk"/><circle cx="22" cy="22" r="19" class="prg" id="hgRing"/></svg><span id="hgLeft"></span></div>
+        <button class="hg-players" id="plBtn" title="שחקנים: שינוי שם והסרה" aria-label="שחקנים">👥</button>
         <button class="hg-end" id="endBtn" title="סיום משחק">סיום</button>
       </header>
       <main class="hg-stage ${cls}" id="stage">${stage}</main>
       <div class="feed" id="feed"></div>`;
+    document.getElementById('plBtn').onclick = () => window.openPlayersPanel && window.openPlayersPanel();
     document.getElementById('endBtn').onclick = () => { if (confirm('לסיים את המשחק עכשיו?')) socket.emit('host:end'); };
     return true;
   },

@@ -91,6 +91,7 @@ socket.on('host:state', (s) => {
 
 function render(prev) {
   if (!st) return;
+  drawPlayersPanel();
   U.applyScene(st.setup.scene);
   // player photos for every avatar on the big screen
   U.photos = Object.fromEntries((st.players || []).filter((p) => p.photo).map((p) => [p.name, p.photo]));
@@ -175,6 +176,7 @@ function renderLobby() {
               <small class="muted">רקעים משלכם: שימו תמונות או סרטונים בתיקייה <b dir="ltr">backgrounds</b> של התוכנה.</small></section>
             <section><h3>🎬 סרטון בזמן ההמתנה</h3><div class="video-lib" id="videoLib"></div><div class="row"><input class="input sm" id="videoUrl" placeholder="או הדביקו קישור ליוטיוב" dir="ltr"><button class="btn sm blue" id="videoSet">הצג</button><button class="btn sm ghost" id="videoClear">הסר</button></div></section>
             <div id="musicSet">${Music.settingsHtml()}</div>
+            <section><h3>🛡️ סינון מילים לא יפות</h3><label class="lite-tog"><input type="checkbox" id="filterOn"> חוסם שמות וטקסטים לא הולמים (בשמות השחקנים ובתשובות שמוצגות על המסך)</label><small class="muted">רשימת המילים נמצאת בקובץ <b dir="ltr">server/badwords.json</b>, אפשר להוסיף בה מילים.</small></section>
             <section><h3>📷 תמונות שחקנים</h3><label class="lite-tog"><input type="checkbox" id="photosOn"> השחקנים יכולים להוסיף תמונה (מהמצלמה או מהגלריה) שתופיע במקום האות</label><small class="muted">התמונות נשמרות רק בזיכרון, עד סוף המשחק. לחיצה על תמונה של שחקן בלובי מסירה אותה.</small></section>
             <section><h3>🏆 טקסט למנצחים</h3><input class="input sm" id="winText" maxlength="140" placeholder="למשל: כל הכבוד! פרס מחכה לכם אצל המורה 🎁"><small class="muted">יופיע בטלפון של המנצחים ובמסך התוצאות</small></section>
           </div>
@@ -217,6 +219,7 @@ function renderLobby() {
       socket.emit('host:setup', { video: vu.value });
     };
     document.getElementById('videoClear').onclick = () => { vu.value = ''; socket.emit('host:setup', { video: '' }); };
+    document.getElementById('filterOn').onchange = (e) => socket.emit('host:setup', { filter: e.target.checked });
     const wt = document.getElementById('winText');
     wt.onchange = () => socket.emit('host:setup', { winText: wt.value });
     document.getElementById('quizSel').onchange = (e) => socket.emit('host:setup', { quiz: e.target.value });
@@ -293,6 +296,8 @@ function renderLobby() {
     vlBox.innerHTML = videoLib.map((v) => `<button class="vl-pick" data-video-pick="${esc(v.kind === 'youtube' ? 'https://youtu.be/' + v.key : v.key)}">${v.thumb ? `<img src="${esc(v.thumb)}" alt="" loading="lazy">` : '<span class="vl-file">🎞️</span>'}<span>${esc(v.title)}</span></button>`).join('');
   }
   vlBox.querySelectorAll('[data-video-pick]').forEach((b) => b.classList.toggle('on', b.dataset.videoPick === st.setup.video || (youtubeId(b.dataset.videoPick) && youtubeId(b.dataset.videoPick) === youtubeId(st.setup.video))));
+  const fo = document.getElementById('filterOn');
+  if (fo) fo.checked = st.setup.filter !== false;
   const wt = document.getElementById('winText');
   if (document.activeElement !== wt) wt.value = st.setup.winText || '';
   const vu = document.getElementById('videoUrl');
@@ -331,6 +336,57 @@ function renderNet() {
   row.innerHTML = `<span class="net-chip">${cur.kind === 'wifi' ? '📶' : cur.kind === 'hotspot' ? '📡' : '🔌'} ${esc(cur.label)}${cur.kind === 'wifi' || cur.kind === 'ethernet' ? '' : ` · ${esc(cur.name)}`}</span>${addrs.length > 1 ? `<select id="netSel" title="כתובת אחרת">${addrs.map((a) => `<option value="${esc(a.ip)}" ${a.ip === host ? 'selected' : ''}>${esc(a.label)} · ${esc(a.ip)}</option>`).join('')}</select>` : ''}`;
   const sel = document.getElementById('netSel');
   if (sel) sel.onchange = () => { pickedIp.set(sel.value); ready(st.pin); };
+}
+
+// ---------- players panel during a game: rename, random name, remove ----------
+window.openPlayersPanel = function () {
+  if (document.getElementById('plPanel')) return;
+  const m = document.createElement('div');
+  m.className = 'modal';
+  m.id = 'plPanel';
+  m.innerHTML = `<div class="modal-card pl-card"><div class="modal-head"><h2>👥 שחקנים</h2><div class="modal-actions"><button class="btn sm ghost" id="plClose">✕</button></div></div>
+    <div class="pl-msg muted" id="plMsg"></div><div class="pl-list" id="plList"></div></div>`;
+  document.body.appendChild(m);
+  const msg = (t) => { document.getElementById('plMsg').textContent = t || ''; };
+  m.onclick = (e) => {
+    if (e.target === m || e.target.id === 'plClose') return m.remove();
+    const row = e.target.closest('.pl-row');
+    if (!row) return;
+    const id = row.dataset.id;
+    if (e.target.closest('[data-rd]')) socket.emit('host:rename', { id }, (r) => msg(r && r.error ? r.error : ''));
+    else if (e.target.closest('[data-rn]')) {
+      row.querySelector('.nm').innerHTML = `<input class="input sm" maxlength="14" value="${esc((st.players.find((p) => p.id === id) || {}).name || '')}">`;
+      const inp = row.querySelector('input');
+      inp.focus();
+      inp.select();
+      const done = () => socket.emit('host:rename', { id, name: inp.value }, (r) => { msg(r && r.error ? r.error : ''); drawPlayersPanel(true); });
+      inp.onkeydown = (ev) => { if (ev.key === 'Enter') done(); if (ev.key === 'Escape') drawPlayersPanel(true); };
+    } else if (e.target.closest('[data-kk]')) {
+      const b = e.target.closest('[data-kk]');
+      // two clicks: the first asks, the second removes
+      if (b.classList.contains('ask')) socket.emit('host:kick', id);
+      else {
+        b.classList.add('ask');
+        b.textContent = 'בטוח/ה?';
+        setTimeout(() => b.isConnected && (b.classList.remove('ask'), (b.textContent = '✕')), 3000);
+      }
+    }
+  };
+  drawPlayersPanel(true);
+};
+
+function drawPlayersPanel(force) {
+  const m = document.getElementById('plPanel');
+  if (!m) return;
+  if (!st || st.phase !== 'playing') return m.remove();
+  // don't redraw under a name being typed
+  if (!force && m.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;
+  const list = (st.players || []).slice().sort((a, b) => a.name.localeCompare(b.name, 'he'));
+  const box = document.getElementById('plList');
+  const sig = list.map((p) => p.id + p.name + p.connected).join('|');
+  if (!force && box.dataset.sig === sig) return;
+  box.dataset.sig = sig;
+  box.innerHTML = list.map((p) => `<div class="pl-row ${p.connected ? '' : 'off'}" data-id="${esc(p.id)}">${U.avatar(p.name)}<span class="nm">${esc(p.name)}</span>${p.connected ? '' : '<small class="muted">מנותק/ת</small>'}<button data-rn title="שינוי שם">✏️</button><button data-rd title="שם אקראי">🎲</button><button data-kk title="הסרה מהמשחק">✕</button></div>`).join('') || '<div class="muted">אין שחקנים</div>';
 }
 
 function renderPlayers() {
