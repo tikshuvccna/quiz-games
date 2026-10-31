@@ -1,4 +1,5 @@
 const socket = io();
+Share.init(socket);
 const app = document.getElementById('app');
 const { esc } = U;
 let st = null;
@@ -35,7 +36,7 @@ async function computeJoinUrl(pin) {
       addrs = info.addresses || [];
       const want = pickedIp.get();
       const a = addrs.find((x) => x.ip === want) || addrs[0];
-      if (a) base = a.url || `http://${a.ip}:${info.port}`;
+      if (a) base = a.url || `${info.secure ? 'https' : 'http'}://${a.ip}:${info.port}`;
     } catch {}
   }
   joinUrl = `${base}/?pin=${pin}`;

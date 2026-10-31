@@ -62,3 +62,14 @@ Caddy passes WebSockets through without extra settings. With nginx, add the `Upg
 - **Student privacy.** Class rosters and progress reports hold student names. Online they sit on that server's disk: use a host you trust, and keep the teachers' password to yourselves.
 - **Upload sizes.** Quizzes with videos and PDFs can be large (up to 400 MB per import). Check the host's request size limit (nginx: `client_max_body_size`).
 - **The Kahoot extension's "send" button** does not work online yet (it carries no sign-in). Use "save as file" and then "⬆ ייבוא קובץ" in the editor.
+
+## Screen sharing needs a secure address for students
+
+The teacher can always share their screen: their page is `localhost`. A **student** sharing a screen or a camera needs the browser to treat the page as secure. Online (behind HTTPS) that is automatic. On the school network, where phones open `http://192.168.x.x:3000`, it is not: the student is told sharing is not available. To allow it on the local network, run the server with a certificate:
+
+```
+openssl req -x509 -newkey rsa:2048 -nodes -keyout key.pem -out cert.pem -days 365 -subj "/CN=brainblast"
+SSL_KEY=key.pem SSL_CERT=cert.pem node server/index.js
+```
+
+Phones then open `https://…` (the join box and QR use it automatically) and see a one-time "not private" warning that they must accept. Not tried on real phones yet. For students outside the school, a public STUN server is used online by default; set `ICE_SERVERS` (a JSON list) to add a TURN server if sharing fails across strict networks.

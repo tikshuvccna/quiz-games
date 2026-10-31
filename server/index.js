@@ -33,7 +33,12 @@ if (authProblem) {
 const app = express();
 // behind a reverse proxy (nginx, Caddy, a hosting platform) the real address is in X-Forwarded-For
 if (process.env.TRUST_PROXY) app.set('trust proxy', process.env.TRUST_PROXY === 'true' ? 1 : process.env.TRUST_PROXY);
-const server = http.createServer(app);
+// HTTPS for the local network (SSL_KEY and SSL_CERT point at a certificate): phones then count as a secure context, which
+// the browser needs before a student can share a screen or a camera. Online, a reverse proxy usually does this instead.
+const SECURE = !!(process.env.SSL_KEY && process.env.SSL_CERT);
+const server = SECURE
+  ? require('https').createServer({ key: fs.readFileSync(process.env.SSL_KEY), cert: fs.readFileSync(process.env.SSL_CERT) }, app)
+  : http.createServer(app);
 const io = new Server(server, { maxHttpBufferSize: 64 * 1024 });
 
 // every game's client script / stylesheet in one file (classic first: other quiz modes build on it),
@@ -82,7 +87,15 @@ app.get('/api/info', (req, res) => {
       else list.push(o);
     } catch {}
   }
-  res.json({ port: PORT, mode: Auth.MODE, publicUrl: Auth.PUBLIC_URL, ips: list.map((a) => a.ip), addresses: list });
+  res.json({ port: PORT, secure: SECURE, mode: Auth.MODE, publicUrl: Auth.PUBLIC_URL, ips: list.map((a) => a.ip), addresses: list });
+});
+
+// the servers WebRTC may use to find a route (screen sharing). On a school network nothing is needed; online a public STUN
+// server helps, and ICE_SERVERS (a JSON list, TURN included) replaces it.
+app.get('/api/ice', (req, res) => {
+  let list = [];
+  try { if (process.env.ICE_SERVERS) list = JSON.parse(process.env.ICE_SERVERS); else if (Auth.online()) list = [{ urls: 'stun:stun.l.google.com:19302' }]; } catch {}
+  res.json({ iceServers: Array.isArray(list) ? list : [] });
 });
 
 app.get('/qr', async (req, res) => {
@@ -406,6 +419,56 @@ io.on('connection', (socket) => {
     const room = hostRoom();
     const o = obj(d);
     if (room && room.phase === 'playing' && room.game.hostCommand && ['next', 'prev', 'goto'].includes(o.cmd)) room.game.hostCommand(o.cmd, o.arg);
+  });
+
+  // ---- screen sharing: the teacher's screen to the class, or a student's screen / camera to the teacher.
+  // The picture itself goes browser to browser (WebRTC); the server only passes the handshake along. ----
+  const signalOk = (d) => { try { return JSON.stringify(d).length < 24000; } catch { return false; } };
+  const mePlayer = () => {
+    const room = socket.data.room;
+    const p = room && !socket.data.isHost ? room.players.get(socket.data.playerId) : null;
+    return p && p.socketId === socket.id ? { room, p } : null;
+  };
+  on('share:start', (d) => {
+    const room = hostRoom();
+    if (!room) return;
+    const o = obj(d);
+    room.share = { source: o.source === 'student' ? 'student' : 'host', name: str(o.name).slice(0, 40) };
+    room.broadcastShare();
+  });
+  on('share:stop', () => {
+    const room = hostRoom();
+    if (!room) return;
+    room.share = null;
+    room.broadcastShare();
+  });
+  // a student's phone wants the stream: tell the teacher's page to send it
+  on('share:watch', () => {
+    const m = mePlayer();
+    if (m && m.room.share && m.room.hostSocketId) io.to(m.room.hostSocketId).emit('share:viewer', { pid: m.p.id });
+  });
+  on('share:signal', (d) => {
+    const o = obj(d);
+    if (!signalOk(o.data)) return;
+    if (socket.data.isHost) {
+      const room = hostRoom();
+      const p = room && room.players.get(str(o.to));
+      if (p && p.socketId) io.to(p.socketId).emit('share:signal', { data: o.data });
+    } else {
+      const m = mePlayer();
+      if (m && m.room.hostSocketId) io.to(m.room.hostSocketId).emit('share:signal', { from: m.p.id, name: m.p.name, data: o.data });
+    }
+  });
+  // the teacher asks one student to share (screen on a computer, camera on a phone)
+  on('share:ask', (d) => {
+    const room = hostRoom();
+    const p = room && room.players.get(str(obj(d).pid));
+    if (p && p.socketId) io.to(p.socketId).emit('share:ask');
+  });
+  on('share:reply', (d) => {
+    const m = mePlayer();
+    const o = obj(d);
+    if (m && m.room.hostSocketId) io.to(m.room.hostSocketId).emit('share:reply', { pid: m.p.id, name: m.p.name, accept: !!o.accept, reason: str(o.reason).slice(0, 20) });
   });
 
   // the teacher's private look at the results of the current step (when the class sees only anonymous statistics)

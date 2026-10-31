@@ -1,4 +1,5 @@
 const socket = io();
+Share.init(socket);
 const app = document.getElementById('app');
 const { esc, mmss } = U;
 const MODE_COLOR = '#7c4dff';

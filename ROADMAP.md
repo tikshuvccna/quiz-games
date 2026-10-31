@@ -186,3 +186,11 @@ Requested 2026-10-30: "we need more music, lots of music, premium music from Flo
 - [ ] Check each file (no vocals, even loudness, a loop-friendly ending).
 - [x] (done 2026-10-30, `public/js/music.js`) **Variety** mode: every moment in the room settings can be "🔀 random from a group" (M1 to M7 by file prefix) or "🔀 all songs"; the next song is drawn when one ends, never the same twice in a row.
 - [ ] Keep file sizes reasonable (MP3, about 2 to 3 minutes each) so the repo and the LAN stay light.
+
+## 18. Screen sharing and private results
+
+Requested 2026-10-31.
+
+- [x] (done 2026-10-31, `public/js/share.js`, `scripts/share-test.js`; checked with canvas streams in a browser, not with real screens or phones) The teacher shares their screen with the students' phones.
+- [x] (done 2026-10-31) The teacher asks a student to share their screen (computers) or camera (phones); it shows on the teacher's page and can be shown to the whole class. Needs a secure address (https): see `docs/DEPLOYMENT.md`.
+- [x] (done 2026-10-31, `scripts/privacy-test.js`) The teacher chooses what the class sees of the results: everything, anonymous class statistics (counts and what was answered, no names or points), or no statistics at all; the teacher still sees everything privately (the 👁️ button, and the presenter screen). A room setting for the classic quiz and the lesson. A per-activity override (one step different from the rest) is not built.

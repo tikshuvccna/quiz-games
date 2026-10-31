@@ -63,6 +63,7 @@ class Room {
     this.phase = 'lobby';
     this.game = null;
     this.presenters = new Set();
+    this.share = null; // screen sharing: { source: 'host' | 'student', name }
     this.results = null;
     this.endAt = 0;
     this.startAt = 0;
@@ -175,8 +176,14 @@ class Room {
     this.touched = Date.now();
   }
 
+  // tell every phone that the teacher's screen (or a student's) is now being shared, or that it stopped
+  broadcastShare() {
+    for (const p of this.players.values()) if (p.socketId) this.io.to(p.socketId).emit('share:state', this.share);
+  }
+
   detachHost(socketId) {
     if (this.hostSocketId !== socketId) return;
+    if (this.share) { this.share = null; this.broadcastShare(); } // the stream came from this page: it is gone
     this.hostSocketId = null;
     this.hostGoneAt = Date.now();
   }
@@ -580,6 +587,7 @@ class Room {
       mode: this.Game.mode,
       scene: this.setup.scene,
       qtheme: this.setup.qtheme,
+      share: this.share,
       round: this.round,
       untimed: !!this.Game.untimed,
       photos: !!this.setup.photos,
