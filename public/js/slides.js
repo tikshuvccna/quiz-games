@@ -43,8 +43,13 @@ window.Slides = (function () {
   const timerBox = (s) => `<div class="sl-timer" data-timer="${s}"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" class="trk"/><circle cx="50" cy="50" r="44" class="ring"/></svg><b>${fmt(s)}</b></div>`;
   const fmt = (s) => (s >= 60 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : String(s));
 
+  // an HTML activity (a simulation, an animation...) in a frame the browser keeps apart from this program:
+  // scripts and forms may run, but the page cannot reach our pages, our data or the network
+  const htmlFrame = (h, title, cls = '') => `<iframe class="sl-html ${cls}" sandbox="allow-scripts allow-forms allow-modals" allowfullscreen src="${esc(h.url)}" title="${esc(title || 'פעילות אינטראקטיבית')}"></iframe>`;
+
   // payload: what server/qtypes.js present() sends for a slide or pdf step
   function html(q) {
+    if (q.type === 'html' && q.html) return `<div class="sl sl-l-html">${htmlFrame(q.html, q.text)}${q.text ? `<div class="sl-cap">${esc(q.text)}</div>` : ''}${q.timer ? timerBox(q.timer) : ''}</div>`;
     const title = q.text ? `<h1 class="sl-title">${nl(q.text)}</h1>` : '';
     const body = q.body ? `<div class="sl-body">${nl(q.body)}</div>` : '';
     const bullets = q.bullets && q.bullets.length ? `<ul class="sl-bullets">${q.bullets.map((b, i) => `<li style="--i:${i}">${esc(b)}</li>`).join('')}</ul>` : '';
@@ -97,5 +102,5 @@ window.Slides = (function () {
     });
   }
 
-  return { html, mount, draw, pages, doc, pdfBox };
+  return { html, mount, draw, pages, doc, pdfBox, htmlFrame };
 })();

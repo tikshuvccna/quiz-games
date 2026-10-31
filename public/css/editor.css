@@ -315,3 +315,8 @@ body.drag-quiz .tf[data-drop] { box-shadow: inset 0 0 0 1px rgba(46, 229, 157, .
 .prev-phone { width: 390px; max-width: 96vw; height: min(800px, 92vh); display: flex; flex-direction: column; border-radius: 34px; background: #0e0833; border: 8px solid #1b1340; box-shadow: 0 24px 60px rgba(0, 0, 0, .6); overflow: hidden; }
 .prev-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 14px; background: #1b1340; font-weight: 800; }
 .prev-screen { flex: 1; min-height: 0; overflow: auto; position: relative; display: flex; flex-direction: column; padding: 10px; }
+
+/* the editor of an HTML activity */
+.ht-ed { display: flex; flex-direction: column; gap: 10px; }
+.ht-prev { border-radius: 12px; overflow: hidden; background: #fff; height: min(46vh, 380px); box-shadow: 0 6px 0 rgba(0, 0, 0, .25); }
+.ht-prev iframe { width: 100%; height: 100%; border: 0; display: block; }

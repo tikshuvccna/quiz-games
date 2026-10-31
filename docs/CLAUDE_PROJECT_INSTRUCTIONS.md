@@ -136,6 +136,7 @@ A lesson is one sheet where **every row is a step**, played in order on the big 
 |---|---|---|
 | slide | a slide | Question = the slide title · Body = text under the title · Bullets = points separated by `|` · Layout · Image / Video · Timer · Notes |
 | pdf | page(s) of a PDF the teacher attached | Pdf = `file.pdf` (all pages), `file.pdf:3` (one page) or `file.pdf:3-7` (a range: one step per page) · Question = an optional small caption (first page only) · Notes |
+| html | an interactive page (simulation, animation, small game) you write yourself | Html = `file.html` or `file.html|phones` · Question = a caption · Notes · Timer (see "HTML activities") |
 | check | "Did you understand?" with the answers "הבנתי ✔ / בערך / לא הבנתי" | nothing else; Question is optional (default "הבנתם?") |
 | poll, multipoll | an opinion or a quick vote | Answer 1-4 |
 | cloud | a word cloud: each student sends a word | Limit |
@@ -164,6 +165,25 @@ Timing: about 1-2 minutes per slide and 1 minute per activity. A 45-minute lesso
 - Put the activities between the pages: a `check`, a poll, a question about the page (Pdf column on a question row). Everything should be tied to what the page actually says.
 - Copy the PDF file into the zip under `pdf/` with exactly the name used in the Pdf column. Maximum 12 PDFs, 80 MB each. If the teacher has a PowerPoint or Google Slides file, ask them to export it to PDF first (the program cannot open .pptx).
 - Never claim something is on a page unless you read it there.
+
+## HTML activities (the Html column): simulations, animations, small games
+A lesson can contain interactive pages that you write as **one self-contained HTML file**: a simulation the class can play with (a pendulum with a length slider, a pizza cut into fractions, a water cycle with buttons, a number line, a circuit, a sorting race, a timeline the teacher can scrub...). Use them when moving or trying something explains the idea better than a slide: a process, a cause and effect, a model with a parameter, a sort or match the class can do on the screen. Do not use them for plain text: that is a slide.
+
+How to deliver one:
+- A row with Type `html`, the **Html** column = the file name (`pendulum.html`), or `pendulum.html|phones` to also show it on every student's phone (each student tries it on their own; good for hands-on practice, bad for something only the teacher should drive). Question = a short caption under the activity. Notes = what the teacher should ask or say. Timer is allowed.
+- Put the file in the zip under `html/` with exactly that name. Up to 30 files, 3 MB each (aim for under 150 KB).
+- Look at the ready examples in the project's `examples/html/` folder (`pendulum.html`, `fractions.html`, `water-cycle.html`) and follow their style.
+
+Rules for the HTML (the program shows it in a sandboxed frame; breaking them makes it fail silently):
+- ONE file: HTML + CSS + JavaScript inline. No external files, no CDN, no web fonts, no libraries from the internet (the classroom may be offline). Draw with inline SVG, canvas or CSS. Images only as inline SVG or small `data:` URIs.
+- It cannot use the network (fetch / XHR / forms are blocked), `localStorage`, cookies, `alert` / `confirm` / `prompt`, popups, the clipboard, or anything outside its own frame. Keep all state in JavaScript variables.
+- Hebrew, right to left: `<html lang="he" dir="rtl">`, `<meta charset="utf-8">`, `<meta name="viewport" content="width=device-width, initial-scale=1">`. System fonts only (`font-family: system-ui, sans-serif`).
+- It fills a frame of any size (a wide projector screen, or a phone when `|phones`): use `html, body { height: 100%; margin: 0 }`, flexbox / grid, `clamp()` for font sizes, and `vh` / `%` units; never a fixed pixel layout. Big readable text (at least 18 px on a phone, much bigger for a projector), big buttons (at least 44 px), high contrast.
+- Work with both a mouse and a finger: use `pointerdown` / `pointermove` / `pointerup` (with `touch-action: none` on a canvas that is dragged), not only `click`.
+- Make it obvious what to do: a short Hebrew instruction line and labeled controls. Show the result of the action at once (a number that changes, a picture that moves). Let the student reset it.
+- Keep animations smooth and gentle (`requestAnimationFrame`, no flashing, no sound that starts by itself). Nothing should block or loop forever. Do not call `window.open`, `top.location`, `parent.*`.
+- The science / math / facts must be correct: check the formula or rule you animate, and add the small label that shows it (for example the period formula under a pendulum). Say in Notes what you simulated and its limits.
+- Test it in code before delivering: the file parses as HTML, has no `http://` or `https://` links, no `fetch`, no `localStorage`, and its size is under the limit. If you can open it in a browser tool, load it and click the controls once.
 
 ## Citations (the Source column)
 When the teacher supplied material (a book, an article, a PDF), fill Source for each real question: the document name, the page or section, and a short quote (up to 200 characters) that really appears there. If you cannot point to the place, leave Source empty. Never invent a source.
@@ -310,7 +330,7 @@ Create an Excel file (.xlsx) in the official Kahoot import template format and d
 - The "Correct answer(s)" column contains only the number of the correct option (1, 2, 3, or 4). For the single question with two correct answers, write both numbers separated by a comma (for example: 1,3). For True/False questions, use 1 or 2.
 - Use a descriptive file name based on the topic. In MODE OUR PROGRAM add the suffix "-QG" to the file name.
 - For Hebrew content, set the sheet to right-to-left and make sure the text displays correctly.
-- DELIVERY WITH IMAGES OR PDFS: if images were generated or provided, or the lesson uses PDFs, deliver ONE .zip file (same descriptive name) containing the .xlsx at the top level, an `images/` folder with the picture files and a `pdf/` folder with the PDFs. A lesson with only text slides can be a single .xlsx. The Image / AfterImage columns hold just the file name (for example `q03-triangle.png`). Without images, deliver only the .xlsx.
+- DELIVERY WITH IMAGES OR PDFS: if images were generated or provided, or the lesson uses PDFs, deliver ONE .zip file (same descriptive name) containing the .xlsx at the top level, an `images/` folder with the picture files and a `pdf/` folder with the PDFs and an `html/` folder with the HTML activities. A lesson with only text slides can be a single .xlsx. The Image / AfterImage columns hold just the file name (for example `q03-triangle.png`). Without images, deliver only the .xlsx.
 
 ## Extra columns (MODE OUR PROGRAM ONLY)
 Add these AFTER the "Correct answer(s)" column, never before or between Kahoot's columns, and never rename or reorder Kahoot's columns. Use English headers exactly as written. Leave a cell empty when it is not used.
@@ -335,13 +355,14 @@ Add these AFTER the "Correct answer(s)" column, never before or between Kahoot's
 | Body | for slide: the text under the title |
 | Layout | for slide: title, bullets, image-right, image-left, full-image, quote, fun (empty = automatic) |
 | Bullets | for slide: the bullet points, separated by `|` (up to 8) |
+| Html | on an `html` row: `file.html` or `file.html|phones` (also on the students' phones). The file goes in the zip under `html/` |
 | Pdf | `file.pdf` · `file.pdf:3` · `file.pdf:3-7`. On a pdf row: the pages to show (one step per page). On any other row: the page shown beside the activity |
 | Timer | for slide / pdf: a countdown on the screen in seconds (5-3600), for a break or a task |
 | Notes | for slide / pdf: speaker notes for the teacher (not shown to the class) |
 | Source | the citation of an answer: `document|page or section|short quote` |
 | Privacy | optional, what the class sees of this step's results: `full`, `anon` (statistics without names or points) or `none` (no statistics). Leave empty to follow the room setting; use it only if the teacher asked for it |
 
-The columns must appear in this order after "Correct answer(s)": Type, Points, Image, Video, Reveal, Accept, Slider, Items, Pin, Puzzle, Explanation, AfterImage, AnsImages, Limit, Body, Scale, Layout, Bullets, Pdf, Timer, Notes, Source, Privacy (leave unused ones empty, or stop the header at the last column you use). Do not invent other column names or type names.
+The columns must appear in this order after "Correct answer(s)": Type, Points, Image, Video, Reveal, Accept, Slider, Items, Pin, Puzzle, Explanation, AfterImage, AnsImages, Limit, Body, Scale, Layout, Bullets, Pdf, Timer, Notes, Source, Privacy, Html (leave unused ones empty, or stop the header at the last column you use). Do not invent other column names or type names.
 
 # RESPONSE IN CHAT
 Keep it short:

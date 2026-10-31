@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>מחזור המים</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; font-family: 'Heebo', system-ui, sans-serif; background: #bfe8ff; color: #0b2a4a; }
+  body { display: flex; flex-direction: column; }
+  .scene { position: relative; flex: 1; min-height: 0; overflow: hidden; background: linear-gradient(#7fc8ff, #d6f0ff 62%, #8fd36b 62%); }
+  svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .sun { animation: spin 30s linear infinite; transform-origin: 85px 70px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .vap { opacity: 0; } .on-evap .vap { opacity: 1; animation: rise 2.4s linear infinite; }
+  .vap:nth-child(2) { animation-delay: .6s !important; } .vap:nth-child(3) { animation-delay: 1.2s !important; } .vap:nth-child(4) { animation-delay: 1.8s !important; }
+  @keyframes rise { from { transform: translateY(0); opacity: .9; } to { transform: translateY(-190px); opacity: 0; } }
+  .cloud { transition: opacity .6s, transform .6s; opacity: .55; } .on-cond .cloud { opacity: 1; transform: scale(1.12); fill: #fff; }
+  .drop { opacity: 0; } .on-rain .drop { opacity: 1; animation: fall 1s linear infinite; }
+  .drop:nth-child(2n) { animation-delay: .3s !important; } .drop:nth-child(3n) { animation-delay: .6s !important; }
+  @keyframes fall { from { transform: translateY(0); } to { transform: translateY(150px); opacity: 0; } }
+  .river { animation: flow 3s linear infinite; stroke-dasharray: 14 10; } @keyframes flow { to { stroke-dashoffset: -48; } }
+  .label { position: absolute; padding: 4px 12px; border-radius: 999px; background: rgba(255, 255, 255, .9); font-weight: 900; font-size: clamp(.8rem, 2.4vw, 1.2rem); opacity: 0; transition: opacity .4s; }
+  .on-evap #l1, .on-cond #l2, .on-rain #l3 { opacity: 1; }
+  .bar { display: flex; gap: 10px; padding: 10px; background: #fff; justify-content: center; flex-wrap: wrap; box-shadow: 0 -4px 12px rgba(0, 0, 0, .12); }
+  button { font: inherit; font-weight: 900; border: 0; border-radius: 14px; padding: 10px 16px; font-size: clamp(.95rem, 2.6vw, 1.3rem); background: #2f80ff; color: #fff; box-shadow: 0 4px 0 #1a4fa3; cursor: pointer; }
+  button.on { background: #ffd23f; color: #3a2d00; box-shadow: 0 4px 0 #b37a00; }
+  button:active { transform: translateY(3px); box-shadow: 0 1px 0 #1a4fa3; }
+  .info { padding: 6px 14px; text-align: center; font-weight: 800; min-height: 2.4em; background: #f1f9ff; font-size: clamp(.9rem, 2.4vw, 1.25rem); }
+</style>
+</head>
+<body>
+<div class="scene" id="scene">
+  <svg viewBox="0 0 400 240" preserveAspectRatio="xMidYMid slice">
+    <g class="sun"><circle cx="85" cy="70" r="26" fill="#ffd23f"/><g stroke="#ffd23f" stroke-width="5" stroke-linecap="round"><path d="M85 28v-14M85 112v14M43 70H29M127 70h14M55 40l-10-10M115 100l10 10M115 40l10-10M55 100l-10 10"/></g></g>
+    <path d="M0 148 L90 110 L170 150 L250 100 L340 150 L400 120 V160 H0Z" fill="#7e9a7a"/><path d="M250 100 L232 118 L250 112 L266 120Z" fill="#fff"/>
+    <rect x="0" y="146" width="400" height="94" fill="#8fd36b"/><rect x="0" y="190" width="400" height="50" fill="#2f80ff"/><path d="M0 200 Q60 190 120 200 T240 200 T400 200" fill="none" stroke="#bfe8ff" stroke-width="3" opacity=".7"/>
+    <path class="river" d="M262 122 Q270 150 250 175 Q240 185 245 192" fill="none" stroke="#3aa0ff" stroke-width="5"/>
+    <g class="vap"><path d="M110 188 q-6-10 0-18 t0-18" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/></g>
+    <g class="vap"><path d="M150 188 q-6-10 0-18 t0-18" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/></g>
+    <g class="vap"><path d="M190 188 q-6-10 0-18 t0-18" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/></g>
+    <g class="vap"><path d="M130 188 q-6-10 0-18 t0-18" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/></g>
+    <g class="cloud" fill="#cfd8e3"><ellipse cx="250" cy="38" rx="48" ry="17"/><ellipse cx="226" cy="28" rx="26" ry="16"/><ellipse cx="270" cy="26" rx="24" ry="15"/></g>
+    <g fill="#2f80ff"><path class="drop" d="M222 62 q-4 7 0 10 q4-3 0-10z"/><path class="drop" d="M238 66 q-4 7 0 10 q4-3 0-10z"/><path class="drop" d="M254 62 q-4 7 0 10 q4-3 0-10z"/><path class="drop" d="M270 66 q-4 7 0 10 q4-3 0-10z"/><path class="drop" d="M284 62 q-4 7 0 10 q4-3 0-10z"/></g>
+  </svg>
+  <div class="label" id="l1" style="left:6%;bottom:36%">☀️ התאדות: המים מתחממים ועולים</div>
+  <div class="label" id="l2" style="right:8%;top:6%">☁️ התעבות: האדים מתקררים ונהיים ענן</div>
+  <div class="label" id="l3" style="right:6%;top:46%">🌧️ משקעים: גשם יורד</div>
+</div>
+<div class="info" id="info">לחצו על כפתור כדי לראות שלב במחזור המים</div>
+<div class="bar"><button data-s="evap">☀️ התאדות</button><button data-s="cond">☁️ התעבות</button><button data-s="rain">🌧️ משקעים</button><button data-s="all">🔄 הכול ביחד</button></div>
+<script>
+const scene = document.getElementById('scene'), info = document.getElementById('info');
+const TXT = { evap: 'השמש מחממת את הים והמים הופכים לאדים שעולים למעלה.', cond: 'למעלה קר: האדים מתקררים והופכים לטיפות קטנות שיוצרות ענן.', rain: 'כשהענן כבד מדי, הטיפות יורדות כגשם, וחוזרות לנהר ולים.', all: 'המחזור חוזר על עצמו שוב ושוב: התאדות, התעבות, משקעים.' };
+document.querySelector('.bar').onclick = (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  const s = b.dataset.s;
+  scene.className = 'scene' + (s === 'all' ? ' on-evap on-cond on-rain' : ' on-' + s);
+  document.querySelectorAll('.bar button').forEach((x) => x.classList.toggle('on', x === b));
+  info.textContent = TXT[s];
+};
+</script>
+</body>
+</html>

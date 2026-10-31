@@ -14,7 +14,8 @@ Before building anything, ask the teacher (one message, numbered options) what t
 - Make the Excel sheet (one row per step) with Python `openpyxl` (or `exceljs`), the columns and type names exactly as the instructions list them, and run the checks the instructions require in code.
 - Pictures: draw the ones the teacher agreed to as PNG (Python + matplotlib / Pillow). Look at each picture before delivering.
 - PDFs the teacher gave you: read them (do not retype them), reference pages in the `Pdf` column, and copy the file into `pdf/` in the zip under the same name.
-- Deliver one `.zip`: `lesson.xlsx` + `images/` + `pdf/`. Save it in the project's scratchpad or a folder the user names.
+- Interactive pages (simulations, animations, small games) are `html` rows: write each as ONE self-contained, offline, Hebrew RTL HTML file, follow "HTML activities" in the instructions and the examples in `examples/html/`, put it in `html/` in the zip, and name it in the `Html` column (`file.html` or `file.html|phones`). Open it in a browser tool and click its controls before delivering.
+- Deliver one `.zip`: `lesson.xlsx` + `images/` + `pdf/` + `html/`. Save it in the project's scratchpad or a folder the user names.
 
 ## 3. Flow images and videos (only on this computer, only with permission)
 More or richer pictures and short videos can be made with Google Flow, but that uses the teacher's Google account. **Ask first, and only use a Flow tool that is actually available in this environment.** Do not guess a tool or a script path, and never run one that logs in to an account without a clear yes. The Flow *music* tool is described in `CLAUDE.md`; it is not an image tool. If no image/video Flow tool is available, say so and use the pictures you can draw yourself. Put any generated picture in `images/` and reference it from the sheet like any other picture.

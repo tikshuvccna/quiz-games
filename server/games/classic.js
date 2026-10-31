@@ -226,7 +226,7 @@ class ClassicGame extends QuizGame {
 
   open() {
     const q = this.cur.q;
-    if (q.type === 'slide' || q.type === 'pdf') {
+    if (q.type === 'slide' || q.type === 'pdf' || q.type === 'html') {
       this.stage = 'slide';
       this.pushEveryone();
       if (!this.manual) this.schedule(() => this.next(), q.time * 1000);

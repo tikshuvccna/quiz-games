@@ -187,6 +187,14 @@ Requested 2026-10-30: "we need more music, lots of music, premium music from Flo
 - [x] (done 2026-10-30, `public/js/music.js`) **Variety** mode: every moment in the room settings can be "🔀 random from a group" (M1 to M7 by file prefix) or "🔀 all songs"; the next song is drawn when one ends, never the same twice in a row.
 - [ ] Keep file sizes reasonable (MP3, about 2 to 3 minutes each) so the repo and the LAN stay light.
 
+## 19. HTML activities, lottery and class vote
+
+Requested 2026-10-31.
+
+- [x] (done 2026-10-31, `scripts/html-test.js`) HTML content as a lesson step (simulations, animations, buttons), safe in a sandboxed frame; in the editor, in sheets and zips (`Html` column, `html/` folder), in packages, and in the Claude Project instructions and the Claude Code skill.
+- [x] (done 2026-10-31, `scripts/vote-test.js`) A lottery for the game, and a mode where the class votes for the game with a "surprise me" choice for each student.
+- [ ] Lesson plans matched to the curriculum, with the interactive presentations and the questions in the flow, shipped with the program. Needs the subjects and grades to cover first.
+
 ## 18. Screen sharing and private results
 
 Requested 2026-10-31.

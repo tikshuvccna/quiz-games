@@ -15,6 +15,7 @@
 //     pairs?:   [{ a, b }]                 match: 2-6 pairs, the player connects each a to its b
 //     buckets?: [{ name, items: [string] }] sort: 2-3 categories, the player puts every item in its category (8 items at most)
 //     layout?, bullets?, body?, timer?, notes?   slide / pdf: how a slide looks (see LAYOUTS), its bullet points, a countdown in seconds
+//     html?:    { file, phones }           type 'html': an HTML page (a simulation, an animation...) shown in a sandboxed frame; phones = also on the students' phones
 //     pdf?:     { file, page }             a page of an uploaded PDF: the slide itself (type 'pdf') or the picture behind any activity
 //     source?:  { doc, loc, quote }        where the answer comes from (shown after the answer)
 //     scale?:   { max, low, high }         rate: stars or a scale 1..max (5, 7 or 10) with labels for the two ends
@@ -24,7 +25,7 @@
 //   }
 const { shuffle } = require('./shuffle');
 
-const TYPES = ['quiz', 'tf', 'type', 'slider', 'order', 'match', 'sort', 'pin', 'puzzle', 'poll', 'cloud', 'open', 'brain', 'qna', 'drop', 'rate', 'rank', 'tap', 'slide', 'pdf'];
+const TYPES = ['quiz', 'tf', 'type', 'slider', 'order', 'match', 'sort', 'pin', 'puzzle', 'poll', 'cloud', 'open', 'brain', 'qna', 'drop', 'rate', 'rank', 'tap', 'slide', 'pdf', 'html'];
 // types that have a right answer (the only ones the games use)
 const SCORED = new Set(['quiz', 'tf', 'type', 'slider', 'order', 'match', 'sort', 'pin', 'puzzle']);
 // everyone answers, nothing is graded (the classic quiz only): poll, word cloud, free text, brainstorm, drop a pin
@@ -159,7 +160,12 @@ function normalize(raw) {
     if (ar >= 0.1 && ar <= 10) q.pin.ar = Math.round(ar * 1000) / 1000;
   } else if (type === 'cloud' || type === 'open' || type === 'brain' || type === 'qna') {
     q.limit = clamp(Math.round(num(raw.limit, LIMIT_DEFAULT[type])), 1, 5);
-  } else if (type === 'slide' || type === 'pdf') {
+  } else if (type === 'slide' || type === 'pdf' || type === 'html') {
+    if (type === 'html') {
+      const h = raw.html || {};
+      const f = String(str(h.file, 200)).replace(/^.*[\\/]/, '');
+      if (/^[\w.-]+\.html?$/i.test(f)) q.html = { file: f, phones: !!h.phones };
+    }
     const b = str(raw.body, 600).trim();
     if (b) q.body = b;
     const bl = (Array.isArray(raw.bullets) ? raw.bullets : []).map((x) => str(x, 140).trim()).filter(Boolean).slice(0, 8);
@@ -201,6 +207,7 @@ function shown(q) {
   if (q.type === 'drop') return !!q.text && !!q.image;
   if (q.type === 'slide') return !!(q.text || q.image || q.video || (q.bullets && q.bullets.length) || q.body);
   if (q.type === 'pdf') return !!q.pdf;
+  if (q.type === 'html') return !!q.html;
   if (q.type === 'tap') return !!q.text;
   return false;
 }
@@ -216,6 +223,7 @@ function present(q, mediaBase) {
   }
   if (q.video) out.video = q.video.id ? { ...q.video } : { url: mediaBase + encodeURIComponent(q.video.file), start: q.video.start, end: q.video.end };
   if (q.pdf) out.pdf = { url: mediaBase + encodeURIComponent(q.pdf.file), page: q.pdf.page };
+  if (q.html) out.html = { url: mediaBase + encodeURIComponent(q.html.file), phones: q.html.phones };
   const state = {};
   if (q.type === 'quiz' || q.type === 'tf' || q.type === 'poll') {
     const idx = q.answers.map((a, i) => i).filter((i) => q.answers[i].text || q.answers[i].image);
@@ -227,7 +235,7 @@ function present(q, mediaBase) {
     out.limit = q.limit;
   } else if (q.type === 'rate') {
     out.scale = q.scale;
-  } else if (q.type === 'slide' || q.type === 'pdf') {
+  } else if (q.type === 'slide' || q.type === 'pdf' || q.type === 'html') {
     if (q.body) out.body = q.body;
     if (q.bullets) out.bullets = q.bullets;
     if (q.layout) out.layout = q.layout;

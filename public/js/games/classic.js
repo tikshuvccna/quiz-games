@@ -364,6 +364,8 @@
         html = `<div class="cl-p-wait"><div class="cl-p-icon">✔</div><h2>התשובה נשלחה!</h2><div class="muted">מחכים לשאר הכיתה<span class="dots"><i></i><i></i><i></i></span></div></div>`;
       } else if (ph === 'c_watch' || ph === 'c_watch_res') {
         html = `<div class="cl-p-wait"><div class="cl-p-icon">👀</div><h2>${you.bonus ? 'הזדמנות שנייה' : 'צפו במסך'}</h2><div class="muted">${you.bonus ? '5 השחקנים עם הכי מעט נקודות עונים עכשיו על שאלות בניקוד כפול' : 'השאלה הבאה תכף מגיעה'}</div><div class="pill">⭐ ${you.score} · מקום ${you.rank}</div></div>`;
+      } else if (ph === 'c_slide' && you.q && you.q.html && you.q.html.phones && window.Slides) {
+        html = `<div class="ls-p ls-p-html"><div class="ls-hframe">${Slides.htmlFrame(you.q.html, you.q.text)}</div></div>`;
       } else if (ph === 'c_slide') {
         html = `<div class="cl-p-wait"><div class="cl-p-icon">📺</div><h2>הסתכלו על המסך</h2></div>`;
       } else if (ph === 'c_result') {

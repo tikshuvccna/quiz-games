@@ -102,6 +102,89 @@ class Room {
     this.touched = Date.now();
   }
 
+  // ---- choosing the game by lottery or by a vote of the class (lobby only) ----
+  // games that need their own preparation (a lesson, a study set) are not drawn
+  pickable(mode) {
+    const NO = new Set(['lesson', 'study']);
+    return Object.values(GAMES).filter((G) => !NO.has(G.id) && (!mode || mode === 'all' || G.mode === mode)).map((G) => G.id);
+  }
+
+  // the teacher's lottery: a random game now (not the one already chosen, when there is another)
+  lottery(mode) {
+    if (this.phase !== 'lobby') return null;
+    this.cancelVote();
+    let ids = this.pickable(mode);
+    if (ids.length > 1) ids = ids.filter((id) => id !== this.Game.id);
+    if (!ids.length) return null;
+    const id = ids[Math.floor(Math.random() * ids.length)];
+    this.setGame(id);
+    this.lastLottery = { id, at: Date.now() };
+    return id;
+  }
+
+  // the class votes: `n` random games to choose from (or "surprise me": a random one for that student)
+  startVote(mode, n, secs) {
+    if (this.phase !== 'lobby') return false;
+    this.cancelVote();
+    const ids = this.pickable(mode).sort(() => Math.random() - 0.5).slice(0, Math.max(2, Math.min(10, Number(n) || 6)));
+    if (ids.length < 2) return false;
+    const ms = Math.max(10, Math.min(120, Number(secs) || 30)) * 1000;
+    this.vote = { cands: ids, votes: new Map(), endsAt: Date.now() + ms, done: false, winner: null };
+    this.voteTimer = setTimeout(() => this.finishVote(), ms);
+    return true;
+  }
+
+  castVote(p, id) {
+    const v = this.vote;
+    if (!v || v.done || this.phase !== 'lobby') return;
+    if (id !== 'rand' && !v.cands.includes(id)) return;
+    v.votes.set(p.id, id);
+    // everyone who is here has voted: no need to wait
+    const here = [...this.players.values()].filter((x) => x.connected);
+    if (here.length && here.every((x) => v.votes.has(x.id))) {
+      clearTimeout(this.voteTimer);
+      this.voteTimer = setTimeout(() => this.finishVote(), 1200);
+    }
+  }
+
+  finishVote() {
+    const v = this.vote;
+    clearTimeout(this.voteTimer);
+    if (!v || v.done || this.phase !== 'lobby') return;
+    const count = new Map(v.cands.map((c) => [c, 0]));
+    for (const id of v.votes.values()) {
+      const pick = id === 'rand' ? v.cands[Math.floor(Math.random() * v.cands.length)] : id; // each "surprise me" draws its own game
+      count.set(pick, count.get(pick) + 1);
+    }
+    const top = Math.max(...count.values());
+    const tied = [...count].filter(([, n]) => n === top).map(([c]) => c);
+    v.winner = tied[Math.floor(Math.random() * tied.length)];
+    v.done = true;
+    v.tally = Object.fromEntries(count);
+    this.setGame(v.winner);
+    this.pushAll();
+  }
+
+  cancelVote() {
+    clearTimeout(this.voteTimer);
+    this.vote = null;
+  }
+
+  voteHostView() {
+    const v = this.vote;
+    if (!v) return null;
+    const counts = new Map(v.cands.map((c) => [c, 0]));
+    let rand = 0;
+    for (const id of v.votes.values()) (id === 'rand' ? rand++ : counts.set(id, counts.get(id) + 1));
+    return { done: v.done, winner: v.winner, left: v.done ? 0 : Math.max(0, v.endsAt - Date.now()), voters: v.votes.size, rand, tally: v.tally || null, cands: v.cands.map((id) => ({ id, title: GAMES[id].title, emoji: GAMES[id].emoji, n: counts.get(id) })) };
+  }
+
+  voteFor(p) {
+    const v = this.vote;
+    if (!v) return null;
+    return { done: v.done, winner: v.winner, mine: v.votes.get(p.id) || '', left: v.done ? 0 : Math.max(0, v.endsAt - Date.now()), cands: v.cands.map((id) => ({ id, title: GAMES[id].title, emoji: GAMES[id].emoji })) };
+  }
+
   setSettings(s) {
     if (this.phase !== 'lobby' || !s) return;
     if (DURATIONS.includes(Number(s.duration))) this.settings.duration = Number(s.duration);
@@ -351,6 +434,7 @@ class Room {
   // ---- lifecycle ----
   start() {
     if (this.phase !== 'lobby' || this.players.size < 1) return false;
+    this.cancelVote();
     const n = this.teamCount();
     if (n >= 2) shuffle([...this.players.values()]).forEach((p, i) => (p.team = i % n));
     else for (const p of this.players.values()) p.team = -1;
@@ -446,6 +530,7 @@ class Room {
     clearInterval(this.timer);
     clearTimeout(this.countdownTimer);
     clearTimeout(this.hostPushTimer);
+    clearTimeout(this.voteTimer);
     for (const p of this.players.values()) clearTimeout(p.graceTimer);
     if (this.game && !this.game.over) this.game.stop();
     if (this.phase === 'playing') this.phase = 'ended';
@@ -531,6 +616,8 @@ class Room {
       left: this.left(),
       cd: this.phase === 'countdown' ? Math.max(0, this.startAt - Date.now()) : 0,
       players: [...this.players.values()].map((p) => ({ id: p.id, name: p.name, team: p.team, connected: p.connected, photo: this.photoUrl(p) })),
+      vote: this.phase === 'lobby' ? this.voteHostView() : null,
+      lastLottery: this.lastLottery || null,
       board: this.phase === 'playing' ? this.game.publicState() : null,
       teamScores: this.phase === 'playing' && this.Game.mode === 'ffa' && this.teamCount() >= 2 ? this.teamScores() : null,
       results: this.results,
@@ -588,6 +675,7 @@ class Room {
       scene: this.setup.scene,
       qtheme: this.setup.qtheme,
       share: this.share,
+      vote: this.voteFor(p),
       round: this.round,
       untimed: !!this.Game.untimed,
       photos: !!this.setup.photos,

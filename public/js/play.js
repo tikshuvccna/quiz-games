@@ -219,7 +219,7 @@ function render(was) {
   U.applyTheme(you.qtheme);
 
   if (ph === 'lobby' || ph === 'countdown' || ph === 'spectate') {
-    const key = [ph, you.gameId, you.team, you.name, you.canReroll, you.round, you.photo, you.photos].join(':');
+    const key = [ph, you.gameId, you.team, you.name, you.canReroll, you.round, you.photo, you.photos, Vote.sig(you)].join(':');
     if (you.photo) U.photos[you.name] = you.photo;
     else delete U.photos[you.name];
     if (ph === 'countdown' && was !== 'countdown') U.countdown(you.cd || 3000, esc(you.gameTitle));
@@ -235,12 +235,14 @@ function render(was) {
       ${ph === 'lobby' && you.round > 0 ? `<div class="pill">🔁 סיבוב ${you.round + 1}</div>` : ''}
       ${team}
       <h2>${ph === 'lobby' ? 'את/ה בפנים!' : ph === 'spectate' ? 'המשחק כבר רץ' : 'מתחילים!'}</h2>
+      ${ph === 'lobby' ? Vote.phoneHtml(you) : ''}
       <div class="muted">${ph === 'lobby' ? 'מחכים שהמארח/ת יתחיל<span class="dots"><i></i><i></i><i></i></span>' : ''}</div>
       ${ph === 'lobby' && you.photos ? `<div class="photo-row"><div class="photo-t">${you.photo ? 'החלפת תמונה' : 'תמונה במקום האות (לא חובה)'}</div>
         <label class="btn ghost photo-btn">📷 מצלמה<input type="file" class="photoIn" accept="image/*" capture="user" hidden></label>
         <label class="btn ghost photo-btn">🖼️ מהגלריה<input type="file" class="photoIn" accept="image/*" hidden></label>
         ${you.photo ? '<button class="btn ghost photo-btn" id="photoX">הסרה</button>' : ''}</div>` : ''}
       ${ph === 'lobby' ? U.soundBtn() : ''}`;
+    Vote.bind(app, you, (id) => socket.emit('player:vote', { id }));
     // two inputs: "capture" opens the camera straight away, the other lets the phone offer the gallery / files
     document.querySelectorAll('.photoIn').forEach((pi) => (pi.onchange = (e) => { if (e.target.files[0]) sendPhoto(e.target.files[0]); e.target.value = ''; }));
     const px = document.getElementById('photoX');

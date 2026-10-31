@@ -9,7 +9,7 @@ const ClassicGame = require('./classic');
 const qt = require('../qtypes');
 
 const REACTS = ['got', 'unsure', 'ask'];
-const SLIDEISH = (q) => q.type === 'slide' || q.type === 'pdf';
+const SLIDEISH = (q) => q.type === 'slide' || q.type === 'pdf' || q.type === 'html';
 
 class LessonGame extends ClassicGame {
   static id = 'lesson';
@@ -130,6 +130,7 @@ class LessonGame extends ClassicGame {
   outline() {
     return this.list.map((q) => {
       if (q.type === 'slide') return `🖼️ ${q.text || (q.bullets && q.bullets[0]) || 'שקופית'}`.slice(0, 46);
+      if (q.type === 'html') return `🧪 ${q.text || 'פעילות אינטראקטיבית'}`.slice(0, 46);
       if (q.type === 'pdf') return `📄 ${q.text || 'עמוד ' + q.pdf.page}`.slice(0, 46);
       const icon = { poll: '📊', cloud: '☁️', open: '✍️', brain: '💡', qna: '❓', drop: '📌', rate: '⭐', rank: '🏅', tap: '👆', quiz: '🔷', tf: '⚖️' }[q.type] || '🎯';
       return `${icon} ${q.text}`.slice(0, 46);

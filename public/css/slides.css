@@ -65,3 +65,15 @@
 .sl-thumb .sl { padding: 6px; gap: 4px; }
 .sl-thumb .sl-title { font-size: 1rem; text-shadow: none; }
 .sl-thumb .sl-body, .sl-thumb .sl-bullets li { font-size: .6rem; }
+
+/* an HTML activity (simulation, animation...) in a sandboxed frame */
+.sl-l-html { padding: 0; gap: 0; background: #0b0620; display: flex; flex-direction: column; }
+.sl-html { flex: 1; min-height: 0; width: 100%; border: 0; background: #fff; display: block; }
+.sl-l-html .sl-cap { padding: 6px 14px; text-align: center; font-weight: 800; background: #1b1340; color: #fff; }
+.ls-p-html { width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; }
+.ls-hframe { flex: 1; min-height: 0; border-radius: 14px; overflow: hidden; background: #fff; box-shadow: 0 6px 0 rgba(0, 0, 0, .3); }
+.ls-hframe .sl-html { height: 100%; }
+.ls-bs-sm { display: flex; gap: 6px; }
+.ls-bs-sm .ls-b { flex: 1; padding: 8px 4px; }
+/* on the big screen the teacher's bar sits along the bottom: leave room so it never covers the activity's own buttons */
+.cl-slide .sl-l-html { padding-bottom: 92px; }

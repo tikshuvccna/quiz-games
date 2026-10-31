@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>שברים על פיצה</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; font-family: 'Heebo', system-ui, sans-serif; background: #fff4e0; color: #3a1d00; }
+  body { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 10px; }
+  h1 { margin: 0; font-size: clamp(1.1rem, 3.6vw, 2rem); }
+  .stage { flex: 1; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; gap: 4vw; flex-wrap: wrap; }
+  svg { height: min(100%, 52vw); max-height: 60vh; aspect-ratio: 1; filter: drop-shadow(0 10px 8px rgba(0, 0, 0, .25)); }
+  .slice { cursor: pointer; transition: transform .2s; transform-origin: 100px 100px; }
+  .slice:hover { transform: scale(1.03); }
+  .frac { display: flex; flex-direction: column; align-items: center; font-weight: 900; font-size: clamp(2rem, 8vw, 4.5rem); line-height: 1; }
+  .frac i { display: block; width: 1.6em; height: .09em; background: currentColor; margin: .08em 0; border-radius: 4px; }
+  .ctl { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+  .grp { display: flex; align-items: center; gap: 8px; background: #fff; padding: 6px 10px; border-radius: 16px; box-shadow: 0 4px 0 #e6c9a0; font-weight: 800; }
+  button { font: inherit; font-weight: 900; font-size: 1.4rem; width: 2.2em; height: 2.2em; border: 0; border-radius: 12px; background: #ff7a1a; color: #fff; box-shadow: 0 4px 0 #b34a00; cursor: pointer; }
+  button:active { transform: translateY(3px); box-shadow: 0 1px 0 #b34a00; }
+  .msg { min-height: 1.4em; font-weight: 800; font-size: clamp(1rem, 2.8vw, 1.5rem); text-align: center; }
+</style>
+</head>
+<body>
+<h1>🍕 שברים: לוחצים על פרוסות</h1>
+<div class="stage"><svg id="pz" viewBox="0 0 200 200"></svg><div class="frac"><span id="n">3</span><i></i><span id="d">8</span></div></div>
+<div class="msg" id="msg"></div>
+<div class="ctl">
+  <div class="grp">מכנה (פרוסות) <button id="dm">−</button><b id="dv">8</b><button id="dp">+</button></div>
+  <div class="grp"><button id="all">הכול</button><button id="none">כלום</button><button id="rnd">🎲</button></div>
+</div>
+<script>
+let d = 8, on = new Set([0, 1, 2]);
+const pz = document.getElementById('pz');
+function draw() {
+  let h = `<circle cx="100" cy="100" r="96" fill="#e8a64e" stroke="#8a4a10" stroke-width="4"/><circle cx="100" cy="100" r="86" fill="#ffd27a"/>`;
+  for (let i = 0; i < d; i++) {
+    const a0 = (i / d) * 2 * Math.PI - Math.PI / 2, a1 = ((i + 1) / d) * 2 * Math.PI - Math.PI / 2;
+    const x0 = 100 + 86 * Math.cos(a0), y0 = 100 + 86 * Math.sin(a0), x1 = 100 + 86 * Math.cos(a1), y1 = 100 + 86 * Math.sin(a1);
+    const mid = (a0 + a1) / 2;
+    const path = `M100 100 L${x0} ${y0} A86 86 0 0 1 ${x1} ${y1} Z`;
+    h += `<g class="slice" data-i="${i}"><path d="${path}" fill="${on.has(i) ? '#e84a3a' : '#fff1c9'}" stroke="#8a4a10" stroke-width="2.5"/>`;
+    if (on.has(i)) h += `<circle cx="${100 + 52 * Math.cos(mid)}" cy="${100 + 52 * Math.sin(mid)}" r="7" fill="#b3261a"/><circle cx="${100 + 28 * Math.cos(mid + .25)}" cy="${100 + 28 * Math.sin(mid + .25)}" r="5" fill="#b3261a"/>`;
+    h += '</g>';
+  }
+  pz.innerHTML = h;
+  document.getElementById('n').textContent = on.size;
+  document.getElementById('d').textContent = d;
+  document.getElementById('dv').textContent = d;
+  const n = on.size;
+  document.getElementById('msg').textContent = n === 0 ? 'אף פרוסה לא נבחרה' : n === d ? 'הפיצה כולה: ' + d + '/' + d + ' = 1' : n * 2 === d ? 'חצי פיצה! ' + n + '/' + d + ' = ½' : n + ' מתוך ' + d + ' פרוסות';
+}
+pz.onclick = (e) => { const s = e.target.closest('.slice'); if (!s) return; const i = +s.dataset.i; on.has(i) ? on.delete(i) : on.add(i); draw(); };
+document.getElementById('dp').onclick = () => { d = Math.min(12, d + 1); on = new Set([...on].filter((i) => i < d)); draw(); };
+document.getElementById('dm').onclick = () => { d = Math.max(2, d - 1); on = new Set([...on].filter((i) => i < d)); draw(); };
+document.getElementById('all').onclick = () => { on = new Set([...Array(d).keys()]); draw(); };
+document.getElementById('none').onclick = () => { on = new Set(); draw(); };
+document.getElementById('rnd').onclick = () => { on = new Set([...Array(d).keys()].filter(() => Math.random() < .5)); draw(); };
+draw();
+</script>
+</body>
+</html>

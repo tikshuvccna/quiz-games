@@ -135,6 +135,12 @@
       const key = `c_slide:${you.qid}:${you.react || ''}`;
       if (!ctx.setView(key)) return ctx.refreshTop(), true;
       const q = you.q || {};
+      // an HTML activity the teacher also put on the phones: the student can try it too
+      if (q.html && q.html.phones && window.Slides) {
+        app.innerHTML = `${ctx.topBar()}<div class="ls-p ls-p-html"><div class="ls-hframe">${Slides.htmlFrame(q.html, q.text)}</div><div class="ls-bs ls-bs-sm">${[['got', '👍', 'הבנתי'], ['unsure', '🤔', 'לא בטוח'], ['ask', '🙋', 'שאלה']].map(([v, i, t]) => `<button class="ls-b ${you.react === v ? 'on' : ''}" data-v="${v}"><i>${i}</i><span>${t}</span></button>`).join('')}</div></div>`;
+        app.querySelector('.ls-bs').onclick = (e) => { const b = e.target.closest('.ls-b'); if (!b) return; U.sfx('pop'); ctx.act('react', { value: b.dataset.v, qid: you.qid }); };
+        return true;
+      }
       const label = q.text || (q.bullets && q.bullets[0]) || '';
       const B = (v, ico, t) => `<button class="ls-b ${you.react === v ? 'on' : ''}" data-v="${v}"><i>${ico}</i><span>${t}</span></button>`;
       app.innerHTML = `${ctx.topBar()}<div class="ls-p"><div class="ls-pic">📺</div><div class="ls-pt">${label ? esc(label) : 'הסתכלו על המסך'}</div><div class="ls-pq">איך זה הולך?</div>

@@ -1,0 +1,35 @@
+/* ---------- choosing the game: lottery and class vote (vote.js) ---------- */
+.vt-box { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 20px; background: rgba(255, 255, 255, .1); }
+.vt-title { font-weight: 900; font-size: 1.15rem; text-align: center; }
+.vt-bar { height: 8px; border-radius: 999px; background: rgba(0, 0, 0, .3); overflow: hidden; }
+.vt-bar i { display: block; height: 100%; background: #ffd23f; transform-origin: right; animation: fb-timer linear forwards; }
+.vt-cands { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.vt-cand { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 6px 8px; border: 3px solid transparent; border-radius: 14px; background: #fff; color: #1b1340; font: inherit; cursor: pointer; box-shadow: 0 4px 0 #c9c2f0; }
+.vt-cand b { font-size: .9rem; line-height: 1.1; text-align: center; }
+.vt-art { display: block; width: 100%; border-radius: 8px; overflow: hidden; }
+.vt-art svg { display: block; width: 100%; height: auto; }
+.vt-cand.on { border-color: #ffd23f; background: #fff7d1; box-shadow: 0 4px 0 #b37a00; }
+.vt-rand { grid-column: 1 / -1; flex-direction: row; justify-content: center; gap: 10px; padding: 10px; background: #ffe9f5; }
+.vt-dice { font-size: 1.8rem; }
+.vt-hint { text-align: center; font-size: .85rem; opacity: .85; }
+.vt-done { text-align: center; }
+.vt-win { font-size: 1.5rem; font-weight: 900; color: #ffd23f; }
+/* the teacher's page */
+.vt-host { width: min(560px, 94vw); display: flex; flex-direction: column; gap: 12px; text-align: center; }
+.vt-rows { display: flex; flex-direction: column; gap: 8px; }
+.vt-row { display: flex; align-items: center; gap: 10px; }
+.vt-rn { width: 11em; text-align: start; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vt-track { flex: 1; height: 16px; border-radius: 999px; background: rgba(255, 255, 255, .12); overflow: hidden; }
+.vt-track i { display: block; height: 100%; background: linear-gradient(90deg, #8b5cf6, #ffd23f); border-radius: 999px; transition: width .4s; }
+.vt-btns { display: flex; justify-content: center; gap: 10px; }
+.vt-hwin { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 1.6rem; }
+.vt-hart { width: 240px; border-radius: 14px; overflow: hidden; box-shadow: 0 8px 0 rgba(0, 0, 0, .3); }
+.vt-hart svg { display: block; width: 100%; height: auto; }
+.lot-box { position: fixed; inset: 0; z-index: 120; display: flex; align-items: center; justify-content: center; background: rgba(10, 8, 30, .82); backdrop-filter: blur(6px); }
+.lot-card { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 26px 34px; border-radius: 26px; background: #1b1340; box-shadow: 0 20px 60px rgba(0, 0, 0, .6); }
+.lot-title { font-size: 1.8rem; font-weight: 900; }
+.lot-art { width: 320px; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 0 rgba(0, 0, 0, .3); }
+.lot-art svg { display: block; width: 100%; height: auto; }
+.lot-name { font-size: 2rem; font-weight: 900; }
+.lot-box.landed .lot-card { animation: beat .5s ease-out 3; }
+.lot-btns { display: flex; gap: 6px; }

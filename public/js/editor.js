@@ -23,11 +23,12 @@
     ['tap', 'מרוץ הקשות', 'כולם מקישים כמה שיותר מהר, בלי תשובה נכונה · חידון קלאסי ושיעור', '👆'],
     ['slide', 'שקופית', 'כותרת, נקודות, תמונה או סרטון · חידון קלאסי ושיעור', '🖼️'],
     ['pdf', 'עמוד PDF', 'עמוד מקובץ PDF כשקופית · חידון קלאסי ושיעור', '📄'],
+    ['html', 'פעילות HTML', 'סימולציה, הנפשה או משחק קטן מקובץ HTML · חידון קלאסי ושיעור', '🧪'],
   ];
   const TYPE = Object.fromEntries(TYPES.map((t) => [t[0], t]));
   const TIMES = [5, 10, 20, 30, 45, 60, 90, 120, 180, 240];
   const POINTS = [[0, 'ללא ניקוד'], [1, 'רגיל'], [2, 'כפול ×2'], [3, 'משולש ×3'], [4, 'מרובע ×4']];
-  const UNSCORED = ['slide', 'pdf', 'tap', 'cloud', 'open', 'brain', 'qna', 'drop', 'rate', 'rank']; // no points
+  const UNSCORED = ['slide', 'pdf', 'html', 'tap', 'cloud', 'open', 'brain', 'qna', 'drop', 'rate', 'rank']; // no points
   const LIMITS = { cloud: 3, open: 1, brain: 3, qna: 2 };
   const COLORS = ['#e9334f', '#1f73e0', '#e6a400', '#23a14a', '#8b5cf6', '#0fa3b8'];
 
@@ -74,6 +75,7 @@
     if (UNSCORED.includes(type)) q.points = 0;
     if (LIMITS[type]) q.limit = LIMITS[type];
     if (type === 'pdf') q.pdf = { file: '', page: 1 };
+    if (type === 'html') q.html = { file: '', phones: false };
     if (type === 'tap') q.time = 10;
     return q;
   }
@@ -97,9 +99,10 @@
   // what is still missing before the question can be played
   function problems(q) {
     const p = [];
-    const slideish = q.type === 'pdf' || (q.type === 'slide' && (q.image || q.video || q.body || (q.bullets && q.bullets.some((b) => b.trim()))));
+    const slideish = q.type === 'pdf' || q.type === 'html' || (q.type === 'slide' && (q.image || q.video || q.body || (q.bullets && q.bullets.some((b) => b.trim()))));
     if (!q.text.trim() && !slideish) p.push('חסר טקסט לשאלה');
     if (q.type === 'pdf' && !(q.pdf && q.pdf.file)) p.push('בחרו קובץ PDF ועמוד');
+    if (q.type === 'html' && !(q.html && q.html.file)) p.push('בחרו קובץ HTML');
     if (q.type === 'quiz') {
       if (q.answers.filter((a) => a.text.trim() || a.image).length < 2) p.push('צריך לפחות 2 תשובות');
       if (!q.answers.some((a) => a.correct && (a.text.trim() || a.image))) p.push('סמנו תשובה נכונה');
@@ -742,18 +745,21 @@
   async function upload(file, slot) {
     const isVideo = file.type.startsWith('video/');
     const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '');
+    const isHtml = /\.html?$/i.test(file.name || '') || file.type === 'text/html';
+    if (isHtml && file.size > 3 * 1024 * 1024) return toast('קובץ ה־HTML גדול מדי (עד 3MB)', true);
     if (isPdf && file.size > 80 * 1024 * 1024) return toast('ה־PDF גדול מדי (עד 80MB)', true);
     if (slot === 'explain' && isVideo) return toast('תמונת ההסבר צריכה להיות תמונה', true);
     if (String(slot).startsWith('ans:') && isVideo) return toast('תמונת תשובה צריכה להיות תמונה', true);
-    if (!file.type.startsWith('image/') && !isVideo && !isPdf) return toast('רק תמונות, סרטונים או PDF', true);
+    if (!file.type.startsWith('image/') && !isVideo && !isPdf && !isHtml) return toast('רק תמונות, סרטונים, PDF או HTML', true);
     if (!isVideo && !isPdf && file.size > 12 * 1024 * 1024) return toast('התמונה גדולה מדי (עד 12MB)', true);
     if (isVideo && file.size > 300 * 1024 * 1024) return toast('הסרטון גדול מדי (עד 300MB)', true);
     const q = quiz.questions[cur];
     if (isVideo && (q.type === 'pin' || q.type === 'puzzle' || q.type === 'drop')) return toast('לשאלה מהסוג הזה אפשר להוסיף רק תמונה', true);
-    const t = isVideo || isPdf ? toastSticky(isPdf ? 'מעלה PDF…' : 'מעלה סרטון…') : null;
+    const t = isVideo || isPdf || isHtml ? toastSticky(isPdf ? 'מעלה PDF…' : isHtml ? 'מעלה פעילות…' : 'מעלה סרטון…') : null;
     try {
-      const r = await api(`/quizzes/${encodeURIComponent(quiz.id)}/media`, { method: 'POST', body: file, headers: { 'Content-Type': isPdf ? 'application/pdf' : file.type } });
-      if (isPdf) q.pdf = { file: r.name, page: (q.pdf && q.pdf.page) || 1 };
+      const r = await api(`/quizzes/${encodeURIComponent(quiz.id)}/media`, { method: 'POST', body: file, headers: { 'Content-Type': isPdf ? 'application/pdf' : isHtml ? 'text/html' : file.type } });
+      if (isHtml) q.html = { file: r.name, phones: !!(q.html && q.html.phones) };
+      else if (isPdf) q.pdf = { file: r.name, page: (q.pdf && q.pdf.page) || 1 };
       else if (isVideo) q.video = { file: r.name, start: 0, end: 0 };
       else if (slot === 'explain') q.explainImage = r.name;
       else if (String(slot).startsWith('ans:')) q.answers[Number(slot.slice(4))].image = r.name;
@@ -1083,6 +1089,7 @@
     }
 
     if (q.type === 'pdf') return pdfEditor(q, box, rerender);
+    if (q.type === 'html') return htmlEditor(q, box, rerender);
 
     // a slide: layout, text, bullet points, a countdown, notes (a picture or video goes in the area above)
     const LAY = [['', 'אוטומטי'], ['title', 'כותרת'], ['bullets', 'כותרת ונקודות'], ['image-right', 'טקסט ותמונה (תמונה משמאל)'], ['image-left', 'טקסט ותמונה (תמונה מימין)'], ['full-image', 'תמונה מלאה עם טקסט'], ['quote', 'ציטוט'], ['fun', 'הפסקה / כיף']];
@@ -1107,6 +1114,28 @@
       if (e.target.id === 'slLay') { if (e.target.value) q.layout = e.target.value; else delete q.layout; dirty(); }
       if (e.target.id === 'slTim') { const v = Number(e.target.value); if (v) q.timer = v; else delete q.timer; dirty(); }
     };
+  }
+
+  // ---------- an HTML activity as a step: a simulation, an animation, a small game ----------
+  function htmlEditor(q, box, rerender) {
+    const f = q.html && q.html.file;
+    if (!f) {
+      box.innerHTML = '<div class="drop" id="htDrop"><div class="drop-hint">🧪 העלו קובץ HTML אחד שלם (סימולציה, הנפשה, תרגול…)<small>גררו לכאן או לחצו. עד 3MB, בלי תלות באינטרנט</small></div><input type="file" id="htFile" accept=".html,.htm,text/html" hidden></div>';
+      const d = document.getElementById('htDrop');
+      d.onclick = () => document.getElementById('htFile').click();
+      document.getElementById('htFile').onchange = (e) => e.target.files[0] && upload(e.target.files[0]);
+      d.ondragover = (e) => { e.preventDefault(); d.classList.add('over'); };
+      d.ondragleave = () => d.classList.remove('over');
+      d.ondrop = (e) => { e.preventDefault(); d.classList.remove('over'); if (e.dataTransfer.files[0]) upload(e.dataTransfer.files[0]); };
+      return;
+    }
+    const url = mediaUrl(f);
+    box.innerHTML = `<div class="ht-ed"><div class="ht-prev"><iframe sandbox="allow-scripts allow-forms allow-modals" src="${esc(url)}" title="תצוגה מקדימה"></iframe></div>
+      <label class="lite-tog"><input type="checkbox" id="htPhones" ${q.html.phones ? 'checked' : ''}> הצגה גם בטלפונים של התלמידים (כל תלמיד מנסה בעצמו)</label>
+      <div class="row"><label class="btn ghost sm">🔄 החלפת קובץ<input type="file" id="htFile" accept=".html,.htm,text/html" hidden></label></div>
+      <div class="muted ae-tip">הפעילות מוצגת במסגרת מבודדת: היא יכולה להריץ סקריפטים, אבל לא לגשת לשאר התוכנה ולא לאינטרנט. הכותרת למעלה מופיעה כיתוב מתחת לפעילות. אפשר להוסיף שאלות לפני ואחרי.</div></div>`;
+    document.getElementById('htFile').onchange = (e) => e.target.files[0] && upload(e.target.files[0]);
+    document.getElementById('htPhones').onchange = (e) => { q.html.phones = e.target.checked; dirty(); };
   }
 
   // ---------- a PDF page as a step ----------

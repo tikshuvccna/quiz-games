@@ -173,7 +173,7 @@ app.get('/api/q/quizzes/:id/cards.csv', (req, res) => {
 });
 app.post('/api/q/quizzes/:id/duplicate', api((req) => Quizzes.duplicate(req.params.id)));
 // pictures (incl. animated GIF / APNG / WebP) and video files for questions
-app.post('/api/q/quizzes/:id/media', express.raw({ type: ['image/*', 'video/*', 'application/pdf'], limit: '300mb' }), api((req) => {
+app.post('/api/q/quizzes/:id/media', express.raw({ type: ['image/*', 'video/*', 'application/pdf', 'text/html'], limit: '300mb' }), api((req) => {
   const name = Quizzes.saveMedia(req.params.id, req.body, String(req.headers['content-type'] || '').split(';')[0]);
   return { name, url: `/media/${encodeURIComponent(req.params.id)}/${name}` };
 }));
@@ -284,7 +284,11 @@ app.get('/photo/:pin/:pid', (req, res) => {
 app.get('/media/:id/:file', (req, res) => {
   const p = Quizzes.mediaPath(req.params.id, req.params.file);
   if (!p) return res.status(404).end();
-  res.sendFile(p, { maxAge: '1h' });
+  // an HTML activity can run scripts, so the browser gets it in a sandbox: no access to this program's pages or data,
+  // no top-level navigation and no network requests from the page (it must be one self-contained file)
+  const isHtml = /\.html?$/i.test(p);
+  if (isHtml) res.set({ 'Content-Security-Policy': "sandbox allow-scripts allow-forms allow-modals; connect-src 'none'; form-action 'none'", 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'no-cache' });
+  res.sendFile(p, { maxAge: isHtml ? 0 : '1h' });
 });
 
 const obj = (d) => (d && typeof d === 'object' && !Array.isArray(d) ? d : {});
@@ -395,6 +399,40 @@ io.on('connection', (socket) => {
   });
 
   // remove a player: in the lobby and, since 2026-10-30, also in the middle of a game
+  // choosing the game: the teacher's lottery, or a vote of the class (each student may also pick "surprise me")
+  const PICK_MODES = ['all', 'teams', 'ffa', 'coop'];
+  on('host:lottery', (d) => {
+    const room = hostRoom();
+    if (!room) return;
+    const m = str(obj(d).mode);
+    if (room.lottery(PICK_MODES.includes(m) ? m : 'all')) room.pushAll();
+  });
+  on('host:vote', (d) => {
+    const room = hostRoom();
+    if (!room) return;
+    const o = obj(d);
+    const m = str(o.mode);
+    if (room.startVote(PICK_MODES.includes(m) ? m : 'all', Number(o.n), Number(o.secs))) room.pushAll();
+  });
+  on('host:vote-end', () => {
+    const room = hostRoom();
+    if (room) room.finishVote();
+  });
+  on('host:vote-cancel', () => {
+    const room = hostRoom();
+    if (!room) return;
+    room.cancelVote();
+    room.pushAll();
+  });
+  on('player:vote', (d) => {
+    const room = socket.data.room;
+    const p = room && !socket.data.isHost ? room.players.get(socket.data.playerId) : null;
+    if (!p || p.socketId !== socket.id) return;
+    room.castVote(p, str(obj(d).id));
+    room.pushPlayer(p);
+    room.scheduleHostPush();
+  });
+
   on('host:kick', (pid) => {
     const room = hostRoom();
     if (room && room.phase !== 'ended' && room.phase !== 'countdown') room.removePlayer(str(pid), true);

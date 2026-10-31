@@ -102,6 +102,7 @@ async function addQuiz(zip, prefix, id) {
       if (x.explainImage) used.add(x.explainImage);
       for (const a of x.answers || []) if (a.image) used.add(a.image);
       if (x.pdf && x.pdf.file) used.add(x.pdf.file);
+      if (x.html && x.html.file) used.add(x.html.file);
     }
     for (const f of fs.readdirSync(dir)) if (used.has(f)) zip.file(prefix + 'media/' + f, fs.readFileSync(path.join(dir, f)));
   }
@@ -144,7 +145,7 @@ async function unpackQuiz(zip, prefix, folderPath) {
   for (const m of Object.values(zip.files)) {
     if (m.dir || !m.name.startsWith(prefix + 'media/')) continue;
     const base = path.basename(m.name);
-    if (!/^[\w.-]+\.(png|jpe?g|gif|webp|svg|mp4|webm|m4v|mov|ogv|pdf)$/i.test(base)) continue;
+    if (!/^[\w.-]+\.(png|jpe?g|gif|webp|svg|mp4|webm|m4v|mov|ogv|pdf|html)$/i.test(base)) continue;
     fs.writeFileSync(path.join(dir, base), await m.async('nodebuffer'));
   }
   Q.save(q.id, { ...data, folder: folderPath });

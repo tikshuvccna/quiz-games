@@ -31,6 +31,7 @@
   function guide() {
     let n = 0;
     const body = quiz.questions.map((q) => {
+      if (q.type === 'html') return `<section class="p-slide"><h2>🧪 ${esc(q.text || 'פעילות אינטראקטיבית')}</h2><p class="muted">פעילות אינטראקטיבית (סימולציה או הנפשה): מוצגת במסך בשיעור.</p></section>`;
       if (q.type === 'slide') {
         const bl = q.bullets && q.bullets.length ? `<ul>${q.bullets.map((b) => `<li>${esc(b)}</li>`).join('')}</ul>` : '';
         return `<section class="p-slide"><h2>${esc(q.text || (q.bullets && q.bullets[0]) || '')}</h2>${q.body ? `<p>${esc(q.body)}</p>` : ''}${bl}${q.image ? `<img src="${mediaUrl(q.image)}" alt="">` : ''}</section>`;

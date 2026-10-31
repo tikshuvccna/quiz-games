@@ -111,6 +111,7 @@ function render(prev) {
   const cs = st.phase === 'playing' && st.board && st.board.kind === 'classic' ? st.board.stage : null;
   Music.play(st.phase === 'lobby' ? 'lobby' : st.phase === 'ended' ? 'victory' : cs && cs !== 'question' && cs !== 'ready' ? 'between' : 'game');
   Silly.update(st);
+  Vote.hostSync(st, (what) => socket.emit(what === 'end' ? 'host:vote-end' : 'host:vote-cancel'));
   if (st.phase !== 'playing') document.getElementById('clPeekBtn')?.remove();
   if (st.phase === 'lobby') renderLobby();
   else if (st.phase === 'countdown') renderCountdown(prev);
@@ -228,6 +229,7 @@ function renderLobby() {
         <div class="lm-top">
           <div class="lm-tabs"><button data-tab="games">🎮 משחקים</button><button data-tab="room">⚙️ הגדרות חדר</button></div>
           <div class="mode-filter" id="filter">${FILTERS.map(([k, l]) => `<button data-filter="${k}">${l}</button>`).join('')}</div>
+          <span class="lot-btns"><button class="btn sm ghost" id="lotBtn" title="הגרלה של משחק מהלשונית הנוכחית">🎲 הגרלה</button><button class="btn sm ghost" id="voteBtn" title="התלמידים מצביעים על המשחק (כל אחד יכול גם לבחור הפתעה)">🗳️ הצבעה</button></span>
           <input class="input sm" id="gSearch" placeholder="🔍 חיפוש משחק" autocomplete="off" style="max-width:190px;margin-inline-start:auto">
         </div>
         <div class="lm-body">
@@ -290,6 +292,8 @@ function renderLobby() {
     document.getElementById('jzBtn').onclick = () => openJoinZoom();
     document.getElementById('classSel').onchange = (e) => socket.emit('host:setup', { classId: e.target.value });
     document.getElementById('themes').onclick = (e) => { const b = e.target.closest('[data-qtheme]'); if (b) socket.emit('host:setup', { qtheme: b.dataset.qtheme }); };
+    document.getElementById('lotBtn').onclick = () => socket.emit('host:lottery', { mode: filter });
+    document.getElementById('voteBtn').onclick = () => socket.emit('host:vote', { mode: filter, n: 6, secs: 30 });
     document.getElementById('gSearch').oninput = (e) => { gsearch = e.target.value.trim(); renderLobby(); };
     document.getElementById('sillyOn').onchange = (e) => socket.emit('host:setup', { silly: e.target.checked });
     document.getElementById('filterOn').onchange = (e) => socket.emit('host:setup', { filter: e.target.checked });
@@ -337,6 +341,7 @@ function renderLobby() {
   document.querySelectorAll('[data-filter]').forEach((b) => b.classList.toggle('on', b.dataset.filter === filter));
   document.getElementById('filter').classList.toggle('hidden', tab !== 'games');
   document.getElementById('gSearch').classList.toggle('hidden', tab !== 'games');
+  document.querySelector('.lot-btns').classList.toggle('hidden', tab !== 'games');
   document.getElementById('games').classList.toggle('hidden', tab !== 'games');
   document.getElementById('roomSetup').classList.toggle('hidden', tab !== 'room');
 
