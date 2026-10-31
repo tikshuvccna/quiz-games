@@ -32,13 +32,13 @@
   }
 
   function tiles(q, rv) {
-    const max = rv ? Math.max(1, ...rv.dist) : 1;
+    const max = rv ? Math.max(1, ...rv.dist.map((x) => x || 0)) : 1;
     return `<div class="cl-answers n${q.options.length} ${rv ? 'revealed' : ''} ${q.optionImages ? 'pics' : ''}">${q.options
       .map((o, i) => {
         const ok = rv && rv.correct.includes(i);
         const pic = q.optionImages && q.optionImages[i];
         return `<div class="cl-ans ${rv ? (ok ? 'ok' : q.type === 'poll' ? '' : 'no') : ''}" style="--a:${color(q, i)};--i:${i}">
-          ${shape(q, i)}${pic ? `<img class="cl-ans-pic" src="${esc(pic)}" alt="">` : ''}${o ? `<span class="t">${esc(o)}</span>` : ''}${rv ? `<span class="cnt">${ok ? '✓ ' : ''}${rv.dist[i]}</span><i class="bar" style="--w:${(rv.dist[i] / max) * 100}%"></i>` : ''}</div>`;
+          ${shape(q, i)}${pic ? `<img class="cl-ans-pic" src="${esc(pic)}" alt="">` : ''}${o ? `<span class="t">${esc(o)}</span>` : ''}${rv ? `<span class="cnt">${ok ? '✓ ' : ''}${rv.dist[i] == null ? '' : rv.dist[i]}</span><i class="bar" style="--w:${((rv.dist[i] || 0) / max) * 100}%"></i>` : ''}</div>`;
       })
       .join('')}</div>`;
   }
@@ -139,8 +139,39 @@
 
   Games.classic = {
     // ---------- host ----------
+    // the teacher's private view of the results, for when the class sees only anonymous statistics (or none)
+    peek() {
+      socket.emit('host:peek', {}, (r) => {
+        document.getElementById('clPeekBox')?.remove();
+        const m = document.createElement('div');
+        m.className = 'modal';
+        m.id = 'clPeekBox';
+        if (!r || !r.ok) { m.innerHTML = '<div class="modal-card"><p>אין עדיין נתונים</p><button class="btn" id="pkX">סגירה</button></div>'; } else {
+          const dist = r.dist && r.options ? `<div class="pk-dist">${r.options.map((o, i) => `<span><b>${r.dist[i] == null ? 0 : r.dist[i]}</b> ${esc(o)}</span>`).join('')}</div>` : '';
+          m.innerHTML = `<div class="modal-card pk-card"><div class="modal-head"><h2>👁️ תוצאות (רק למורה)</h2><div class="modal-actions"><button class="btn sm ghost" id="pkR">↻ רענון</button><button class="btn sm ghost" id="pkX">✕</button></div></div>
+            <div class="modal-body"><div class="pk-q"><b>${esc(r.text)}</b><small>התשובה הנכונה: ${esc(r.correctText || '—')} · ענו ${r.answered}${r.right != null ? ` · נכון ${r.right}` : ''}</small></div>${dist}
+            <table class="rep"><thead><tr><th>שם</th><th></th><th>ענה/תה</th><th>נקודות</th><th>סך הכול</th></tr></thead><tbody>${r.rows.map((x) => `<tr><td>${esc(x.name)}</td><td>${!x.answered ? '⏳' : x.ok === null ? '·' : x.ok ? '✅' : '❌'}</td><td>${esc(x.chosen)}</td><td>${x.pts || ''}</td><td>${x.score}</td></tr>`).join('')}</tbody></table>
+            <div class="muted" style="margin-top:8px">התלמידים רואים את זה רק אם המסך הגדול מוצג עכשיו לכיתה.</div></div></div>`;
+        }
+        document.body.appendChild(m);
+        m.onclick = (e) => { if (e.target === m || e.target.id === 'pkX') m.remove(); if (e.target.id === 'pkR') { m.remove(); this.peek(); } };
+      });
+    },
+
     hostPlaying(app, st) {
       const b = st.board;
+      // when the class sees only anonymous statistics (or none) the teacher can still look at the full results
+      const pk = document.getElementById('clPeekBtn');
+      if (b.privacy && b.privacy !== 'full') {
+        if (!pk) {
+          const btn = document.createElement('button');
+          btn.id = 'clPeekBtn';
+          btn.className = 'btn sm cl-peek';
+          btn.textContent = '👁️ תוצאות (למורה)';
+          btn.onclick = () => Games[st.gameId].peek();
+          document.body.appendChild(btn);
+        }
+      } else if (pk) pk.remove();
       if (U.hostFrame(app, st, {
         id: 'classic',
         cls: 'classic-stage',
@@ -199,7 +230,7 @@
         const rv = b.reveal;
         box.innerHTML = `<div class="cl-q rv">
           <div class="cl-qtext">${esc(q.text)}</div>
-          <div class="cl-mid">${LIVE.includes(q.type) ? '<span></span>' : `<div class="cl-score-sum"><b>${rv.right}</b><span>ענו נכון</span></div>`}<div class="cl-media">${media(q, rv)}</div><div class="cl-counter"><b>${rv.answered}</b><span>ענו</span></div></div>
+          <div class="cl-mid">${LIVE.includes(q.type) || rv.hide ? '<span></span>' : `<div class="cl-score-sum"><b>${rv.right}</b><span>ענו נכון</span></div>`}<div class="cl-media">${media(q, rv)}</div>${rv.hide ? '<span></span>' : `<div class="cl-counter"><b>${rv.answered}</b><span>ענו</span></div>`}</div>
           ${body(q, rv)}
           ${rv.explain ? `<div class="cl-explain">💡 ${esc(rv.explain)}</div>` : ''}
           ${rv.hidden ? `<div class="cl-hint">🛡️ ${rv.hidden} הוסתרו בסינון מילים</div>` : ''}
@@ -253,6 +284,7 @@
     },
 
     hostEnded(app, st) {
+      document.getElementById('clPeekBtn')?.remove();
       if (!U.view(app, 'classic-end')) return;
       const r = st.results.players;
       // learning style: a class summary instead of a podium
@@ -298,7 +330,7 @@
           if (navigator.vibrate) navigator.vibrate([30, 30, 30]);
         }, 0);
       }
-      if (you.style === 'learn') return '';
+      if (you.style === 'learn' || you.quiet) return '';
       const lives = you.lives != null ? `<span class="hchip">${you.lives > 0 ? '❤️'.repeat(you.lives) : '💀'}</span>` : '';
       return `<span class="hchip">⭐ ${you.score || 0}</span>${lives}${you.rank ? `<span class="hchip">#${you.rank}</span>` : ''}`;
     },
@@ -342,14 +374,14 @@
         html = `<div class="fb-screen ${cls}">
           ${poll ? `<div class="cl-p-icon">${{ cloud: '☁️', open: '✍️', brain: '💡', qna: '❓', drop: '📍', rate: '⭐', rank: '🏅', tap: '👆' }[you.qtype] || '📊'}</div>` : `<div class="fb-icon">${r.ok ? Art.check() : Art.cross()}</div>`}
           <div class="fb-title">${title}</div>
-          ${r.pts && you.style !== 'learn' ? `<div class="cl-p-pts ${r.pts < 0 ? 'neg' : ''}">${r.pts > 0 ? '+' : ''}${r.pts}${this.ptsUnit ? ` <small>${this.ptsUnit}</small>` : ''}</div>` : ''}
+          ${r.pts && you.style !== 'learn' && !you.quiet ? `<div class="cl-p-pts ${r.pts < 0 ? 'neg' : ''}">${r.pts > 0 ? '+' : ''}${r.pts}${this.ptsUnit ? ` <small>${this.ptsUnit}</small>` : ''}</div>` : ''}
           ${r.conf === 1 && you.stage !== undefined && !this.pyramidMode ? `<div class="pill">🚀 ${r.ok ? 'הבוסט הצליח!' : 'הבוסט נכשל'}</div>` : ''}
           ${r.ok && r.streak >= 2 ? `<div class="streak">${Art.flame()} רצף ${r.streak}</div>` : ''}
           ${!r.ok && !poll && you.correctText ? `<div class="fb-answer">התשובה הנכונה<b>${esc(you.correctText)}</b></div>` : ''}
           ${you.afterImage ? `<img class="fb-pic" src="${esc(you.afterImage)}" alt="">` : ''}
           ${you.explain ? `<div class="fb-explain">${esc(you.explain)}</div>` : ''}
           ${you.source ? `<div class="fb-source">📖 ${esc(you.source.doc)}${you.source.loc ? ' · ' + esc(you.source.loc) : ''}${you.source.quote ? `<q>${esc(you.source.quote)}</q>` : ''}</div>` : ''}
-          ${you.style === 'learn' ? '' : `<div class="fb-note">מקום ${you.rank}${you.above ? (you.above.gap > 0 ? ` · עוד ${you.above.gap} ${this.ptsUnit || 'נק׳'} כדי לעקוף את ${esc(you.above.name)}` : ` · צמוד ל־${esc(you.above.name)}!`) : you.rank === 1 ? ' · אתם בראש! 👑' : ''}</div>`}</div>`;
+          ${you.style === 'learn' || you.quiet ? '' : `<div class="fb-note">מקום ${you.rank}${you.above ? (you.above.gap > 0 ? ` · עוד ${you.above.gap} ${this.ptsUnit || 'נק׳'} כדי לעקוף את ${esc(you.above.name)}` : ` · צמוד ל־${esc(you.above.name)}!`) : you.rank === 1 ? ' · אתם בראש! 👑' : ''}</div>`}</div>`;
         if (!poll) {
           U.sfx(r.ok ? 'good' : 'bad');
           if (navigator.vibrate) navigator.vibrate(r.ok ? 20 : [40, 40, 40]);

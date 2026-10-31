@@ -22,3 +22,9 @@ body { margin: 0; min-height: 100dvh; background: #140c33; color: #fff; font-fam
 .pr-btns button.go { background: #ffd23f; box-shadow: 0 6px 0 #b37a00; }
 .pr-btns button:active { transform: translateY(5px); box-shadow: 0 1px 0 rgba(0, 0, 0, .3); }
 .pr-btns button:disabled { opacity: .35; }
+.pr-peekbtn { padding: 12px; border: 0; border-radius: 14px; font: inherit; font-weight: 800; background: rgba(255, 255, 255, .12); color: #fff; cursor: pointer; }
+.pr-peek { padding: 10px 12px; border-radius: 14px; background: rgba(255, 255, 255, .07); display: flex; flex-direction: column; gap: 6px; font-size: .95rem; }
+.pr-dist { display: flex; flex-wrap: wrap; gap: 6px; }
+.pr-dist span { padding: 2px 10px; border-radius: 999px; background: rgba(255, 255, 255, .1); }
+.pr-row { display: flex; gap: 8px; align-items: baseline; }
+.pr-ans { margin-inline-start: auto; opacity: .8; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

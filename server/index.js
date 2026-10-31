@@ -408,6 +408,12 @@ io.on('connection', (socket) => {
     if (room && room.phase === 'playing' && room.game.hostCommand && ['next', 'prev', 'goto'].includes(o.cmd)) room.game.hostCommand(o.cmd, o.arg);
   });
 
+  // the teacher's private look at the results of the current step (when the class sees only anonymous statistics)
+  on('host:peek', (_, ack) => {
+    const room = hostRoom();
+    ack(room && room.phase === 'playing' && room.game && room.game.peek ? room.game.peek() : { ok: false });
+  });
+
   on('host:end', () => {
     const room = hostRoom();
     if (room) room.end();

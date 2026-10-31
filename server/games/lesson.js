@@ -21,10 +21,11 @@ class LessonGame extends ClassicGame {
   static noReward = true;
   static untimed = true;
   static blurb = 'מלמדים עם מצגת: שקופיות ועמודי PDF, ובתוך השיעור פעילויות: סקר, "הבנתם?", שאלה מהירה, ענן מילים, חידון, הפסקה מהנה. התלמידים מגיבים מהטלפון (👍 הבנתי · 🤔 לא בטוח · 🙋 שאלה) והמורה רואה בזמן אמת אם הכיתה איתו. אפשר לחזור אחורה ולקפוץ לכל שלב.';
-  static defaults = { duration: 600, count: 0, order: 'original', advance: 'manual', bonus: 'off', style: 'learn', scoring: 'none', timer: 'question' };
+  static defaults = { duration: 600, count: 0, order: 'original', advance: 'manual', bonus: 'off', style: 'learn', scoring: 'none', privacy: 'full', timer: 'question' };
   static options = [
     { key: 'scoring', label: 'ניקוד בפעילויות', choices: [['none', 'בלי ניקוד (מעורבות והבנה)'], ['speed', 'עם ניקוד (בדיקת הבנה)']] },
     { key: 'timer', label: 'זמן לפעילות', choices: [['question', 'לפי הפעילות'], ['unlimited', 'ללא הגבלה']] },
+    { key: 'privacy', label: 'מה הכיתה רואה בתוצאות', choices: [['full', 'הכול: ספירות ושמות'], ['anon', 'סטטיסטיקה בלי שמות'], ['none', 'בלי סטטיסטיקות בכלל']] },
   ];
 
   get style() {
@@ -154,6 +155,8 @@ class LessonGame extends ClassicGame {
       students: this.players().filter((p) => p.connected).length,
       outline: this.outline(),
       last: this.isLast(),
+      peek: this.privacy !== 'full' ? this.peek() : null,
+      privacy: this.privacy,
     };
   }
 

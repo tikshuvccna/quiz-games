@@ -28,7 +28,7 @@ class ClassicGame extends QuizGame {
   static teamAvg = true; // team score = average of its members (like Kahoot)
   static blurb = 'החידון הקלאסי: כולם עונים על אותה שאלה מהמסך הגדול. תשובה נכונה ומהירה = יותר נקודות, רצפים נותנים בונוס, ובין השאלות יש לוח מובילים. אפשר גם בקבוצות.';
   static tickMs = 500;
-  static defaults = { duration: 600, count: 0, order: 'original', advance: 'manual', bonus: 'off', style: 'speed', timer: 'question', surprise: 'off', final: 'normal', lives: 'off', teamtalk: 'off' };
+  static defaults = { duration: 600, count: 0, order: 'original', advance: 'manual', bonus: 'off', style: 'speed', timer: 'question', surprise: 'off', final: 'normal', lives: 'off', teamtalk: 'off', privacy: 'full' };
   static options = [
     { key: 'style', label: 'סגנון ניקוד', choices: [['speed', 'קלאסי: מהירות + דיוק'], ['accuracy', 'דיוק בלבד (נקודה לכל נכונה)'], ['confidence', 'ביטחון: בוסט או בטוח'], ['learn', 'למידה: בלי ניקוד ובלי לוח מובילים']] },
     { key: 'timer', label: 'זמן לשאלה', choices: [['question', 'לפי השאלה'], ['unlimited', 'ללא הגבלה']] },
@@ -39,6 +39,7 @@ class ClassicGame extends QuizGame {
     { key: 'teamtalk', label: 'דיון בקבוצה לפני התשובה', choices: [['off', 'ללא'], ['on', 'כן: 8 שניות']] },
     { key: 'final', label: 'השאלה האחרונה', choices: [['normal', 'רגילה'], ['double', 'שווה כפול']] },
     { key: 'lives', label: 'הישרדות', choices: [['off', 'ללא'], [3, '3 חיים'], [1, 'חיים אחד: טעות אחת וזהו']] },
+    { key: 'privacy', label: 'מה הכיתה רואה בתוצאות', choices: [['full', 'הכול: שמות, ניקוד ולוח מובילים'], ['anon', 'סטטיסטיקה בלי שמות וניקוד'], ['none', 'בלי סטטיסטיקות בכלל']] },
     { key: 'surprise', label: '🎁 הפתעות בלוח המובילים', choices: [['off', 'ללא'], ['sometimes', 'לפעמים'], ['often', 'הרבה']] },
   ];
 
@@ -69,6 +70,64 @@ class ClassicGame extends QuizGame {
 
   freshG() {
     return { score: 0, streak: 0, bestStreak: 0, correct: 0, wrong: 0, rank: 0, prevRank: 0, res: null, fastest: null, conf: 1, boosts: 0, lives: this.livesStart() };
+  }
+
+  // what the class sees of the results (classic quiz and lesson): 'full', 'anon' (class statistics, no names, points or
+  // leaderboard) or 'none' (not even statistics). The teacher can always look through peek().
+  get privacy() {
+    const v = this.room.settings.privacy;
+    return (this.constructor.id === 'classic' || this.constructor.id === 'lesson') && (v === 'anon' || v === 'none') ? v : 'full';
+  }
+
+  get quiet() {
+    return this.privacy !== 'full';
+  }
+
+  // the reveal as the class gets it (the teacher's own view comes from peek)
+  shownReveal(rv) {
+    if (!rv || !this.quiet) return rv;
+    const r = { ...rv };
+    if (r.taps) r.taps = r.taps.map((t) => ({ ...t, name: '' }));
+    if (r.texts) r.texts = r.texts.map((t) => ({ ...t, by: '' }));
+    if (this.privacy === 'none') {
+      r.hide = true;
+      r.right = 0;
+      r.answered = 0;
+      if (r.dist) r.dist = r.dist.map(() => null);
+      delete r.avgPct;
+      delete r.boostPct;
+      delete r.taps;
+      delete r.totalTaps;
+    }
+    return r;
+  }
+
+  // the teacher's private view of the current step: who answered what, right or wrong, the points, and the class counts
+  peek() {
+    const cur = this.cur;
+    if (!cur) return { ok: false };
+    const rv = cur.reveal;
+    const rows = this.players()
+      .filter((p) => p.g && this.canAnswer(p))
+      .map((p) => {
+        const a = cur.answers.get(p.id);
+        return { name: p.name, answered: !!a, ok: p.g.res ? p.g.res.ok : null, pts: p.g.res ? p.g.res.pts : 0, chosen: a && a.res ? String(a.res.chosen == null ? '' : a.res.chosen) : '', ms: a ? a.ms : 0, score: p.g.score, correct: p.g.correct, wrong: p.g.wrong };
+      })
+      .sort((x, y) => y.score - x.score);
+    return {
+      ok: true,
+      stage: this.stage,
+      index: this.i + 1,
+      total: this.list.length,
+      text: cur.q.text || '',
+      type: cur.q.type,
+      correctText: rv ? rv.correctText : qt.correctText(cur.q),
+      options: cur.payload.options || null,
+      dist: rv && rv.dist ? rv.dist : null,
+      right: rv ? rv.right : null,
+      answered: cur.answers.size,
+      rows,
+    };
   }
 
   // survival: wrong answers cost lives, and a player with none left only watches (classic quiz only)
@@ -441,7 +500,7 @@ class ClassicGame extends QuizGame {
     // no leaderboard after the very last question: straight to the podium
     if (this.isLast()) return this.room.end();
     // learning: no leaderboard at all, straight to the next question
-    if (this.style === 'learn') return this.next();
+    if (this.style === 'learn' || this.quiet) return this.next();
     if (this.livesOn && this.players().filter((p) => p.g && p.g.lives > 0).length <= (this.players().length > 1 ? 1 : 0)) return this.room.end();
     this.sur = this.maybeSurprise();
     this.stage = 'board';
@@ -518,7 +577,7 @@ class ClassicGame extends QuizGame {
       if (pct >= 80) out.push(`👏 ${pct}% ענו נכון! איזו כיתה חכמה`);
       else if (pct <= 30) out.push(`🤔 שאלה קשה! רק ${pct}% צדקו`);
     }
-    if (this.style === 'learn') return out.slice(0, 1);
+    if (this.style === 'learn' || this.quiet) return this.privacy === 'none' ? [] : out.slice(0, 1);
     const climb = list.filter((p) => p.g.prevRank && p.g.prevRank - p.g.rank >= 2).sort((a, b) => b.g.prevRank - b.g.rank - (a.g.prevRank - a.g.rank))[0];
     if (climb) out.push(`🚀 ${climb.name} קפץ/ה ${climb.g.prevRank - climb.g.rank} מקומות!`);
     const hot = list.filter((p) => p.g.streak >= 3).sort((a, b) => b.g.streak - a.g.streak)[0];
@@ -549,6 +608,7 @@ class ClassicGame extends QuizGame {
     const cur = this.cur;
     const out = {
       kind: 'classic',
+      privacy: this.privacy,
       stage: this.stage,
       index: this.i,
       total: this.list.length,
@@ -574,7 +634,7 @@ class ClassicGame extends QuizGame {
       out.time = VOTE_MS / 1000;
     }
     if (this.stage === 'reveal' || this.stage === 'board') {
-      out.reveal = cur.reveal;
+      out.reveal = this.shownReveal(cur.reveal);
       out.lines = this.lines;
       out.surprise = this.stage === 'board' && this.sur ? { k: this.sur.k, text: this.sur.text } : null;
       out.board = this.board5();
@@ -587,7 +647,7 @@ class ClassicGame extends QuizGame {
   personal(p) {
     const g = p.g;
     const cur = this.cur;
-    const base = { score: g.score, rank: g.rank, streak: g.streak, qid: this.qid(), qnum: this.i + 1, total: this.list.length, bonus: this.inBonus, stage: this.stage, lives: this.livesOn ? g.lives : null, qtype: cur ? cur.q.type : '', style: this.style };
+    const base = { quiet: this.quiet, score: g.score, rank: g.rank, streak: g.streak, qid: this.qid(), qnum: this.i + 1, total: this.list.length, bonus: this.inBonus, stage: this.stage, lives: this.livesOn ? g.lives : null, qtype: cur ? cur.q.type : '', style: this.style };
     const can = this.canAnswer(p);
     if (!cur) return { ...base, phase: 'c_ready' };
     if (this.stage === 'ready') return { ...base, phase: can ? 'c_ready' : 'c_watch', text: cur.q.text, points: cur.q.points, talk: this.talkMs() > 0, readyMs: this.readyDelay(cur.q) };
@@ -614,7 +674,7 @@ class ClassicGame extends QuizGame {
 
   results() {
     const players = this.rank().map((p) => ({ name: p.name, team: p.team, score: p.g.score, correct: p.g.correct, wrong: p.g.wrong, best: p.g.bestStreak }));
-    return { kind: 'classic', players, total: this.main.length, style: this.style, scored: this.main.filter((q) => qt.SCORED.has(q.type)).length };
+    return { kind: 'classic', players: this.quiet ? [] : players, quiet: this.quiet, total: this.main.length, style: this.quiet ? 'learn' : this.style, scored: this.main.filter((q) => qt.SCORED.has(q.type)).length };
   }
 }
 

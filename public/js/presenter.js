@@ -10,6 +10,7 @@
   const socket = io();
   let st = null;
   let joined = false;
+  let showPeek = false; // the private results panel
 
   const msg = (t) => { box.innerHTML = `<div class="pr-msg">${esc(t)}</div>`; };
   const cmd = (c, arg) => { socket.emit('presenter:cmd', { cmd: c, arg }); if (navigator.vibrate) navigator.vibrate(15); };
@@ -28,6 +29,13 @@
 
   // keep the phone awake while presenting
   try { navigator.wakeLock && navigator.wakeLock.request('screen').catch(() => {}); } catch {}
+
+  // the full results of the current step, for the teacher's eyes only (the class sees less)
+  function peekHtml(p) {
+    const dist = p.dist && p.options ? `<div class="pr-dist">${p.options.map((o, i) => `<span><b>${p.dist[i] == null ? 0 : p.dist[i]}</b> ${esc(o)}</span>`).join('')}</div>` : '';
+    return `<div class="pr-peek"><div>${p.right != null ? `נכון: <b>${p.right}</b> · ` : ''}ענו: <b>${p.answered}</b>${p.correctText ? ` · התשובה: ${esc(p.correctText)}` : ''}</div>${dist}
+      ${p.rows.map((x) => `<div class="pr-row"><span>${!x.answered ? '⏳' : x.ok === null ? '·' : x.ok ? '✅' : '❌'}</span><b>${esc(x.name)}</b><span class="pr-ans">${esc(x.chosen)}</span></div>`).join('')}</div>`;
+  }
 
   function draw() {
     if (!st) return;
@@ -54,7 +62,10 @@
       ${meter}
       ${nx}
       <select id="prJump" aria-label="קפיצה לשלב">${st.outline.map((t, i) => `<option value="${i}" ${i === st.i ? 'selected' : ''}>${i + 1}. ${esc(t)}</option>`).join('')}</select>
+      ${st.peek ? `<button class="pr-peekbtn" id="prPeek">👁️ ${showPeek ? 'הסתר תוצאות' : 'תוצאות מלאות (רק לכם)'}</button>${showPeek ? peekHtml(st.peek) : ''}` : ''}
       <footer class="pr-btns"><button id="prPrev" ${st.i <= 0 ? 'disabled' : ''}>◀ קודם</button><button id="prNext" class="go">${st.last ? 'סיום' : 'הבא ▶'}</button></footer>`;
+    const pk = document.getElementById('prPeek');
+    if (pk) pk.onclick = () => { showPeek = !showPeek; draw(); };
     document.getElementById('prPrev').onclick = () => cmd('prev');
     document.getElementById('prNext').onclick = () => cmd('next');
     document.getElementById('prJump').onchange = (e) => { cmd('goto', Number(e.target.value)); e.target.blur(); };

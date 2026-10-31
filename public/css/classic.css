@@ -256,3 +256,12 @@
 
 /* team talk: a few seconds to discuss before the answers open */
 .cl-talk { margin: 10px auto 0; padding: 10px 24px; border-radius: 999px; font-size: clamp(1.1rem, 2.6cqh, 1.8rem); font-weight: 900; color: #3a2d00; background: linear-gradient(90deg, #ffd23f, #7dffc4); box-shadow: 0 6px 0 rgba(0, 0, 0, .25); animation: beat 1.2s infinite; }
+
+/* the teacher's private results button and window */
+.cl-peek { position: fixed; left: 14px; bottom: 14px; z-index: 40; opacity: .75; }
+.cl-peek:hover { opacity: 1; }
+.pk-card { max-width: 760px; width: 94vw; }
+.pk-q { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; }
+.pk-q small { opacity: .8; }
+.pk-dist { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.pk-dist span { padding: 4px 12px; border-radius: 999px; background: rgba(255, 255, 255, .12); }

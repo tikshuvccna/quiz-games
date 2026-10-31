@@ -110,6 +110,7 @@ function render(prev) {
   const cs = st.phase === 'playing' && st.board && st.board.kind === 'classic' ? st.board.stage : null;
   Music.play(st.phase === 'lobby' ? 'lobby' : st.phase === 'ended' ? 'victory' : cs && cs !== 'question' && cs !== 'ready' ? 'between' : 'game');
   Silly.update(st);
+  if (st.phase !== 'playing') document.getElementById('clPeekBtn')?.remove();
   if (st.phase === 'lobby') renderLobby();
   else if (st.phase === 'countdown') renderCountdown(prev);
   else if (st.phase === 'playing') {
