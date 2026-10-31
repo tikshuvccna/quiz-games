@@ -87,6 +87,8 @@ function normalize(raw) {
     points: POINTS.includes(num(raw.points, 1)) ? num(raw.points, 1) : 1,
   };
   if (raw.image) q.image = str(raw.image, 200);
+  // this one step shows the class something other than the room's setting: 'full', 'anon' or 'none' (classic quiz and lesson)
+  if (['full', 'anon', 'none'].includes(raw.privacy)) q.privacy = raw.privacy;
   // older quizzes stored reveal: true (= the blur that clears)
   if (raw.reveal && q.image) {
     q.reveal = REVEALS.includes(raw.reveal) ? raw.reveal : 'blur';

@@ -96,6 +96,16 @@ async function sheet() {
     ws.addRow(['Question', 'Answer 1', 'Answer 2', 'Answer 3', 'Answer 4', 'Time limit (sec)', 'Correct answer(s)']);
     ws.addRow(['Plain question', 'a', 'b', 'c', 'd', 20, '2']);
     const norm = await Q.importXlsx(Buffer.from(await wb.xlsx.writeBuffer()), 'norm');
+    // the Privacy column: what the class sees of one step's results
+    const wp = new ExcelJS.Workbook();
+    const wsp = wp.addWorksheet('Quiz');
+    wsp.addRow(['Question', 'Answer 1', 'Answer 2', 'Answer 3', 'Answer 4', 'Time limit (sec)', 'Correct answer(s)', 'Privacy']);
+    wsp.addRow(['Anonymous one', 'a', 'b', 'c', 'd', 20, '1', 'anon']);
+    wsp.addRow(['Open one', 'a', 'b', 'c', 'd', 20, '1', '']);
+    wsp.addRow(['Bad value', 'a', 'b', 'c', 'd', 20, '1', 'secret']);
+    const prv = Q.load((await Q.importXlsx(Buffer.from(await wp.xlsx.writeBuffer()), 'priv')).id);
+    check('a Privacy column sets what the class sees for that step (and ignores bad values)', prv.questions[0].privacy === 'anon' && prv.questions[1].privacy === undefined && prv.questions[2].privacy === undefined, prv.questions.map((x) => x.privacy));
+
     check('a normal quiz sheet still imports as before', norm.count === 1 && Q.load(norm.id).questions[0].answers[1].correct === true);
 
     // the blank template has the new columns

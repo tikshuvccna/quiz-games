@@ -218,8 +218,8 @@ const cellText = (c) => {
 
 // Extra columns after Kahoot's own (all optional; Kahoot ignores them):
 //   Type, Points, Image, Video, Reveal, Accept, Slider, Items, Pin, Puzzle, Explanation, AfterImage, AnsImages, Limit, Body, Scale,
-//   and for lessons: Layout, Bullets, Pdf, Timer, Notes, Source
-const EXTRA_COLS = /^(afterimage|ansimages|type|points|image|video|reveal|accept|slider|items|pin|puzzle|explanation|limit|body|scale|layout|bullets|pdf|timer|notes|source)\b/i;
+//   and for lessons: Layout, Bullets, Pdf, Timer, Notes, Source, Privacy (full | anon | none: what the class sees of this step's results)
+const EXTRA_COLS = /^(afterimage|ansimages|type|points|image|video|reveal|accept|slider|items|pin|puzzle|explanation|limit|body|scale|layout|bullets|pdf|timer|notes|source|privacy)\b/i;
 const IMG_EXT = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
 const parts = (s) => String(s || '').split('|').map((x) => x.trim()).filter(Boolean);
 
@@ -323,6 +323,8 @@ function rowToRaw(cells, head, images, note, ctx = { pdfs: new Map(), pdfPages: 
   }
   const ex = get('x_explanation');
   if (ex) base.explain = ex;
+  const prv = get('x_privacy').toLowerCase();
+  if (['full', 'anon', 'none'].includes(prv)) base.privacy = prv;
   // where the answer comes from: document | location | quote
   const srcRaw = get('x_source');
   if (srcRaw) {
@@ -609,7 +611,7 @@ async function templateXlsx(id) {
   ws.addRow(['', 'תבנית חידון (תואמת לתבנית של Kahoot)']).font = { bold: true, size: 16 };
   ws.addRow(['', 'מלאו שאלה בכל שורה. זמן: 5/10/20/30/60/90/120/240 שניות. תשובה נכונה: מספר התשובה (למשל 2, או 1,3 לכמה תשובות). העמודות אחרי "Correct answer" (I ואילך) אופציונליות: Kahoot מתעלם מהן והתוכנית שלנו קוראת אותן.']);
   ws.addRow([]);
-  const head = ws.addRow(['#', 'Question - שאלה', 'Answer 1 - תשובה 1', 'Answer 2 - תשובה 2', 'Answer 3 - תשובה 3', 'Answer 4 - תשובה 4', 'Time limit (sec) - זמן', 'Correct answer(s) - נכונות', 'Type', 'Points', 'Image', 'Video', 'Reveal', 'Accept', 'Slider', 'Items', 'Pin', 'Puzzle', 'Explanation', 'AfterImage', 'AnsImages', 'Limit', 'Body', 'Scale', 'Layout', 'Bullets', 'Pdf', 'Timer', 'Notes', 'Source']);
+  const head = ws.addRow(['#', 'Question - שאלה', 'Answer 1 - תשובה 1', 'Answer 2 - תשובה 2', 'Answer 3 - תשובה 3', 'Answer 4 - תשובה 4', 'Time limit (sec) - זמן', 'Correct answer(s) - נכונות', 'Type', 'Points', 'Image', 'Video', 'Reveal', 'Accept', 'Slider', 'Items', 'Pin', 'Puzzle', 'Explanation', 'AfterImage', 'AnsImages', 'Limit', 'Body', 'Scale', 'Layout', 'Bullets', 'Pdf', 'Timer', 'Notes', 'Source', 'Privacy']);
   head.font = { bold: true, color: { argb: 'FFFFFFFF' } };
   head.eachCell((c, cn) => (c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: cn > 8 ? 'FF1E7B4F' : 'FF46178F' } }));
   // extras: Type, Points, Image, Video, Reveal, Accept, Slider, Items, Pin, Puzzle (type "puzzle" is not played yet)

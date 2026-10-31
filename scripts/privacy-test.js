@@ -83,6 +83,39 @@ async function run(privacy, quizId) {
   ok(r.seen.lines.length === 0, 'no lines about the class');
   ok(r.peek && r.peek.ok && r.peek.dist && r.peek.dist.some((x) => x > 0), 'the teacher still sees the counts when peeking', r.peek && r.peek.dist);
 
+  // one step with its own setting while the room says "full"
+  console.log('a single step:');
+  const qs3 = [1, 2, 3].map((n) => ({ type: 'quiz', text: 'Step ' + n, time: 10, answers: [{ text: 'right', correct: true }, { text: 'wrong' }], ...(n === 1 ? { privacy: 'anon' } : {}) }));
+  await api('/quizzes/' + quiz.id, 'PUT', { title: 'privacy test', questions: qs3 });
+  const host = io(URL);
+  let hs = null;
+  host.on('host:state', (st) => (hs = st));
+  const room = await new Promise((res) => host.emit('host:create', { game: 'classic' }, res));
+  host.emit('host:setup', { quiz: quiz.id });
+  host.emit('host:settings', { privacy: 'full', advance: 'auto', style: 'speed', surprise: 'off', count: 3 });
+  await wait(300);
+  const quietAt = {};
+  const kid = io(URL);
+  kid.on('you', (y) => {
+    if (y.phase === 'c_result') quietAt[y.qnum] = y.quiet;
+    if (y.phase === 'c_question') setTimeout(() => kid.emit('player:action', { type: 'answer', data: { choice: y.question.options.indexOf('right'), qid: y.qid } }), 150);
+  });
+  await new Promise((res) => kid.emit('player:join', { pin: room.pin, name: 'Ann' }, res));
+  await wait(400);
+  host.emit('host:start');
+  const stageAfter = {};
+  const t1 = Date.now();
+  while (hs.phase !== 'ended' && Date.now() - t1 < 90000) {
+    await wait(150);
+    if (hs.board && hs.board.stage) { stageAfter[hs.board.index] = stageAfter[hs.board.index] || new Set(); stageAfter[hs.board.index].add(hs.board.stage); }
+  }
+  ok(quietAt[1] === true && quietAt[2] === false, 'the phone hides points only on the step that asked for it', quietAt);
+  ok(stageAfter[0] && !stageAfter[0].has('board') && stageAfter[1] && stageAfter[1].has('board'), 'no leaderboard after that step, a leaderboard after the others', Object.fromEntries(Object.entries(stageAfter).map(([k, v]) => [k, [...v]])));
+  ok(hs.results.players.length === 1 && hs.results.style !== 'learn', 'the end screen follows the room setting (full)');
+  kid.close();
+  host.emit('host:end');
+  host.close();
+
   await api('/quizzes/' + quiz.id, 'DELETE');
   console.log(failed ? `${failed} FAILED` : 'all passed');
   process.exit(failed ? 1 : 0);

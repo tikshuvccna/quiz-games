@@ -75,7 +75,12 @@ class ClassicGame extends QuizGame {
   // what the class sees of the results (classic quiz and lesson): 'full', 'anon' (class statistics, no names, points or
   // leaderboard) or 'none' (not even statistics). The teacher can always look through peek().
   get privacy() {
-    const v = this.room.settings.privacy;
+    // one step can have its own setting (set in the editor); otherwise the room's
+    const step = this.cur && this.cur.q && this.cur.q.privacy;
+    return this.roomPrivacy(step || this.room.settings.privacy);
+  }
+
+  roomPrivacy(v) {
     return (this.constructor.id === 'classic' || this.constructor.id === 'lesson') && (v === 'anon' || v === 'none') ? v : 'full';
   }
 
@@ -674,7 +679,8 @@ class ClassicGame extends QuizGame {
 
   results() {
     const players = this.rank().map((p) => ({ name: p.name, team: p.team, score: p.g.score, correct: p.g.correct, wrong: p.g.wrong, best: p.g.bestStreak }));
-    return { kind: 'classic', players: this.quiet ? [] : players, quiet: this.quiet, total: this.main.length, style: this.quiet ? 'learn' : this.style, scored: this.main.filter((q) => qt.SCORED.has(q.type)).length };
+    const hide = this.roomPrivacy(this.room.settings.privacy) !== 'full'; // the end screen follows the room, not the last step
+    return { kind: 'classic', players: hide ? [] : players, quiet: hide, total: this.main.length, style: hide ? 'learn' : this.style, scored: this.main.filter((q) => qt.SCORED.has(q.type)).length };
   }
 }
 

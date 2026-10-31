@@ -1167,6 +1167,7 @@
     side.innerHTML = `
       <label>סוג השאלה<select id="sType">${TYPES.map(([k, l, , ic]) => `<option value="${k}" ${k === q.type ? 'selected' : ''}>${ic} ${l}</option>`).join('')}</select></label>
       <label>⏱ זמן לשאלה<select id="sTime">${TIMES.map((t) => `<option value="${t}" ${t === q.time ? 'selected' : ''}>${t < 60 ? t + ' שניות' : t / 60 + ' דק׳'}</option>`).join('')}</select></label>
+      <label title="מה הכיתה רואה אחרי השלב הזה. המורה תמיד יכול לראות הכול בלחיצה">👁️ מה הכיתה רואה בתוצאות<select id="sPriv">${[['', 'לפי ההגדרה בחדר'], ['full', 'הכול (שמות וניקוד)'], ['anon', 'סטטיסטיקה בלי שמות'], ['none', 'בלי סטטיסטיקות']].map(([v, l]) => `<option value="${v}" ${(q.privacy || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
       ${UNSCORED.includes(q.type) ? '' : `<label>⭐ ניקוד<select id="sPts">${POINTS.map(([v, l]) => `<option value="${v}" ${v === q.points ? 'selected' : ''}>${l}</option>`).join('')}</select></label>`}
       ${q.image && q.type !== 'pin' && q.type !== 'puzzle' && q.type !== 'drop' ? `<label>🌫️ חשיפת התמונה<select id="sReveal">${[['', 'מיד'], ['blur', 'טשטוש שמתבהר'], ['tiles', 'אריחים שנעלמים']].map(([v, l]) => `<option value="${v}" ${(q.reveal || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
         ${q.reveal ? `<label>⏳ משך החשיפה<select id="sRevealSec">${[[0, 'לאורך כל הזמן'], [5, '5 שניות'], [10, '10 שניות'], [15, '15 שניות'], [20, '20 שניות'], [30, '30 שניות'], [45, '45 שניות'], [60, 'דקה']].map(([v, l]) => `<option value="${v}" ${(q.revealSec || 0) === v ? 'selected' : ''}>${l}</option>`).join('')}</select><small class="muted">מי שעונה מהר, לפני שרואים הכל, מקבל יותר נקודות</small></label>` : ''}` : ''}
@@ -1195,6 +1196,7 @@
       if (e.target.id === 'sPdfPg') { q.pdf.page = Math.max(1, Math.min(999, Number(e.target.value) || 1)); dirty(); }
       if (e.target.id === 'sPdfFile' && e.target.files[0]) upload(e.target.files[0]);
       if (e.target.id === 'sPts') { q.points = Number(e.target.value); dirty(); }
+      if (e.target.id === 'sPriv') { if (e.target.value) q.privacy = e.target.value; else delete q.privacy; dirty(); }
       if (e.target.id === 'sReveal') { if (e.target.value) q.reveal = e.target.value; else { delete q.reveal; delete q.revealSec; } dirty(); drawSide(); }
       if (e.target.id === 'sWhen') { if (e.target.value) q.imageWhen = e.target.value; else delete q.imageWhen; dirty(); }
       if (e.target.id === 'exImgFile' && e.target.files[0]) upload(e.target.files[0], 'explain');
