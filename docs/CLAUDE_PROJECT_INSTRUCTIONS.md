@@ -339,8 +339,9 @@ Add these AFTER the "Correct answer(s)" column, never before or between Kahoot's
 | Timer | for slide / pdf: a countdown on the screen in seconds (5-3600), for a break or a task |
 | Notes | for slide / pdf: speaker notes for the teacher (not shown to the class) |
 | Source | the citation of an answer: `document|page or section|short quote` |
+| Privacy | optional, what the class sees of this step's results: `full`, `anon` (statistics without names or points) or `none` (no statistics). Leave empty to follow the room setting; use it only if the teacher asked for it |
 
-The columns must appear in this order after "Correct answer(s)": Type, Points, Image, Video, Reveal, Accept, Slider, Items, Pin, Puzzle, Explanation, AfterImage, AnsImages, Limit, Body, Scale, Layout, Bullets, Pdf, Timer, Notes, Source (leave unused ones empty, or stop the header at the last column you use). Do not invent other column names or type names.
+The columns must appear in this order after "Correct answer(s)": Type, Points, Image, Video, Reveal, Accept, Slider, Items, Pin, Puzzle, Explanation, AfterImage, AnsImages, Limit, Body, Scale, Layout, Bullets, Pdf, Timer, Notes, Source, Privacy (leave unused ones empty, or stop the header at the last column you use). Do not invent other column names or type names.
 
 # RESPONSE IN CHAT
 Keep it short:
